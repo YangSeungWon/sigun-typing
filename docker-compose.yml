@@ -1,0 +1,82 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sigun}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sigun}
+      POSTGRES_DB: ${POSTGRES_DB:-sigun}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # 웹이 뜨기 전에 DB가 실제로 받을 준비가 됐는지 확인한다.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sigun}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # 스키마를 맞춘 뒤 빠진다. 웹은 이 작업이 끝나야 뜬다.
+  migrate:
+    build:
+      context: .
+      target: socket
+    command: ["node_modules/.bin/drizzle-kit", "migrate"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-sigun}:${POSTGRES_PASSWORD:-sigun}@db:5432/${POSTGRES_DB:-sigun}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        SITE_URL: ${SITE_URL:-https://sigun-typing.ysw.kr}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-sigun}:${POSTGRES_PASSWORD:-sigun}@db:5432/${POSTGRES_DB:-sigun}
+      SCORE_SECRET: ${SCORE_SECRET:?SCORE_SECRET을 설정하세요}
+      HOSTNAME: "0.0.0.0"
+    # 기본은 루프백. 바깥으로 나가는 길은 리버스 프록시 하나뿐이어야 한다.
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${WEB_PORT:-18730}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  socket:
+    build:
+      context: .
+      target: socket
+    environment:
+      # 웹과 같은 비밀키여야 한다. 소켓 서버가 발급한 토큰을 웹이 검증하기 때문이다.
+      SCORE_SECRET: ${SCORE_SECRET:?SCORE_SECRET을 설정하세요}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:18730}
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${SOCKET_PORT:-18731}:4000"
+    restart: unless-stopped
+
+  # 랭킹만은 되살릴 수 없다. 하루 한 번 뜨고 오래된 것은 지운다.
+  backup:
+    image: postgres:17-alpine
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-sigun}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-sigun}
+      PGDATABASE: ${POSTGRES_DB:-sigun}
+      BACKUP_DIR: /backups
+      RETAIN_DAYS: ${BACKUP_RETAIN_DAYS:-14}
+      INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    entrypoint: ["/bin/sh", "/usr/local/bin/backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:

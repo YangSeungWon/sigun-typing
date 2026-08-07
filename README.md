@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 시군 타이핑
 
-## Getting Started
-
-First, run the development server:
+지도에 표시된 지역이 어디인지 떠올려 이름을 직접 입력하는 게임.
+맞힐 때마다 대한민국 지도가 하나씩 채워진다.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+npm run dev          # http://localhost:3000
+npm test             # 단위 테스트
+npm run typecheck    # 타입 + 라우트 타입
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+배포는 Vercel이 아니라 **직접 운영하는 서버의 Docker**다. 소켓이 필요해
+서버리스로는 안 되고, 절차는 [DEPLOY.md](DEPLOY.md)에 있다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| | |
+| --- | --- |
+| `npm run build:geo` | 코스 지도 다시 만들기 (원본 경계 자료 필요) |
+| `npm run build:og` | 공유 카드 이미지 다시 뜨기 |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 행정구역 기준
 
-## Learn More
+이 게임의 지역 데이터는 **2025년 행정구역 기준**이다. 경계 자료가 통계청 SGIS
+2025판이고, 그 이후 개편된 지역의 경계를 아직 구하지 못했기 때문이다. 코드만
+최신으로 맞추면 지도 매칭이 깨지므로 전체를 한 시점으로 고정했다.
 
-To learn more about Next.js, take a look at the following resources:
+2026년 8월 기준으로 반영되지 않은 개편:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 광주광역시 + 전라남도 → 전남광주통합특별시
+- 인천 자치구 재편 (제물포구·영종구·서해구·검단구 신설)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+해당 코드는 `data/reference/pinned-2025.ts`에 이유와 함께 모아 두었다.
+새 경계 자료를 구하면 그 목록이 그대로 할 일 목록이 된다.
 
-## Deploy on Vercel
+### 코드 검증의 범위
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`data/courses/codes.test.ts`의 검사는 **내부 일관성과 의도치 않은 변경**을
+확인한다. 공식 자료 대조(validity)도 하지만, 위 고정 항목은 예외로 빠진다.
+테스트가 녹색이라고 해서 모든 코드가 현행 공식 코드라는 뜻은 아니다.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 실험 기록
+
+퍼널을 해석하려면 **어떤 화면을 본 사람들의 행동인지**가 고정되어야 한다.
+그래서 모든 계측 이벤트에 실험 버전이 붙는다(`lib/analytics/events.ts`의
+`EXPERIMENT`). 입구 구조나 카피를 바꾸면 이 값을 올린다.
+
+`SCORING_VERSION`과 목적이 다르다 — 그쪽은 기록끼리 비교 가능한지를 가르고,
+이쪽은 어떤 제품을 본 사람인지를 가른다.
+
+### map-recall-v1
+
+| | |
+| --- | --- |
+| 가설 | 지도 회상을 본편으로 두되 쉬운 첫 코스(전국 17 시도)와 초성 힌트로 부담을 낮추면, 첫 방문자도 첫 판을 끝내고 다시 도전한다 |
+| 구분 | 모든 이벤트에 `experiment` 값이 함께 저장되므로, 폐기한 `typing-first-v1` 기록과 자동으로 갈린다. 별도의 시작 시각 설정은 필요 없다 |
+
+본편은 `지도 타이핑`(quiz)이다. 홈 주 CTA가 여기로 가고, 따라치기(single)는
+`연습`으로 내려가 "처음이라 어렵다면?" 자리에 놓인다. 타임어택도 같은 회상
+규칙에 시간 압박만 더한 것으로 바꿨다.
+
+볼 숫자는 넷이다.
+
+1. `home_view` → 지도 타이핑 `game_start`
+2. 지도 타이핑 `game_start` → `first_correct` ← **가장 중요**
+3. `first_correct` → `game_finish`
+4. 힌트 사용률, 특히 `progress = 0`에서의 비율
+
+2가 낮으면 첫 문제의 회상 부담이 여전히 크다는 뜻이고, 그때는 첫 코스를
+더 쉽게 하거나 힌트를 기본 노출로 올리는 쪽을 본다. 4가 높으면 사람들은
+이미 힌트로 난도를 스스로 낮추고 있는 것이므로 그걸 정식 난이도로 승격한다.
+
+숫자는 `scripts/funnel.sql`이 전부 뽑는다(아래 [조회](#조회)).
+
+**힌트 사용률만 보면 안 된다.** 60%라는 수 하나로는 첫 문제부터 60%가 쓰는
+것인지 15문제쯤 가서 한두 번 쓰는 것인지 구분되지 않고, 둘은 완전히 다른
+신호다. 그래서 `hint_used`에 그 시점의 문제 번호를, `hint_resolved`에 힌트를
+보고 정답까지 걸린 시간을 함께 남긴다 — 후자가 짧으면 초성만 보면 떠오르는
+것(실마리가 모자랐다)이고, 길면 초성을 봐도 모르는 것(그 지역을 아예 모른다)이다.
+
+시간은 전부 이벤트의 `at_ms`(판 시작 기준 경과)로 잰다. `created_at`으로는
+잴 수 없다 — 이벤트를 3초씩 모아 보내므로 한 묶음의 `created_at`이 거의 같은
+값이 되어 `game_start → first_correct`가 전부 0초로 찍힌다.
+
+퍼널의 분모는 `game_id`다. 새로고침·재시작·연속 플레이가 한 세션에 섞여도
+판 단위로 갈린다. 같은 묶음이 두 번 도착해도 이벤트마다 붙는 `event_id`가
+겹치면 서버가 버리므로 판 수가 부풀지 않는다.
+
+`/api/events`는 인증이 없는 창구다. 기기당 분당 30번, 접속 주소당 300번으로
+막아 둔다 — 한 판은 요청 대여섯 번이라 연달아 여러 판을 해도 걸리지 않는다.
+남용을 완전히 막는 장치가 아니라 무한정 부을 수 있던 것을 막는 장치다.
+
+**이 데이터는 점수가 아니다.** `at_ms`를 비롯해 이벤트에 실리는 값은 전부
+기기가 보내 준 숫자이고 얼마든지 조작할 수 있다. 퍼널을 보는 데만 쓰고
+기록 검증에는 절대 끌어 쓰지 않는다 — 그쪽은 서버가 발급한 토큰의 시각과
+타건 기록 재생만 믿는다(`lib/score/validate.ts`). 두 계통은 테이블도 코드도
+서로 닿지 않는다.
+
+**이탈은 이벤트가 아니라 부재로 판정한다.** `game_quit`은 창을 통째로 닫으면
+브라우저가 이탈 처리를 실행하지 않고 꺼지는 일이 있어 "오면 좋은" 값이다
+(탭 닫기와 화면 이동은 실측으로 확인했고 창을 닫는 경우만 유실된다).
+그래서 이탈 자체는 `game_finish`가 없다는 사실로 세고, 어디까지 갔는지는
+`game_quit`의 progress → 마지막 이정표 순으로 찾는다. 이정표는 발생 즉시
+따로 보내므로 quit보다 살아남을 확률이 높다.
+
+### typing-first-v1 (폐기)
+
+| | |
+| --- | --- |
+| 가설 | 이름을 보며 치는 타이핑을 입구로 두면, 지도 회상을 앞세울 때보다 더 많은 사람이 첫 판을 플레이하고 이후 지도 퀴즈로 넘어간다 |
+| 구분 | 모든 이벤트에 `experiment` 값이 함께 저장되므로, 폐기한 `typing-first-v1` 기록과 자동으로 갈린다. 별도의 시작 시각 설정은 필요 없다 |
+
+따라치기를 입구로 뒀던 구조. 배포 후 실제로 플레이해 보니 답이 적혀 있는데
+지도가 그 지역을 문제처럼 가리켜 무엇을 맞히는 게임인지 알 수 없었다.
+지도가 장식이 되면서 시군을 소재로 쓰는 이유가 흐려져 폐기했다.
+
+볼 숫자는 넷이다.
+
+1. `home_view` → 타이핑 `game_start`
+2. 타이핑 `game_start` → `game_finish`
+3. 타이핑 `game_finish` → `source=result_cta`인 지도 퀴즈 `game_start`
+4. 지도 퀴즈 `game_start` → `first_correct` → `game_finish`
+
+1·2가 높고 3이 낮으면 타이핑은 맞지만 지도 퀴즈에 관심이 없는 것이고,
+3은 높은데 4의 `first_correct`에서 깨지면 관심은 있으나 회상 난도가 문제다.
+
+### 조회
+
+```bash
+docker compose exec -T db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < scripts/funnel.sql
+```
+
+퍼널·첫 정답까지 걸린 시간·힌트를 처음 연 지점·판당 힌트 수·힌트에서 정답까지·
+이탈 지점·유입 경로까지 일곱 장이 한 번에 나온다.
+
+개발·QA 이벤트는 `internal` 표시로 걸러진다(localhost·사설 IP에서 온 판).
+예전에는 `EXPERIMENT_STARTED_AT`으로 배포 시각을 잘라 냈는데, 실험마다 그
+시각을 기억해야 해서 구조적으로 확실한 쪽으로 바꿨다. 배포 직전에 이벤트
+테이블을 한 번 비우면 그 뒤로는 신경 쓸 것이 없다.
+
+### 동결 규칙
+
+실험 기간에는 카피·CTA 순서·기본 모드·지역 챌린지 구성을 바꾸지 않는다.
+문구 하나만 바뀌어도 무엇 때문에 숫자가 움직였는지 알 수 없게 된다.
+심각한 버그만 고친다.

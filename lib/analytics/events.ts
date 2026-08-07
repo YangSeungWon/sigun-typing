@@ -1,0 +1,164 @@
+/**
+ * 계측 이벤트.
+ *
+ * 답하려는 질문은 하나다 — 사람들이 **지도 회상의 부담 때문에** 나가는가,
+ * 아니면 그냥 흥미가 없어서 나가는가.
+ *
+ * 그래서 `game_start → first_correct` 구간이 가장 중요하다. 이 구간에서
+ * 크게 빠지면 콘텐츠가 아니라 첫 문제의 난도가 문제다. 완주율만 보면
+ * 이 둘을 구분할 수 없다.
+ */
+export const EVENT_NAMES = [
+  /** 홈에 도달했다 */
+  "home_view",
+  /** 코스 선택 화면에서 코스를 열었다 */
+  "course_view",
+  /** 출발했다 */
+  "game_start",
+  /** 첫 항목을 맞혔다 — 회상 부담을 넘겼다는 신호 */
+  "first_correct",
+  /** 초성 힌트를 열었다. progress=0이 많으면 사람들은 힌트로 게임을 우회하는 중이다 */
+  "hint_used",
+  /**
+   * 힌트를 본 항목을 끝냈다. elapsedMs가 힌트에서 정답까지 걸린 시간이다.
+   *
+   * 힌트 사용률만으로는 힌트가 구조대인지 지름길인지 알 수 없다. 짧으면
+   * 초성만 보면 떠오르는 것이고, 길면 초성을 봐도 모르는 것이다 — 전자는
+   * 실마리를 늘릴 문제, 후자는 코스 난도를 낮출 문제다.
+   */
+  "hint_resolved",
+  /** 25·50·75% 지점을 지났다 */
+  "game_progress",
+  /** 끝까지 갔다 */
+  "game_finish",
+  /** 끝내지 않고 떠났다 */
+  "game_quit",
+  /** 결과 화면에서 다른 모드로 넘어갔다 */
+  "mode_switch",
+  /** 결과를 도전장으로 내보냈다 — 이 게임이 퍼지는 유일한 통로 */
+  "share_clicked",
+] as const;
+
+export type EventName = (typeof EVENT_NAMES)[number];
+
+/**
+ * 실험 버전. 입구 구조나 카피를 바꾸면 올린다.
+ *
+ * SCORING_VERSION과 목적이 다르다 — 그쪽은 기록끼리 비교 가능한지를 가르고,
+ * 이쪽은 **어떤 화면을 본 사람들의 행동인지**를 가른다. 문구 하나만 바꿔도
+ * 퍼널이 흔들리므로, 섞이면 그 뒤로는 해석이 불가능해진다.
+ *
+ * typing-first-v1: 이름을 보고 따라 치는 모드를 입구로 둔 구조. 폐기.
+ *   답이 적혀 있는데 지도가 그 지역을 문제처럼 가리켜, 무엇을 맞히는
+ *   게임인지 알 수 없었다. 지도가 장식이 되면서 시군을 소재로 쓰는
+ *   이유 자체가 흐려졌다.
+ *
+ * map-recall-v1: 지도 회상을 본편으로 두고, 진입장벽은 쉬운 첫 코스와
+ *   초성 힌트로 낮춘다. 검증할 질문이 "따라치기가 대중적인가"에서
+ *   "회상 부담을 얼마나 낮출 수 있는가"로 바뀌었다.
+ */
+export const EXPERIMENT = "map-recall-v1";
+
+/** game_start를 유발한 화면. 결과 화면 CTA의 전환율을 따로 보려면 필요하다. */
+export const ENTRY_SOURCES = [
+  "home_primary",
+  "home_secondary",
+  "home_challenge",
+  "course_select",
+  "result_cta",
+  /** 이용안내를 읽고 시작했다. 설명이 필요한 사람이 얼마나 되는지 본다 */
+  "guide",
+  /** 남의 도전장을 받고 들어왔다. share_clicked와 짝이 되어 고리를 완성한다 */
+  "challenge",
+  "direct",
+] as const;
+
+export type EntrySource = (typeof ENTRY_SOURCES)[number];
+
+export function isEntrySource(value: unknown): value is EntrySource {
+  return typeof value === "string" && (ENTRY_SOURCES as readonly string[]).includes(value);
+}
+
+export interface GameEvent {
+  name: EventName;
+  /**
+   * 이 이벤트 하나를 가리키는 값. 클라이언트가 만든다.
+   *
+   * 같은 묶음이 두 번 도착할 수 있다 — beacon은 보냈는지 확인할 방법이 없고,
+   * 중간의 프록시가 다시 보낼 수도 있다. 그때 판 하나가 두 판으로 세어지면
+   * 퍼널이 조용히 틀린다. 서버는 이 값이 겹치면 그냥 버린다.
+   */
+  id?: string;
+  /**
+   * 판이 시작된 뒤 흐른 시간(ms).
+   *
+   * **믿을 수 없는 값이다.** 기기가 보내 준 숫자이고 얼마든지 조작할 수 있다.
+   * 퍼널 분석에만 쓰고, 점수·랭킹 검증에는 절대 쓰지 않는다 — 그쪽은
+   * 서버가 발급한 토큰 시각과 타건 기록 재생으로만 판단한다(lib/score).
+   *
+   * created_at으로는 이걸 대신할 수 없다. 이벤트는 3초 단위로 모아 보내므로
+   * 한 묶음의 created_at이 거의 같아진다 — `game_start → first_correct`가
+   * 전부 0초로 찍힌다. 시간을 재려면 클라이언트가 찍어 보내야 한다.
+   */
+  atMs?: number;
+  /**
+   * 한 판을 묶는 값. 이게 없으면 새로고침이나 중복 전송 때문에
+   * 퍼널의 분모가 흔들린다 — 한 사람이 30판 한 것과 30명이 한 판씩 한 것을
+   * 구분할 수 없게 된다.
+   */
+  gameId?: string;
+  courseId?: string;
+  mode?: string;
+  /** 이 시점까지 확정한 항목 수 */
+  progress?: number;
+  total?: number;
+  elapsedMs?: number;
+  hintCount?: number;
+  /** mode_switch에서 넘어간 목적지 */
+  toMode?: string;
+  /** game_start를 유발한 화면 */
+  source?: string;
+  /** 이 이벤트가 속한 실험 버전 */
+  experiment?: string;
+  /**
+   * 개발·QA 트래픽 표시. 배포 시각으로 거르는 것보다 구조적으로 확실하다 —
+   * 시각을 매 실험마다 기억할 필요가 없다.
+   */
+  internal?: boolean;
+}
+
+export function isEventName(value: unknown): value is EventName {
+  return typeof value === "string" && (EVENT_NAMES as readonly string[]).includes(value);
+}
+
+/** 서버가 받아 저장할 수 있는 형태인지. 숫자는 음수·비정상 값을 잘라 낸다. */
+export function sanitizeEvent(raw: unknown): GameEvent | null {
+  if (!raw || typeof raw !== "object") return null;
+  const e = raw as Record<string, unknown>;
+  if (!isEventName(e.name)) return null;
+
+  const num = (v: unknown): number | undefined => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) return undefined;
+    return Math.min(Math.floor(n), 10_000_000);
+  };
+  const str = (v: unknown, max: number): string | undefined =>
+    typeof v === "string" && v.length > 0 && v.length <= max ? v : undefined;
+
+  return {
+    name: e.name,
+    id: str(e.id, 64),
+    atMs: num(e.atMs),
+    courseId: str(e.courseId, 40),
+    mode: str(e.mode, 20),
+    progress: num(e.progress),
+    total: num(e.total),
+    elapsedMs: num(e.elapsedMs),
+    hintCount: num(e.hintCount),
+    toMode: str(e.toMode, 20),
+    source: isEntrySource(e.source) ? e.source : undefined,
+    experiment: str(e.experiment, 40),
+    gameId: str(e.gameId, 64),
+    internal: e.internal === true ? true : undefined,
+  };
+}

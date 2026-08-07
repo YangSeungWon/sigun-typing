@@ -1,0 +1,238 @@
+import type { ModeId } from "../lib/game/types";
+
+/**
+ * 멀티플레이 방의 규칙 전부. 소켓을 모르는 순수 함수라 테스트할 수 있다.
+ *
+ * 소켓 계층은 이 함수들을 부르고 결과를 뿌리기만 한다. 경주 규칙과 전송을
+ * 섞어 두면 "접속이 끊긴 상태에서 호스트가 나가면?" 같은 경우를 확인할 방법이 없다.
+ */
+
+export type RoomStatus = "waiting" | "counting" | "racing" | "finished";
+
+export const MAX_PLAYERS = 8;
+export const COUNTDOWN_MS = 3_000;
+/** 아무도 움직이지 않는 방을 영원히 붙들고 있지 않는다. */
+export const ROOM_IDLE_MS = 30 * 60 * 1000;
+
+export interface Player {
+  /** 소켓 id */
+  id: string;
+  nickname: string;
+  ready: boolean;
+  /** 지금까지 맞힌 지역 수 */
+  index: number;
+  cpm: number;
+  accuracy: number;
+  finishedAt: number | null;
+  /** 완주 순서. 미완주는 null. */
+  rank: number | null;
+  connected: boolean;
+}
+
+export interface Room {
+  id: string;
+  courseId: string;
+  mode: ModeId;
+  seed: number;
+  /** 코스 항목 수 */
+  total: number;
+  hostId: string | null;
+  status: RoomStatus;
+  players: Player[];
+  /** 카운트다운이 끝나고 실제로 출발하는 서버 시각 */
+  startsAt: number | null;
+  updatedAt: number;
+}
+
+export type RoomError =
+  | "room_full"
+  | "already_started"
+  | "not_host"
+  | "not_ready"
+  | "no_players"
+  | "not_racing";
+
+export type RoomResult<T> = { ok: true; value: T } | { ok: false; error: RoomError };
+
+const ok = <T>(value: T): RoomResult<T> => ({ ok: true, value });
+const err = <T>(error: RoomError): RoomResult<T> => ({ ok: false, error });
+
+export function createRoom(input: {
+  id: string;
+  courseId: string;
+  mode: ModeId;
+  seed: number;
+  total: number;
+  now: number;
+}): Room {
+  return {
+    id: input.id,
+    courseId: input.courseId,
+    mode: input.mode,
+    seed: input.seed,
+    total: input.total,
+    hostId: null,
+    status: "waiting",
+    players: [],
+    startsAt: null,
+    updatedAt: input.now,
+  };
+}
+
+export function join(
+  room: Room,
+  player: { id: string; nickname: string },
+  now: number,
+): RoomResult<Room> {
+  if (room.status !== "waiting") return err("already_started");
+  if (room.players.filter((p) => p.connected).length >= MAX_PLAYERS) {
+    return err("room_full");
+  }
+
+  const entry: Player = {
+    id: player.id,
+    nickname: player.nickname,
+    ready: false,
+    index: 0,
+    cpm: 0,
+    accuracy: 1,
+    finishedAt: null,
+    rank: null,
+    connected: true,
+  };
+
+  return ok({
+    ...room,
+    // 먼저 들어온 사람이 방장이 된다.
+    hostId: room.hostId ?? player.id,
+    players: [...room.players, entry],
+    updatedAt: now,
+  });
+}
+
+export function setReady(room: Room, playerId: string, ready: boolean, now: number): Room {
+  return {
+    ...room,
+    players: room.players.map((p) => (p.id === playerId ? { ...p, ready } : p)),
+    updatedAt: now,
+  };
+}
+
+/** 방장이 출발을 누르면 카운트다운이 시작된다. */
+export function startCountdown(
+  room: Room,
+  playerId: string,
+  now: number,
+): RoomResult<Room> {
+  if (room.status !== "waiting") return err("already_started");
+  if (room.hostId !== playerId) return err("not_host");
+
+  const active = room.players.filter((p) => p.connected);
+  if (active.length === 0) return err("no_players");
+  // 방장은 누른 것으로 준비를 갈음한다. 나머지는 명시적으로 준비해야 한다.
+  if (!active.every((p) => p.ready || p.id === room.hostId)) return err("not_ready");
+
+  return ok({
+    ...room,
+    status: "counting",
+    startsAt: now + COUNTDOWN_MS,
+    updatedAt: now,
+  });
+}
+
+/** 카운트다운이 끝났는지 확인해 상태를 넘긴다. 소켓 계층이 주기적으로 부른다. */
+export function tick(room: Room, now: number): Room {
+  if (room.status === "counting" && room.startsAt !== null && now >= room.startsAt) {
+    return { ...room, status: "racing", updatedAt: now };
+  }
+  return room;
+}
+
+export function progress(
+  room: Room,
+  playerId: string,
+  update: { index: number; cpm: number; accuracy: number },
+  now: number,
+): RoomResult<Room> {
+  if (room.status !== "racing") return err("not_racing");
+
+  return ok({
+    ...room,
+    players: room.players.map((p) =>
+      p.id === playerId
+        ? {
+            ...p,
+            // 진행도는 되돌아가지 않는다. 뒤늦게 도착한 패킷이 순위를 흔들지 않게 한다.
+            index: Math.max(p.index, Math.min(update.index, room.total)),
+            cpm: Math.max(0, update.cpm),
+            accuracy: Math.min(1, Math.max(0, update.accuracy)),
+          }
+        : p,
+    ),
+    updatedAt: now,
+  });
+}
+
+export function finish(room: Room, playerId: string, now: number): Room {
+  const already = room.players.find((p) => p.id === playerId)?.finishedAt !== null;
+  if (already) return room;
+
+  const rank = room.players.filter((p) => p.finishedAt !== null).length + 1;
+  const players = room.players.map((p) =>
+    p.id === playerId ? { ...p, finishedAt: now, rank, index: room.total } : p,
+  );
+
+  return closeIfDone({ ...room, players, updatedAt: now });
+}
+
+export function leave(room: Room, playerId: string, now: number): Room {
+  const players = room.players.map((p) =>
+    p.id === playerId ? { ...p, connected: false, ready: false } : p,
+  );
+
+  // 방장이 나가면 남은 사람 중 먼저 들어온 사람이 이어받는다.
+  const hostGone = room.hostId === playerId;
+  const nextHost = players.find((p) => p.connected)?.id ?? null;
+
+  return closeIfDone({
+    ...room,
+    players,
+    hostId: hostGone ? nextHost : room.hostId,
+    updatedAt: now,
+  });
+}
+
+/** 경주 중이던 사람이 모두 끝났거나 나갔으면 방을 닫는다. */
+function closeIfDone(room: Room): Room {
+  if (room.status !== "racing" && room.status !== "counting") return room;
+  const running = room.players.filter((p) => p.connected && p.finishedAt === null);
+  if (running.length > 0) return room;
+  return { ...room, status: "finished" };
+}
+
+/** 순위표 정렬 — 완주자가 완주 순서대로 먼저, 나머지는 진행도순. */
+export function standings(room: Room): Player[] {
+  return [...room.players].sort((a, b) => {
+    if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
+    if (a.rank !== null) return -1;
+    if (b.rank !== null) return 1;
+    if (b.index !== a.index) return b.index - a.index;
+    return b.cpm - a.cpm;
+  });
+}
+
+export function isAbandoned(room: Room, now: number): boolean {
+  if (room.players.some((p) => p.connected)) return false;
+  return now - room.updatedAt > ROOM_IDLE_MS;
+}
+
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+/** 헷갈리는 글자(O/0, I/1)를 뺀 6자리 코드. 말로 불러 주기 위한 것이다. */
+export function makeRoomCode(random: () => number = Math.random): string {
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += CODE_ALPHABET[Math.floor(random() * CODE_ALPHABET.length)];
+  }
+  return code;
+}

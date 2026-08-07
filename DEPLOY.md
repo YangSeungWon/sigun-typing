@@ -241,6 +241,26 @@ satori가 woff2를 읽지 못해 한글 폰트를 따로 넣어야 하기 때문
 때 이미지를 다시 뜰 필요는 없다. `metadataBase`가 빠지면 상대 경로가 절대
 주소로 바뀌지 않아 크롤러가 이미지를 통째로 무시한다.
 
+## 오류 보기
+
+500이 나도 아무도 안 보면 없는 일이 된다. 관측 기간에 숫자가 이상할 때
+"사람들이 안 하는 것"과 "터진 것"을 구분할 수 있어야 한다.
+
+```bash
+# 컨테이너 로그 — DB가 죽어서 난 오류도 여기에는 남는다
+docker compose logs web socket | grep '^\[error\]'
+
+# 쌓인 것을 모아 보기 — 무엇이 몇 번, 언제부터
+docker compose exec -T db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < scripts/errors.sql
+```
+
+서버 오류는 Next의 `onRequestError`가, 브라우저 오류는 `app/error.tsx`가
+`/api/errors`로 보낸다. 양쪽 다 로그와 DB에 남는다 — DB가 원인인 고장에서는
+DB에 못 남기므로 로그가 최후의 경로다.
+
+기록에는 요청 본문도 입력한 지명도 담지 않는다. 주소는 경로만 남기고 물음표
+뒤는 뗀다(도전장 링크에는 닉네임이 실려 있다).
+
 ## 뜬 뒤에 확인할 것
 
 서명 키 지문이 두 서비스에서 같아야 한다.

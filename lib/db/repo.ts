@@ -1,7 +1,14 @@
 import { and, count, desc, eq, gt, gte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ModeId } from "../game/types";
-import { events, scores, type NewScoreRow, type ScoreRow } from "./schema";
+import {
+  errors,
+  events,
+  scores,
+  type NewErrorRow,
+  type NewScoreRow,
+  type ScoreRow,
+} from "./schema";
 import type { GameEvent } from "../analytics/events";
 
 export interface LeaderboardEntry {
@@ -45,6 +52,8 @@ export interface ScoreRepository {
   recentCount(deviceId: string, windowMs: number, now: number): Promise<number>;
   /** 익명 이용 흐름 기록 */
   recordEvents(deviceId: string, batch: GameEvent[]): Promise<void>;
+  /** 오류 기록. 이걸 남기다 실패해도 호출한 쪽이 죽으면 안 된다. */
+  recordError(row: NewErrorRow): Promise<void>;
 }
 
 function toEntry(row: ScoreRow): LeaderboardEntry {
@@ -129,6 +138,16 @@ export class MemoryScoreRepository implements ScoreRepository {
 
   /** 메모리 저장소에서는 계측을 버린다. 개발 중에 볼 이유가 없다. */
   async recordEvents() {}
+
+  /** 오류는 버리지 않는다 — 로그로는 이미 나갔고, 여기서는 셀 수만 있으면 된다. */
+  private errorRows: NewErrorRow[] = [];
+  async recordError(row: NewErrorRow) {
+    this.errorRows.push(row);
+  }
+  /** 테스트에서 몇 건이 들어왔는지 보기 위한 것. */
+  recordedErrors(): NewErrorRow[] {
+    return this.errorRows;
+  }
 }
 
 export class PostgresScoreRepository implements ScoreRepository {
@@ -231,5 +250,9 @@ export class PostgresScoreRepository implements ScoreRepository {
       // 같은 이벤트가 두 번 도착하면 버린다. beacon은 도착 확인이 불가능하고,
       // 중복이 그대로 쌓이면 판 수가 부풀어 퍼널이 조용히 틀린다.
       .onConflictDoNothing({ target: events.eventId });
+  }
+
+  async recordError(row: NewErrorRow) {
+    await this.db.insert(errors).values(row);
   }
 }

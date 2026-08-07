@@ -1,3 +1,5 @@
+import type { Instrumentation } from "next";
+
 /**
  * 서버가 뜰 때 한 번 실행된다.
  *
@@ -11,3 +13,37 @@ export async function register() {
   const { secretFingerprint } = await import("./lib/score/session");
   process.stdout.write(`[web] 기록 서명 키 지문 ${secretFingerprint()}\n`);
 }
+
+/**
+ * 서버에서 터진 오류를 남긴다.
+ *
+ * 이게 없으면 500이 나도 아무도 모른다. 관측 기간에 숫자가 이상할 때
+ * "사람들이 안 하는 것"과 "터진 것"을 구분할 방법이 있어야 한다.
+ *
+ * 로그와 DB 양쪽에 남기는 이유: DB가 죽어서 터진 경우에는 DB에 못 남긴다.
+ * 어떤 상황에서도 남는 경로가 하나는 있어야 한다.
+ */
+export const onRequestError: Instrumentation.onRequestError = async (
+  error,
+  request,
+  context,
+) => {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  const { toErrorRow, logError } = await import("./lib/observability/report");
+  const row = toErrorRow({
+    source: "server",
+    error,
+    path: request.path,
+    kind: context.routeType,
+  });
+
+  logError(row);
+
+  try {
+    const { getScoreRepository } = await import("./lib/db/client");
+    await getScoreRepository().recordError(row);
+  } catch {
+    // 오류를 남기다 난 오류까지 좇지는 않는다. 로그에는 이미 나갔다.
+  }
+};

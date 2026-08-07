@@ -219,6 +219,20 @@ setInterval(() => {
   }
 }, TICK_MS);
 
+/**
+ * 잡히지 않은 오류.
+ *
+ * 이대로 두면 프로세스가 조용히 죽고 컨테이너가 재시작되면서, 방에 있던
+ * 사람들만 이유 없이 튕긴다. 최소한 로그에 남겨야 나중에 맞춰 볼 수 있다.
+ * `[error]`로 시작하는 것은 웹 쪽과 같은 방식으로 grep하기 위해서다.
+ */
+process.on("uncaughtException", (err) => {
+  process.stderr.write(`[error] socket uncaught — ${err.message}\n${err.stack}\n`);
+});
+process.on("unhandledRejection", (reason) => {
+  process.stderr.write(`[error] socket unhandled — ${String(reason)}\n`);
+});
+
 httpServer.listen(PORT, () => {
   process.stdout.write(`소켓 서버 http://localhost:${PORT} (허용 출처 ${ORIGIN})\n`);
   // 웹이 찍는 지문과 같아야 한다. 다르면 멀티 기록만 조용히 거부된다.

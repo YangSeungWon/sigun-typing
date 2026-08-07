@@ -113,3 +113,34 @@ export const events = pgTable(
 );
 
 export type NewEventRow = typeof events.$inferInsert;
+
+/**
+ * 서버·브라우저에서 터진 오류.
+ *
+ * 로그로만 남기면 아무도 안 본다. 관측 기간에 숫자가 이상할 때 "사람들이
+ * 안 하는 것"과 "터진 것"을 구분할 방법이 있어야 한다. 계측과 같은 곳에
+ * 두면 같은 질의로 같이 볼 수 있다.
+ *
+ * 요청 본문이나 입력값은 절대 담지 않는다. 여기 필요한 것은 어디서 무엇이
+ * 몇 번 터졌는가이지 누가 무엇을 쳤는가가 아니다.
+ */
+export const errors = pgTable(
+  "errors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    /** server | client */
+    source: text("source").notNull(),
+    message: text("message").notNull(),
+    /** React가 가려 놓은 오류를 로그와 맞춰 보는 열쇠 */
+    digest: text("digest"),
+    stack: text("stack"),
+    /** 터진 자리. 주소의 질의 문자열은 떼고 경로만 남긴다 */
+    path: text("path"),
+    /** render | route | action 등 어떤 처리 중이었는지 */
+    kind: text("kind"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("errors_recent_idx").on(t.createdAt)],
+);
+
+export type NewErrorRow = typeof errors.$inferInsert;

@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`코스 판번호 > 내용이 바뀌면 판번호도 바뀌어야 한다 1`] = `
+{
+  "busan@v1": "f634fc3c62b6",
+  "chungbuk@v1": "8ae7485c61e0",
+  "chungnam@v1": "ed31759be08f",
+  "daegu@v1": "74a685c62a27",
+  "daejeon@v1": "abcc2ec1c0e5",
+  "gangwon@v1": "a6a4651dfab5",
+  "gwangju@v1": "ac72277f7318",
+  "gyeongbuk@v1": "28d853868c3e",
+  "gyeonggi@v1": "31ea8310669c",
+  "gyeongnam@v1": "763bf1fa18e7",
+  "incheon@v1": "ba5eeb2b6ba5",
+  "jeju@v1": "905843d91b79",
+  "jeonbuk@v1": "882795f19ac9",
+  "jeonnam@v1": "207dbef370b8",
+  "seoul@v1": "2f28d0104c5a",
+  "sido@v1": "192d4733ebca",
+  "ulsan@v1": "0426bd525899",
+}
+`;

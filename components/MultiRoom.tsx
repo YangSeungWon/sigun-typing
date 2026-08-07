@@ -1,0 +1,375 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { COURSES, getCourse } from "@/data/courses";
+import { useRoom } from "@/lib/multiplayer/useRoom";
+import { useCourseGeo } from "@/lib/useCourseGeo";
+import { getSavedNickname, saveNickname } from "@/lib/score/client";
+import { MultiRace } from "./MultiRace";
+import { Standings } from "./Standings";
+
+interface MultiRoomProps {
+  /** 링크로 들어온 방 코드 */
+  initialCode?: string;
+}
+
+export function MultiRoom({ initialCode }: MultiRoomProps) {
+  const {
+    connected,
+    room,
+    raceStart,
+    error,
+    selfId,
+    create,
+    join,
+    setReady,
+    start,
+    sendProgress,
+    sendFinish,
+  } = useRoom();
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
+  const [courseId, setCourseId] = useState(COURSES[0].id);
+  const [busy, setBusy] = useState(false);
+  // 대기실에 있는 동안 지도를 받아 둔다. 출발 신호를 받고 부르면
+  // 첫 문제에서만 지도가 비는데, 회상 게임에서는 문제가 안 보이는 것과 같다.
+  const geo = useCourseGeo(room?.courseId);
+
+  // 저장해 둔 이름은 ref로 직접 넣는다. 상태로 들면 서버 렌더 결과와 달라
+  // 하이드레이션이 어긋난다.
+  const attachName = useCallback((el: HTMLInputElement | null) => {
+    nameRef.current = el;
+    if (el && !el.value) el.value = getSavedNickname();
+  }, []);
+
+  const attachCode = useCallback(
+    (el: HTMLInputElement | null) => {
+      codeRef.current = el;
+      if (el && !el.value && initialCode) el.value = initialCode.toUpperCase();
+    },
+    [initialCode],
+  );
+
+  const nickname = () => {
+    const name = (nameRef.current?.value ?? "").trim() || "익명";
+    saveNickname(name);
+    return name;
+  };
+
+  const doCreate = async () => {
+    setBusy(true);
+    await create(courseId, nickname());
+    setBusy(false);
+  };
+
+  const doJoinCode = async (code: string) => {
+    setBusy(true);
+    await join(code.trim().toUpperCase(), nickname());
+    setBusy(false);
+  };
+
+  const doJoin = async () => {
+    const code = (codeRef.current?.value ?? "").trim();
+    if (!code) return;
+    setBusy(true);
+    await join(code, nickname());
+    setBusy(false);
+  };
+
+  // ── 초대 링크로 들어온 사람 ───────────────────────────────────
+  if (!room && initialCode) {
+    /*
+     * 방 코드를 받아쓰게 하지 않는다. 카톡에서 링크를 누른 사람에게 필요한
+     * 것은 이름 하나뿐이고, 그 앞에 코스 목록과 방 만들기 상자를 늘어놓으면
+     * 자기가 뭘 하러 왔는지 잊는다.
+     */
+    return (
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <header className="flex flex-col gap-2 text-center">
+          <span className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+            초대받았습니다
+          </span>
+          <span className="font-mono text-4xl font-semibold tracking-[0.2em]">
+            {initialCode.toUpperCase()}
+          </span>
+        </header>
+
+        <input
+          ref={attachName}
+          maxLength={12}
+          placeholder="이름"
+          aria-label="이름"
+          autoFocus
+          onKeyDown={(e) => e.key === "Enter" && doJoinCode(initialCode)}
+          className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-center text-lg text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        />
+        <button
+          type="button"
+          onClick={() => doJoinCode(initialCode)}
+          disabled={!connected || busy}
+          className="rounded-lg bg-sign px-5 py-4 text-lg font-medium text-paint transition-colors hover:bg-sign-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          들어가기
+        </button>
+        <p className="text-center font-mono text-sm text-dim" role="status" aria-live="polite">
+          {error ?? (connected ? "" : "서버에 연결하는 중…")}
+        </p>
+        <Link href="/rooms" className="text-center text-sm text-dim underline underline-offset-4">
+          직접 방 만들기
+        </Link>
+      </div>
+    );
+  }
+
+  // ── 아직 방에 들어가기 전 ─────────────────────────────────────
+  if (!room) {
+    return (
+      <div className="flex w-full max-w-md flex-col gap-8">
+        <section className="flex flex-col gap-3">
+          <label htmlFor="nickname" className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+            이름
+          </label>
+          <input
+            id="nickname"
+            ref={attachName}
+            maxLength={12}
+            placeholder="이름"
+            className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          />
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-6">
+          <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+            방 만들기
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {COURSES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCourseId(c.id)}
+                aria-pressed={c.id === courseId}
+                className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                  c.id === courseId
+                    ? "bg-sign text-paint"
+                    : "border border-concrete-deep text-ink hover:bg-concrete-deep"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={doCreate}
+            disabled={!connected || busy}
+            className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            방 만들기
+          </button>
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep p-6">
+          <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+            방 코드로 들어가기
+          </h2>
+          <div className="flex gap-2">
+            <input
+              ref={attachCode}
+              maxLength={6}
+              placeholder="ABC123"
+              aria-label="방 코드"
+              onKeyDown={(e) => e.key === "Enter" && doJoin()}
+              className="w-40 rounded-lg border border-concrete-deep bg-paint px-4 py-3 font-mono tracking-[0.2em] text-ink uppercase placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            />
+            <button
+              type="button"
+              onClick={doJoin}
+              disabled={!connected || busy}
+              className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              들어가기
+            </button>
+          </div>
+        </section>
+
+        <p className="font-mono text-sm text-dim" role="status" aria-live="polite">
+          {error ?? (connected ? "서버에 연결되었습니다" : "서버에 연결하는 중…")}
+        </p>
+      </div>
+    );
+  }
+
+  const course = getCourse(room.courseId);
+  const isHost = room.hostId === selfId;
+  const me = room.players.find((p) => p.id === selfId);
+
+  // ── 경주 중 / 끝난 뒤 ─────────────────────────────────────────
+  if (room.status === "racing" || room.status === "finished") {
+    if (!course) return null;
+    return (
+      <div className="flex w-full max-w-xl flex-col gap-6">
+        <RoomHeader code={room.id} courseName={course.name} />
+        <MultiRace
+          course={course}
+          geo={geo}
+          room={room}
+          raceStart={raceStart}
+          selfId={selfId}
+          onProgress={sendProgress}
+          onFinish={sendFinish}
+        />
+      </div>
+    );
+  }
+
+  // ── 대기실 ────────────────────────────────────────────────────
+  return (
+    <div className="flex w-full max-w-md flex-col gap-6">
+      <RoomHeader code={room.id} courseName={course?.name ?? room.courseId} />
+
+      {room.status === "counting" ? (
+        <Countdown startsAt={room.startsAt} />
+      ) : (
+        <InviteLink code={room.id} />
+      )}
+
+      <Standings
+        players={room.players}
+        total={room.total}
+        selfId={selfId}
+        hostId={room.hostId}
+        showReady
+      />
+
+      {room.status === "waiting" && (
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setReady(!me?.ready)}
+            className={`flex-1 rounded-lg px-5 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+              me?.ready
+                ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
+                : "bg-expressway text-paint hover:brightness-110"
+            }`}
+          >
+            {me?.ready ? "준비 취소" : "준비"}
+          </button>
+          {isHost && (
+            <button
+              type="button"
+              onClick={start}
+              className="flex-1 rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              출발
+            </button>
+          )}
+        </div>
+      )}
+
+      <p className="font-mono text-sm text-dim" role="status" aria-live="polite">
+        {error ?? (isHost ? "전원이 준비하면 출발할 수 있습니다" : "방장이 출발시킬 때까지 기다립니다")}
+      </p>
+    </div>
+  );
+}
+
+function RoomHeader({ code, courseName }: { code: string; courseName: string }) {
+  return (
+    <header className="flex flex-col gap-2">
+      <Link
+        href="/"
+        className="font-mono text-sm tracking-[0.12em] text-dim uppercase transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        ← 시군 타이핑
+      </Link>
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="font-mono text-3xl font-semibold tracking-[0.2em]">
+          {code}
+        </span>
+        <span className="text-sm text-dim">{courseName}</span>
+      </div>
+    </header>
+  );
+}
+
+/**
+ * 초대 링크.
+ *
+ * 코드를 불러 주는 것과 링크를 보내는 것은 마찰이 다르다. 여섯 자리를
+ * 받아쓰게 하면 단톡방에서 오타가 나고, 오타가 나면 그 사람은 안 들어온다.
+ * 링크를 누른 사람은 이름만 넣고 바로 방에 들어간다.
+ */
+function InviteLink({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    // 주소는 누를 때 만든다. 렌더 중에 window를 읽으면 서버 렌더와 어긋난다.
+    const url = `${window.location.origin}/rooms?code=${code}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "시군 타이핑", text: "같이 한 판 하자", url });
+        return;
+      } catch {
+        return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // 클립보드가 막힌 환경. 위에 적힌 방 코드를 불러 주는 수밖에 없다.
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={copy}
+        className="rounded-lg border border-sign bg-sign/10 px-5 py-3 font-medium text-ink transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        {copied ? "복사했습니다 — 단톡방에 붙여 넣으세요" : "친구 초대 링크 복사"}
+      </button>
+      <p className="text-sm text-dim">
+        링크를 받은 사람은 이름만 넣으면 바로 들어옵니다. 최대 8명.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * 남은 시간 표시. 실제 출발은 서버가 status를 racing으로 바꾸는 순간이고
+ * 이 숫자는 보여 주기용이다 — 클라이언트 시계가 어긋나도 출발은 어긋나지 않는다.
+ */
+function Countdown({ startsAt }: { startsAt: number | null }) {
+  const [left, setLeft] = useState(() =>
+    startsAt ? Math.max(0, Math.ceil((startsAt - Date.now()) / 1000)) : 0,
+  );
+
+  useEffect(() => {
+    if (!startsAt) return;
+    const id = setInterval(() => {
+      setLeft(Math.max(0, Math.ceil((startsAt - Date.now()) / 1000)));
+    }, 200);
+    return () => clearInterval(id);
+  }, [startsAt]);
+
+  return (
+    <div className="flex flex-col items-center gap-2 py-4">
+      <span
+        key={left}
+        className="count-in font-mono text-7xl font-semibold tabular-nums text-sign"
+        aria-hidden="true"
+      >
+        {left}
+      </span>
+      <p className="font-mono text-base text-dim" role="status" aria-live="assertive">
+        곧 출발합니다 — 손을 자판에 올려 두세요
+      </p>
+    </div>
+  );
+}

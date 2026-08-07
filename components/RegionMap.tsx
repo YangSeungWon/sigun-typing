@@ -1,0 +1,120 @@
+"use client";
+
+import { memo, useMemo } from "react";
+import type { CourseGeo } from "@/data/geo/types";
+
+export type MapVariant =
+  /** 퀴즈 문제 — 어디인지만 보여주고 이름은 절대 쓰지 않는다 */
+  | "hint"
+  /** 진행·결과 — 달려온 경로 */
+  | "route";
+
+interface RegionMapProps {
+  geo: CourseGeo;
+  /** 지금 목표인 지역 코드 */
+  currentCode?: string;
+  /** 이미 지나온 지역 코드 */
+  passedCodes?: string[];
+  /** 포기했거나 틀린 채로 지나온 지역 코드 */
+  missedCodes?: string[];
+  variant: MapVariant;
+  className?: string;
+}
+
+/**
+ * 코스 지도. 좌표 계산은 빌드 때 끝났으므로 여기서는 path를 칠하기만 한다.
+ *
+ * 색은 표지판과 같은 언어를 쓴다 — 지나온 곳은 표지판 녹색, 지금 칠 곳은 중앙선 노랑,
+ * 아직 안 간 곳은 콘크리트 회색.
+ */
+/**
+ * 타건 한 번마다 다시 그리지 않도록 memo로 감싼다. 전국 코스는 path가 250개고,
+ * 지도는 한 문제 안에서는 아무것도 바뀌지 않는다 — 바뀌는 건 표지판뿐이다.
+ * 부모는 passedCodes 배열의 정체성을 유지해야 이 memo가 실제로 걸린다.
+ */
+export const RegionMap = memo(function RegionMap({
+  geo,
+  currentCode,
+  passedCodes = EMPTY,
+  missedCodes = EMPTY,
+  variant,
+  className,
+}: RegionMapProps) {
+  const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
+  const missed = useMemo(() => new Set(missedCodes), [missedCodes]);
+  const currentPath = useMemo(
+    () => geo.regions.find((r) => r.code === currentCode)?.d,
+    [geo, currentCode],
+  );
+
+  return (
+    <svg
+      viewBox={`0 0 ${geo.width} ${geo.height}`}
+      className={className}
+      role="img"
+      aria-label={
+        variant === "hint"
+          ? "지도에 표시된 지역"
+          : `${geo.regions.length}곳을 지나는 코스 지도`
+      }
+    >
+      <g>
+        {geo.regions.map((r) => {
+          const isCurrent = r.code === currentCode;
+          const isPassed = passed.has(r.code);
+          const isMissed = missed.has(r.code);
+          return (
+            <path
+              key={r.code}
+              d={r.d}
+              /*
+               * 노랑은 오직 "네가 답해야 할 것"만 가리킨다.
+               *
+               * 이름을 보여 주는 모드에서도 현재 지역을 노랑으로 칠했더니,
+               * 지도는 문제를 내는 것처럼 보이는데 답은 판에 적혀 있어
+               * 앞뒤가 맞지 않았다. 그 모드에서 현재 지역은 질문이 아니라
+               * 위치이므로 밝은 초록 — 곧 칠해질 곳 — 으로 표시한다.
+               */
+              fill={
+                isCurrent
+                  ? variant === "hint"
+                    ? "var(--color-centerline)"
+                    : "var(--color-sign-hi)"
+                  : isPassed
+                    ? "var(--color-sign)"
+                    : isMissed
+                      ? // 지나왔지만 못 맞힌 곳. 아직 안 간 회색과 구분돼야
+                        // 지도만 보고도 어디를 다시 봐야 하는지 읽힌다.
+                        "var(--color-alert)"
+                      : // 배경·면·경계선이 모두 비슷한 명도라 실루엣이 안개처럼 보였다.
+                        "var(--color-map-idle)"
+              }
+              stroke="var(--color-map-line)"
+              strokeWidth={2}
+              strokeLinejoin="round"
+              className="transition-[fill] duration-200"
+            />
+          );
+        })}
+      </g>
+
+      {/*
+        현재 지역을 한 번 더 감싼다. 전국 지도에서 서울처럼 작은 지역은
+        채우기만으로는 눈에 띄지 않는다. 이름은 쓰지 않는다 — 그게 문제니까.
+      */}
+      {currentCode && (
+        <path
+          d={currentPath}
+          fill="none"
+          stroke="var(--color-ink)"
+          strokeWidth={4}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
+    </svg>
+  );
+});
+
+/** 기본값을 인라인 배열로 두면 렌더마다 새 배열이라 memo가 무력해진다. */
+const EMPTY: string[] = [];

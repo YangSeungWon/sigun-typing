@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# 예시 파일은 들어가야 한다. 필요한 값이 무엇인지 알려 주는 유일한 문서다.
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +41,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 지도 원본과 중간 산출물 — data/geo/*.json 결과물만 커밋한다
+/data/geo/source
+
+# DB 백업 — 서버에만 있어야 한다
+/backups

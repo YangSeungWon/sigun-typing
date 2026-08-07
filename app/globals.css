@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/**
+ * 시군 타이핑 — 도로표지판 디자인 토큰.
+ *
+ * 코스는 은유가 아니라 실제 경로다. 그래서 화면의 언어도 한국 도로 안내표지에서
+ * 가져왔다. 일반도로 녹색 표지판, 고속도로 파란 표지판, 중앙선 노랑, 콘크리트 회색.
+ * 숫자는 계기판처럼 읽혀야 하므로 전부 모노스페이스로 둔다.
+ */
+@theme {
+  --color-concrete: #dee0db;
+  --color-concrete-deep: #c7cac3;
+  /* 지도 비활성 지역. 배경(#dee0db)과 확실히 갈리되 현재 지역을 덮지 않을 만큼만. */
+  --color-map-idle: #bfc3bb;
+  --color-map-line: #e8eae5;
+  --color-sign: #0a6b3d;
+  --color-sign-deep: #06522e;
+  --color-sign-hi: #0f8b4f;
+  --color-expressway: #10417e;
+  --color-centerline: #f0c420;
+  --color-paint: #f7f9f5;
+  --color-ink: #101410;
+  --color-dim: #6f7b6c;
+  --color-alert: #c7452b;
+
+  --font-sans: var(--font-plex-kr);
+  --font-mono: var(--font-plex-mono);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-concrete);
+  color: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* 표지판 판면의 질감 — 아주 옅은 수직 그라디언트로 금속판 느낌만 낸다. */
+.sign-face {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-sign-hi) 0%,
+    var(--color-sign) 42%,
+    var(--color-sign-deep) 100%
+  );
+}
+
+/*
+ * 움직임은 전부 "무슨 일이 일어났는지" 알리는 용도다. 장식용 애니메이션은 없다.
+ * 오타는 흔들림, 한 지역 통과는 판면이 한 번 튀는 것, 출발은 카운트다운.
+ */
+
+/* 오타 — 표지판이 옆으로 살짝 튕긴다. 소리 없이 실패를 알리는 가장 빠른 방법. */
+@keyframes plate-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+.plate-shake {
+  animation: plate-shake 260ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* 한 지역 통과 — 판면이 한 번 부풀었다 돌아온다. */
+@keyframes plate-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.028); }
+  100% { transform: scale(1); }
+}
+.plate-pop {
+  animation: plate-pop 220ms ease-out;
+}
+
+/* 카운트다운 숫자 — 크게 들어와 잦아든다. */
+@keyframes count-in {
+  0% { opacity: 0; transform: scale(1.6); }
+  30% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.15; transform: scale(0.94); }
+}
+.count-in {
+  animation: count-in 1s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

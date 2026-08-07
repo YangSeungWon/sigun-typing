@@ -10,6 +10,9 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    // 코스 데이터는 node가 직접 실행하는 빌드 스크립트에서도 읽으므로
+    // 확장자를 명시한 상대 import를 쓴다.
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
@@ -30,5 +33,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // scripts/는 Next 번들이 아니라 node가 직접 실행하는 빌드 스크립트다.
+  // .ts 확장자 import를 쓰므로 tsconfig.scripts.json에서 따로 검사한다.
+  "exclude": ["node_modules", "scripts", "server/index.mts"]
 }

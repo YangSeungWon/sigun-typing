@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    // node는 .ts를 직접 실행하며(타입 스트리핑), ESM이라 확장자를 명시해야 한다.
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["scripts/**/*.ts", "scripts/**/*.mts", "server/index.mts", "types/**/*.d.ts", "data/**/*.ts"],
+  // 테스트는 vitest가 돌린다. 여기서 nodenext로 끌어가면
+  // import.meta.glob 같은 vite 기능이 오류가 된다.
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx"]
+}

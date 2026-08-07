@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    도로 안내표지. 16px에서도 읽히도록 글자를 넣지 않고 형태만 남겼다.
+    녹색 판면 + 흰 내곽선 + 중앙선 노란 화살표.
+  -->
+  <rect width="64" height="64" rx="12" fill="#0a6b3d"/>
+  <rect x="7" y="7" width="50" height="50" rx="7" fill="none" stroke="#f7f9f5" stroke-width="3"/>
+  <path d="M22 40 L32 20 L42 40" fill="none" stroke="#f0c420" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

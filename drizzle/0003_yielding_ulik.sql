@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "to_mode" text;

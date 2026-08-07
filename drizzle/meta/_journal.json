@@ -1,0 +1,69 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785994917971,
+      "tag": "0000_shallow_frog_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786002899204,
+      "tag": "0001_dizzy_lionheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786018820047,
+      "tag": "0002_omniscient_newton_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786024912824,
+      "tag": "0003_yielding_ulik",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786026111339,
+      "tag": "0004_bored_unus",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786061713742,
+      "tag": "0005_normal_stepford_cuckoos",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786061889859,
+      "tag": "0006_talented_tarantula",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786075717137,
+      "tag": "0007_redundant_prism",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786077499235,
+      "tag": "0008_abandoned_shiva",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  real,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+
+/**
+ * 랭킹 테이블.
+ *
+ * 검증을 통과한 기록만 들어온다. 점수 컬럼은 전부 **서버가 다시 계산한 값**이고
+ * 클라이언트가 주장한 값은 저장하지 않는다 — 나중에 둘을 헷갈릴 여지를 없애기 위해서다.
+ */
+export const scores = pgTable(
+  "scores",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    /** 토큰의 sessionId. 같은 판을 두 번 제출하는 것을 막는다. */
+    sessionId: uuid("session_id").notNull(),
+    courseId: text("course_id").notNull(),
+    mode: text("mode").notNull(),
+    nickname: text("nickname").notNull(),
+    /** 기기 식별용 익명 토큰. 로그인 대신 쓰고 개인정보는 담지 않는다. */
+    deviceId: text("device_id").notNull(),
+    /**
+     * 이 기록을 계산한 채점 규칙 버전. 규칙이 바뀌면 옛 기록과 비교할 수 없으므로
+     * 순위표는 같은 버전끼리만 모은다. lib/score/version.ts 참고.
+     */
+    scoringVersion: integer("scoring_version").notNull().default(1),
+    /**
+     * 코스 판번호. 장소·순서·정답 판정이 바뀌면 옛 기록과 비교할 수 없다.
+     * scoringVersion과 함께 두 축으로 비교 가능성을 정한다.
+     */
+    courseVersion: integer("course_version").notNull().default(1),
+
+    cpm: real("cpm").notNull(),
+    accuracy: real("accuracy").notNull(),
+    elapsedMs: integer("elapsed_ms").notNull(),
+    correctKeystrokes: integer("correct_keystrokes").notNull(),
+    totalErrors: integer("total_errors").notNull(),
+    completed: integer("completed").notNull(),
+    total: integer("total").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // 같은 세션 토큰으로는 한 번만 제출할 수 있다.
+    uniqueIndex("scores_session_idx").on(t.sessionId),
+    // 순위표는 코스+모드+채점버전으로 좁힌 뒤 타수순으로 읽는다.
+    index("scores_leaderboard_idx").on(
+      t.courseId,
+      t.mode,
+      t.scoringVersion,
+      t.courseVersion,
+      t.cpm,
+    ),
+    index("scores_device_idx").on(t.deviceId, t.createdAt),
+  ],
+);
+
+export type ScoreRow = typeof scores.$inferSelect;
+export type NewScoreRow = typeof scores.$inferInsert;
+
+/**
+ * 이용 흐름 계측.
+ *
+ * 개인을 식별하는 값은 담지 않는다. deviceId는 로그인 없이 한 사람의 여정을
+ * 이어 보기 위한 익명 토큰이고, 그 밖에는 어떤 코스를 어디까지 했는지만 남는다.
+ *
+ * 알고 싶은 것은 하나다 — 사람들이 지도 회상의 부담 때문에 나가는가,
+ * 아니면 그냥 흥미가 없어서 나가는가. 그래서 `게임 시작 → 첫 정답` 구간과
+ * 진행도 0에서의 힌트 사용을 볼 수 있게 필드를 잡았다.
+ */
+export const events = pgTable(
+  "events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    /** 클라이언트가 만든 이벤트 식별자. 같은 묶음이 두 번 와도 한 번만 센다. */
+    eventId: text("event_id").unique(),
+    name: text("name").notNull(),
+    deviceId: text("device_id").notNull(),
+    courseId: text("course_id"),
+    mode: text("mode"),
+    /** 판이 시작된 뒤 흐른 시간(ms). 묶어 보내느라 뭉개지는 created_at 대신 쓴다 */
+    atMs: integer("at_ms"),
+    /** 이 시점까지 확정한 항목 수 */
+    progress: integer("progress"),
+    total: integer("total"),
+    elapsedMs: integer("elapsed_ms"),
+    hintCount: integer("hint_count"),
+    /** mode_switch에서 넘어간 목적지 모드 */
+    toMode: text("to_mode"),
+    /** game_start를 유발한 화면 */
+    source: text("source"),
+    /** 실험 버전. 다른 버전의 이벤트와 섞어서 해석하면 안 된다. */
+    experiment: text("experiment"),
+    /** 한 판을 묶는 값. 퍼널의 분모를 사람·판 단위로 셀 수 있게 한다. */
+    gameId: text("game_id"),
+    /** 개발·QA 트래픽. 분석에서 항상 제외한다. */
+    internal: boolean("internal").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("events_funnel_idx").on(t.experiment, t.courseId, t.mode, t.name, t.createdAt),
+    index("events_device_idx").on(t.deviceId, t.createdAt),
+    index("events_game_idx").on(t.gameId),
+  ],
+);
+
+export type NewEventRow = typeof events.$inferInsert;

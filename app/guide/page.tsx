@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Keycap } from "@/components/Keycap";
 import { COURSES } from "@/data/courses";
-import { GRADUATE_STREAK } from "@/lib/score/mistakes";
 import { MODES, MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
 
 export const metadata = {
@@ -42,162 +41,92 @@ export default function GuidePage() {
         </p>
       </header>
 
-      <Section title="한 판은 이렇게 흘러갑니다">
-        <Steps
-          items={[
-            <>
-              코스를 고르고 <Kbd>출발</Kbd>을 누릅니다. 아무 키나 눌러도 시작합니다.
-            </>,
-            <>
-              세 번 세고 출발합니다. 손을 자판에 올려 둘 시간입니다.
-            </>,
-            <>
-              지도에 <strong>한 곳만 노랗게</strong> 칠해집니다. 거기가 문제입니다.
-              {" "}
-              <span className="text-dim">
-                (이름을 보여 주는 연습에서는 노랑을 쓰지 않습니다. 노랑은 답해야 할
-                곳에만 씁니다.)
-              </span>
-            </>,
-            <>
-              그 지역의 이름을 칩니다. 맞으면 <strong>바로 다음 문제</strong>로
-              넘어갑니다 — 확인 버튼은 없습니다.
-            </>,
-            <>
-              맞힌 곳은 초록으로, 못 맞힌 곳은 붉은색으로 남습니다. 결과 화면에
-              <strong> 다시 볼 곳</strong>이 이름으로 정리됩니다.
-            </>,
-          ]}
-        />
-      </Section>
+      <section className="flex flex-col gap-3 text-lg leading-relaxed">
+        <p>지도에 표시된 지역의 이름을 입력하세요.</p>
+        <p>모르겠으면 힌트를 쓸 수 있습니다.</p>
+        <p>최대한 빠르고 정확하게 전국을 완성해 보세요.</p>
+      </section>
 
-      <Section title="이름은 짧게 쳐도 됩니다">
-        <p>
-          <Kbd>수원</Kbd>이면 충분하고 <Kbd>수원시</Kbd>라고 쳐도 맞습니다. 시도
-          코스에서는 <Kbd>제주</Kbd>·<Kbd>제주도</Kbd>·<Kbd>제주특별자치도</Kbd>가
-          모두 정답입니다.
-        </p>
-        <p>
-          조합 중인 글자는 틀린 것으로 세지 않습니다. <Kbd>고성</Kbd>을 치는 동안
-          화면에는 고 → 곳 → 고서 → 고성이 지나가지만, 정답으로 가는 길 위에 있는
-          한 오타가 아닙니다. 길을 벗어난 순간에만 빨갛게 표시됩니다.
-        </p>
-      </Section>
+      {/*
+        나머지는 전부 접어 둔다.
+        규칙 하나하나는 이유가 있지만, 게임을 시작하기 전에 읽어야 할 것은
+        아니다. 대부분은 한 판 해 보면 알게 되고, 궁금해진 사람만 열어 보면
+        된다. 설명이 길어질수록 이 게임은 약해진다 — 설명보다 플레이가 빠른
+        게임이기 때문이다.
+      */}
+      <div className="flex flex-col gap-2">
+        <Fold title="키보드">
+          <dl className="flex flex-col gap-3">
+            <KeyRow keys="Tab" label="힌트">
+              초성을 보여 줍니다(<Kbd>의정부</Kbd> → <Kbd>ㅇㅈㅂ</Kbd>). 기록에{" "}
+              {hintSeconds}초가 더해집니다. 한 번 더 누르면 정답을 봅니다.
+            </KeyRow>
+            <KeyRow keys="Esc" label="모르겠어요">
+              정답을 보고 넘어갑니다. 그 지역은 다음에 다시 나옵니다.
+            </KeyRow>
+          </dl>
+          <p className="text-dim">모바일에서는 같은 기능이 버튼으로 나옵니다.</p>
+        </Fold>
 
-      <Section title="막혔을 때">
-        <dl className="flex flex-col gap-4">
-          <KeyRow keys="Tab" label="초성 힌트">
-            첫 글자들의 자음만 보여 줍니다(<Kbd>의정부</Kbd> → <Kbd>ㅇㅈㅂ</Kbd>).
-            기록에 {hintSeconds}초가 더해지고, 시간 제한이 있는 모드에서는 남은
-            시간에서 깎입니다. 한 문제에 한 번만 셉니다.
-            <br />
-            초성을 보고도 모르겠으면 <strong>같은 키를 한 번 더</strong> 누릅니다.
-            아래 <Kbd>Esc</Kbd>와 같게 동작합니다.
-          </KeyRow>
-          <KeyRow keys="Esc" label="모르겠어요">
-            초성을 봐도 떠오르지 않을 때 씁니다. <strong>정답을 보여 준 뒤</strong>
-            다음으로 넘어가고, 그 지역은 오답노트에 담깁니다. 완주 수에는 들어가지
-            않습니다 — 정답을 봐서 이득이 생기면 그건 힌트가 아니라 지름길입니다.
-          </KeyRow>
-        </dl>
-        <p className="text-dim">
-          모드에 따라 둘 다 없을 수도 있습니다. 지금 쓸 수 있는 키는 입력판 아래에
-          표시됩니다.
-        </p>
-      </Section>
+        <Fold title="이름은 어디까지 인정되나요">
+          <p>
+            <Kbd>수원</Kbd>이면 충분하고 <Kbd>수원시</Kbd>라고 쳐도 맞습니다.
+            시도 코스에서는 <Kbd>제주</Kbd>·<Kbd>제주도</Kbd>·
+            <Kbd>제주특별자치도</Kbd>가 모두 정답입니다.
+          </p>
+          <p>
+            치는 도중의 글자는 오타로 세지 않습니다. <Kbd>고성</Kbd>을 칠 때
+            화면에는 고 → 곳 → 고서 → 고성이 지나가지만, 정답으로 가는 길 위에
+            있는 한 괜찮습니다.
+          </p>
+        </Fold>
 
-      <Section title="모드">
-        <dl className="flex flex-col divide-y divide-concrete-deep">
-          {MODE_LADDER.map((mode) => (
-            <div key={mode} className="flex flex-col gap-1 py-3 first:pt-0">
-              <dt className="font-medium">
-                {MODE_LABELS[mode]}
-                {mode === "quiz" && (
-                  <span className="ml-2 font-mono text-xs text-sign">본편</span>
-                )}
-              </dt>
-              <dd className="text-dim">{MODE_DESCRIPTIONS[mode]}</dd>
+        <Fold title="모드">
+          <dl className="flex flex-col divide-y divide-concrete-deep">
+            {MODE_LADDER.map((mode) => (
+              <div key={mode} className="flex flex-col gap-1 py-3 first:pt-0">
+                <dt className="font-medium">{MODE_LABELS[mode]}</dt>
+                <dd className="text-dim">{MODE_DESCRIPTIONS[mode]}</dd>
+              </div>
+            ))}
+            <div className="flex flex-col gap-1 py-3">
+              <dt className="font-medium">{MODE_LABELS.multi}</dt>
+              <dd className="text-dim">{MODE_DESCRIPTIONS.multi}</dd>
             </div>
-          ))}
-          <div className="flex flex-col gap-1 py-3">
-            <dt className="font-medium">{MODE_LABELS.multi}</dt>
-            <dd className="text-dim">{MODE_DESCRIPTIONS.multi}</dd>
-          </div>
-        </dl>
-        <p>
-          타임어택은 {timeLimit}초 안에 최대한 많이 맞히는 모드이고, 틀리면{" "}
-          {wrongPenalty}초가 깎입니다. 연습을 뺀 모든 모드에서 지도가 문제입니다.
-        </p>
-      </Section>
+          </dl>
+          <p>
+            타임어택은 {timeLimit}초 안에 최대한 많이 맞히는 모드이고, 틀리면{" "}
+            {wrongPenalty}초가 깎입니다.
+          </p>
+        </Fold>
 
-      <Section title="기록은 이렇게 셉니다">
-        <dl className="flex flex-col gap-3">
-          <Term label="타수(타/분)">
-            두벌식 자판을 기준으로 셉니다. <Kbd>값</Kbd>은 ㄱ·ㅏ·ㅂ·ㅅ 네 타,{" "}
-            <Kbd>좌</Kbd>는 ㅈ·ㅗ·ㅏ 세 타입니다. 된소리(<Kbd>ㄲ</Kbd>)는 관례대로 한
-            타로 봅니다. 맞힌 글자만 세므로 아무 키나 두드려서는 올라가지 않습니다.
-          </Term>
-          <Term label="정확도">실제로 친 타수 중 정답으로 인정된 비율입니다.</Term>
-          <Term label="시간">
-            힌트를 썼다면 그만큼 더해집니다. 눌러서 얻은 시간을 기록에 되돌려 놓는
-            것입니다.
-          </Term>
-        </dl>
-      </Section>
+        <Fold title="기록과 랭킹">
+          <p>
+            타수는 두벌식 자판 기준입니다. <Kbd>값</Kbd>은 ㄱ·ㅏ·ㅂ·ㅅ 네 타,{" "}
+            <Kbd>좌</Kbd>는 ㅈ·ㅗ·ㅏ 세 타입니다. 맞힌 글자만 셉니다.
+          </p>
+          <p>
+            정답을 보고 넘어간 지역은 공식 기록에 들어가지 않습니다. 힌트를 쓰면
+            그만큼 시간이 더해집니다.
+          </p>
+          <p>
+            기록은 서버가 다시 계산해 확인하며, 같은 규칙으로 끝낸 기록끼리만
+            순위를 비교합니다. 게임 규칙이나 코스 내용이 바뀌면 이전 기록과 따로
+            집계됩니다.
+          </p>
+        </Fold>
 
-      <Section title="랭킹">
-        <p>
-          기록은 브라우저가 보낸 숫자를 그대로 믿지 않고, 서버가 타건 기록을 다시
-          재생해 직접 계산합니다. 사람이 칠 수 없는 속도나 앞뒤가 맞지 않는 기록은
-          등록되지 않습니다.
-        </p>
-        <p>
-          순위표는 <strong>같은 코스·같은 코스 판번호·같은 채점 규칙</strong>끼리만
-          비교합니다. 코스에 지역이 늘거나 채점 방식이 바뀌면 총 타수가 달라져
-          예전 기록과 견줄 수 없기 때문입니다.
-        </p>
-      </Section>
-
-      <Section title="오답노트">
-        <p>
-          틀리거나, 건너뛰거나, 힌트를 본 지역은 <strong>몰랐다</strong>는 뜻으로
-          기기에 기록됩니다. 힌트를 보고 맞힌 것도 마찬가지입니다 — 초성을 봐야
-          했다면 아직 모르는 것입니다.
-        </p>
-        <p>
-          <Link href="/notes" className="underline underline-offset-4 hover:text-sign">
-            오답노트
-          </Link>
-          에서 틀린 곳만 모아 다시 풀 수 있고, {GRADUATE_STREAK}번 연속으로 깨끗하게
-          맞히면 목록에서 빠집니다. 이 기록은 이 기기에만 있고 서버로 보내지 않습니다.
-        </p>
-      </Section>
-
-      <Section title="멀티플레이">
-        <p>
-          방을 만들면 여섯 자리 코드가 나옵니다. 그 코드를 알려 주면 최대 여덟 명이
-          같은 지도를 놓고 동시에 답합니다. 전원이 준비하면 방장이 출발시킬 수
-          있습니다.
-        </p>
-        <p>
-          경주에서도 이름은 가려집니다. 초성 힌트는 쓸 수 있지만 추가 시간을 물지
-          않습니다 — 힌트를 읽는 동안 상대가 앞서 나가는 것이 이미 값입니다.
-          건너뛰기는 없습니다. 순위가 진행 칸수로 매겨지므로, 넘길 수 있으면 다 넘긴
-          사람이 1등이 되기 때문입니다.
-        </p>
-      </Section>
-
-      <Section title="자료">
-        <p>
-          코스 {COURSES.length}개, 지역 {placeCount}곳. 경계 자료는 통계청 SGIS
-          행정구역경계(2025)를 단순화해 쓰고, 지역 이름과 코드는 행정표준코드
-          법정동코드를 따릅니다.
-        </p>
-        <p className="text-dim">
-          2025년 행정구역 기준이며 이후 개편된 지역은 반영되어 있지 않을 수 있습니다.
-          정확성이 필요한 용도로는 소관 기관의 공식 자료를 확인해 주세요.
-        </p>
-      </Section>
+        <Fold title="자료">
+          <p>
+            코스 {COURSES.length}개, 지역 {placeCount}곳. 경계는 통계청 SGIS
+            행정구역경계(2025), 이름과 코드는 행정표준코드 법정동코드를 따릅니다.
+          </p>
+          <p className="text-dim">
+            행정구역 데이터 기준은 2025년입니다. 이후 개편된 지역은 반영되어 있지
+            않을 수 있습니다.
+          </p>
+        </Fold>
+      </div>
 
       <nav className="flex flex-wrap gap-3 border-t border-concrete-deep pt-8">
         <Link
@@ -239,33 +168,28 @@ const MODE_DESCRIPTIONS: Record<keyof typeof MODES, string> = {
   multi: "최대 여덟 명이 같은 지도를 놓고 동시에 답합니다. 진행도가 실시간으로 보입니다.",
 };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/** 궁금해진 사람만 여는 상자. 기본은 접힌 상태다. */
+function Fold({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <div className="flex flex-col gap-3 leading-relaxed text-ink/90">{children}</div>
-    </section>
+    <details className="group rounded-xl border border-concrete-deep bg-paint/60 px-5 py-4">
+      <summary className="cursor-pointer list-none font-medium marker:content-none">
+        <span className="flex items-center justify-between gap-4">
+          {title}
+          <span className="font-mono text-sm text-dim transition-transform group-open:rotate-90">
+            ›
+          </span>
+        </span>
+      </summary>
+      <div className="flex flex-col gap-3 pt-4 leading-relaxed text-ink/90">
+        {children}
+      </div>
+    </details>
   );
 }
 
 /** 본문 안에서 입력 예시나 화면의 글자를 가리킬 때. */
 function Kbd({ children }: { children: React.ReactNode }) {
   return <span className="font-mono text-sign">{children}</span>;
-}
-
-function Steps({ items }: { items: React.ReactNode[] }) {
-  return (
-    <ol className="flex flex-col gap-3">
-      {items.map((item, i) => (
-        <li key={i} className="flex gap-3">
-          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-concrete-deep font-mono text-xs tabular-nums">
-            {i + 1}
-          </span>
-          <span>{item}</span>
-        </li>
-      ))}
-    </ol>
-  );
 }
 
 function KeyRow({
@@ -288,11 +212,3 @@ function KeyRow({
   );
 }
 
-function Term({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <dt className="font-medium">{label}</dt>
-      <dd className="text-ink/90">{children}</dd>
-    </div>
-  );
-}

@@ -16,6 +16,7 @@ import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
 import { Odometer } from "./Odometer";
 import { KeyHint } from "./Keycap";
+import { CourseComplete } from "./CourseComplete";
 import { MiniMap } from "./MiniMap";
 import { RegionMap } from "./RegionMap";
 import { PersonalBestPanel } from "./PersonalBestPanel";
@@ -91,6 +92,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
    * 시간을 주지 않으면 첫 지역에서만 타수가 유독 낮게 찍힌다. 토큰도 이 사이에 받는다.
    */
   const [countdown, setCountdown] = useState<number | null>(null);
+  /** 완성 화면을 이미 보여 줬는지. 한 판에 한 번이다. */
+  const [celebrated, setCelebrated] = useState(false);
 
   /**
    * 남이 보낸 도전장.
@@ -207,9 +210,27 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     hint();
   }, [state.hintShown, state.results.length, state.items.length, course.id, mode, hint]);
 
+  useEffect(() => {
+    if (state.status !== "finished" || score.completed !== score.total) return;
+    // 1.6초. 지도를 훑어보기에는 충분하고, 기록을 보려는 사람을 붙잡아
+    // 두기에는 짧다. 아무 키나 누르면 바로 넘어간다.
+    const timer = setTimeout(() => setCelebrated(true), 1_600);
+    const skip = () => setCelebrated(true);
+    window.addEventListener("keydown", skip);
+    window.addEventListener("pointerdown", skip);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", skip);
+      window.removeEventListener("pointerdown", skip);
+    };
+    // 판이 끝나는 순간 한 번만 건다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
+
   const restartRun = useCallback(() => {
     setToken(null);
     setCountdown(null);
+    setCelebrated(false);
     reportedHints.current = 0;
     restart();
   }, [restart]);
@@ -298,6 +319,29 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     giveUpItem,
     onHintPressed,
   ]);
+
+  /*
+   * 다 채운 순간을 잠깐 보여 준 뒤 결과로 넘어간다.
+   *
+   * 마지막 한 곳을 맞히자마자 숫자 표가 뜨면 이 게임에서 가장 중요한 순간이
+   * 그냥 지나간다. 전부 맞힌 판에서만 뜬다 — 절반만 맞히고 끝난 판에
+   * 축하가 뜨면 그건 축하가 아니라 조롱이다.
+   */
+  const perfect = state.status === "finished" && score.completed === score.total;
+  if (perfect && !celebrated) {
+    return (
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
+        <CourseComplete
+          courseName={course.name}
+          total={score.total}
+          placeUnit={course.placeUnit}
+          elapsedMs={score.elapsedMs}
+          geo={geo}
+          passedCodes={passedCodes}
+        />
+      </main>
+    );
+  }
 
   if (state.status === "finished") {
     return (

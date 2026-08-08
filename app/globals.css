@@ -51,6 +51,32 @@ body {
 }
 
 /*
+ * 완주.
+ *
+ * 마지막 한 곳을 맞힌 순간이 이 게임에서 가장 중요한 순간인데, 그동안은
+ * 곧바로 결과 숫자로 넘어갔다. 지도가 다 채워진 것을 눈으로 볼 시간을 준다.
+ * 색종이 대신 지도 자체를 축하로 쓴다 — 이 게임만 할 수 있는 방식이다.
+ */
+@keyframes course-done {
+  0% {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.course-done {
+  animation: course-done 600ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/*
  * 방금 맞힌 지역.
  *
  * 노랑에서 초록으로 그냥 바뀌면 맞힌 순간이 지나가 버린다. 한 번 밝게

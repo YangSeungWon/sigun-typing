@@ -235,13 +235,16 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   }, [state.status, countdown, startRun]);
 
   /**
-   * 정답을 보여 주는 중에는 Esc·Enter로 바로 넘어갈 수 있다.
-   * 연달아 모르는 곳이 나올 때 매번 1.5초씩 기다리게 하지 않기 위해서다.
+   * 정답을 보여 주는 동안에는 아무 키나 누르면 다음으로 간다.
+   *
+   * 시간이 지나면 알아서 넘기던 것을 그만뒀다. 읽는 속도는 사람마다 다르고,
+   * 읽는 도중에 화면이 저절로 바뀌는 것이 불쾌하다. 출발할 때 아무 키나
+   * 눌러도 되는 것과 같은 규칙이라 따로 배울 것도 없다.
    */
   useEffect(() => {
     if (state.status !== "revealing") return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" && e.key !== "Enter") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       e.preventDefault();
       skipReveal();
     };
@@ -483,7 +486,12 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               >
                 <div className="mx-auto flex w-full max-w-xl items-baseline justify-between pb-2 font-mono text-base text-dim">
                   <span className="tabular-nums">
-                    {state.index + 1} / {state.items.length}
+                    {/*
+                      정답을 보여 주는 동안에는 아직 그 문제에 머물러 있다.
+                      포기하는 순간 내부 index는 이미 다음으로 가 있어서, 그대로
+                      쓰면 판면에는 3번 답이 떠 있는데 번호는 4를 가리킨다.
+                    */}
+                    {state.index + (revealing ? 0 : 1)} / {state.items.length}
                   </span>
                   {streak >= 3 && <span className="text-sign">무오타 ×{streak}</span>}
                 </div>
@@ -539,7 +547,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 role="status"
                 aria-live="polite"
               >
-                {!focused ? (
+                {revealing ? (
+                  "아무 키나 누르면 다음"
+                ) : !focused ? (
                   "표지판을 눌러 계속 입력하세요"
                 ) : (
                   <>

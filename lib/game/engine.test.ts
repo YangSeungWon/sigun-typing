@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   createGame,
   giveUp,
-  REVEAL_MS,
   revealHint,
+  settleReveal,
   settle,
   remainingMs,
   score,
@@ -210,18 +210,19 @@ describe("상태 보호", () => {
 });
 
 describe("모르겠어요", () => {
-  it("정답을 잠깐 보여 준 뒤 다음으로 넘어간다", () => {
+  it("정답을 보여 주고, 사람이 넘길 때까지 기다린다", () => {
     let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
     const answer = g.items[0].answer;
     g = giveUp(g, 1_000);
     expect(g.status).toBe("revealing");
     expect(g.revealed?.answer).toBe(answer);
 
-    // 보여 주는 동안에는 그대로 있어야 읽을 시간이 된다.
-    g = tick(g, 1_000 + REVEAL_MS - 1);
+    // 시간이 지났다고 알아서 넘어가지 않는다. 읽는 속도는 사람마다 다르다.
+    g = tick(g, 60_000);
     expect(g.status).toBe("revealing");
+    expect(g.revealed?.answer).toBe(answer);
 
-    g = tick(g, 1_000 + REVEAL_MS);
+    g = settleReveal(g);
     expect(g.status).toBe("playing");
     expect(g.revealed).toBeNull();
     expect(g.index).toBe(1);
@@ -240,7 +241,7 @@ describe("모르겠어요", () => {
     let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
     for (let i = 0; i < ITEMS.length; i++) {
       g = giveUp(g, 1_000 * (i + 1));
-      if (g.status === "revealing") g = tick(g, 1_000 * (i + 1) + REVEAL_MS);
+      g = settleReveal(g);
     }
     expect(g.status).toBe("finished");
   });

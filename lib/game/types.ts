@@ -110,7 +110,7 @@ export interface GameState {
    * 모르겠다고 넘어갈 때 아무것도 안 알려주면, 알고 싶어진 바로 그 순간에
    * 아무 일도 일어나지 않는다. 회상 게임에서 그 순간이 가장 배우기 좋다.
    */
-  revealed: { answer: string; until: number } | null;
+  revealed: { answer: string } | null;
   /** 지금 항목의 초성 힌트를 봤는지 */
   hintShown: boolean;
   /** 지금 항목의 힌트를 연 시각. 안 열었으면 null. */

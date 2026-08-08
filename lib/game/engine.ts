@@ -143,10 +143,17 @@ export function settle(state: GameState): GameState {
  */
 export function tick(state: GameState, now: number): GameState {
   if (state.status === "revealing") {
-    // 정답을 보여 주는 동안에도 제한 시간은 흐른다.
+    /*
+     * 시간이 지났다고 알아서 넘어가지 않는다.
+     *
+     * 예전에는 1.5초 뒤에 자동으로 넘겼는데, 읽는 속도는 사람마다 다르고
+     * 무엇보다 읽는 도중에 화면이 저절로 바뀌는 것이 불쾌하다. 다음으로
+     * 가는 것은 사람이 정한다.
+     *
+     * 제한 시간은 그동안에도 흐른다. 답을 읽는 것도 판의 일부다.
+     */
     if (remainingMs(state, now) <= 0) return finish(state, now);
-    if (state.revealed && now < state.revealed.until) return state;
-    return settleReveal(state);
+    return state;
   }
   if (state.status === "transitioning") return settle(state);
   if (state.status !== "playing") return state;
@@ -193,14 +200,6 @@ export function setInput(state: GameState, text: string, now: number): GameState
 }
 
 /**
- * 정답을 보여 주는 시간.
- *
- * 짧으면 못 읽고, 길면 포기할 때마다 기다리게 된다. 두 글자 지명을 읽고
- * 지도에서 위치를 한 번 확인할 만큼이면 된다.
- */
-export const REVEAL_MS = 1_500;
-
-/**
  * 모르겠다고 넘어간다.
  *
  * 정답을 보여 주지만 점수에서는 건너뛴 것과 똑같이 다룬다 — 완주 수에
@@ -213,15 +212,10 @@ export function giveUp(state: GameState, now: number): GameState {
   const next = commitItem(state, now, true);
   // 마지막 문제였다면 결과 화면이 곧 뜬다. 거기서 못 맞힌 곳을 이름으로 보여 준다.
   if (next.status === "finished") return next;
-  return { ...next, status: "revealing", revealed: { answer, until: now + REVEAL_MS } };
+  return { ...next, status: "revealing", revealed: { answer } };
 }
 
-/**
- * 정답을 다 읽었으니 그만 넘어간다.
- *
- * 1.5초는 읽는 데 걸리는 시간을 넉넉히 잡은 값이라, 빨리 읽는 사람에게는
- * 게임이 굼떠 보인다. 기다리게 만드는 것이 벌은 아니므로 문을 열어 둔다.
- */
+/** 정답을 다 읽었으니 그만 넘어간다. 이 호출 전까지는 그대로 머문다. */
 export function settleReveal(state: GameState): GameState {
   if (state.status !== "revealing") return state;
   return { ...state, status: "playing", revealed: null };

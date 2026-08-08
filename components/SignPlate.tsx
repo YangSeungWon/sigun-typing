@@ -94,7 +94,11 @@ export function SignPlate({
   // 상태와 타이머로 클래스를 껐다 켜는 것보다 어긋날 여지가 없다.
   return (
     <div key={`shake-${erroredAt}`} className={erroredAt > 0 ? "plate-shake" : undefined}>
-    <div key={`pop-${advancedAt}`} className={advancedAt > 0 ? "plate-pop" : undefined}>
+    {/* plate-area: 표지판과 그 아래 안내를 함께 가리키는 이름 */}
+    <div
+      key={`pop-${advancedAt}`}
+      className={`plate-area ${advancedAt > 0 ? "plate-pop" : ""}`}
+    >
     <div
       /*
        * 노란 테두리를 뺐다. 노랑은 "지금 풀고 있는 것"만 가리켜야 하는데
@@ -172,30 +176,38 @@ export function SignPlate({
         </div>
         )}
 
-        {/*
-          초성은 따로 한 줄로 붙여 둔다.
-          판면의 글자 자리에만 그리면, 다른 글자를 치는 순간 그 자리를 입력이
-          덮어써서 힌트가 사라진다 — 정작 힌트가 필요한 상황(모르겠어서 아무거나
-          쳐 보는 중)에 힌트가 안 보이는 셈이다. 5초를 물고 산 정보다.
-        */}
-        {hinted && masked && !revealed && (
-          <span className="font-mono text-lg tracking-[0.3em] text-centerline sm:text-xl">
-            {initials(target)}
-          </span>
-        )}
-
-        {revealed && (
-          <span className="font-mono text-sm text-paint/70" role="status">
-            오답노트에 담았습니다
-          </span>
-        )}
-
-        {extra.length > 0 && (
-          <span className="font-mono text-sm text-alert" role="status">
-            {extra.length}자 더 쳤습니다 — 지우세요
-          </span>
-        )}
       </div>
+    </div>
+
+    {/*
+      판면에는 글자만 둔다.
+      힌트·안내는 표지판 밖 아래로 내린다. 판면은 "지금 치고 있는 것"을
+      보여 주는 자리인데 거기에 설명이 섞이면 무엇이 답이고 무엇이 도움말인지
+      한눈에 갈리지 않는다.
+    */}
+    <div className="mt-3 flex min-h-6 flex-col items-center gap-1">
+      {hinted && masked && !revealed && (
+        /*
+         * 초성을 글자 자리에 겹쳐 그리면, 다른 글자를 치는 순간 입력이 덮어써서
+         * 힌트가 사라진다 — 정작 힌트가 필요한 상황(모르겠어서 아무거나 쳐 보는
+         * 중)에 안 보이는 셈이다. 5초를 물고 산 정보다.
+         */
+        <span className="font-mono text-lg tracking-[0.3em] text-centerline sm:text-xl">
+          {initials(target)}
+        </span>
+      )}
+
+      {revealed && (
+        <span className="font-mono text-sm text-dim" role="status">
+          오답노트에 담았습니다
+        </span>
+      )}
+
+      {extra.length > 0 && (
+        <span className="font-mono text-sm text-alert" role="status">
+          {extra.length}자 더 쳤습니다 — 지우세요
+        </span>
+      )}
     </div>
     </div>
     </div>

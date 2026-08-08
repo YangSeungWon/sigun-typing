@@ -16,6 +16,7 @@ import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
 import { Odometer } from "./Odometer";
 import { KeyHint } from "./Keycap";
+import { MiniMap } from "./MiniMap";
 import { RegionMap } from "./RegionMap";
 import { PersonalBestPanel } from "./PersonalBestPanel";
 import { ShareResult } from "./ShareResult";
@@ -464,16 +465,35 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 지도 없이 이름만 따라 치면 그냥 타자연습이 된다.
               */}
               {geo && (
+                <div className="relative overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
+                  {/*
+                    전체 맥락은 미니맵이, 지금 묻는 곳은 큰 지도가 맡는다.
+                    큰 지도만 당기면 "전체에서 여기가 어디인가"가 사라져
+                    확대된 모양만 보고 맞히는 도형 퀴즈가 된다.
+
+                    바탕을 깔아 주는 이유: 같은 회색 위에 얹으면 이 크기에서는
+                    지도가 아니라 얼룩으로 보인다.
+                  */}
+                  <div className="pointer-events-none absolute top-2 right-2 rounded-lg border border-concrete-deep bg-paint/80 p-1.5">
+                    <MiniMap
+                      geo={geo}
+                      currentCode={revealing ? revealing.id : current.id}
+                      passedCodes={passedCodes}
+                      className="h-16 w-auto sm:h-24"
+                    />
+                  </div>
                 <RegionMap
                   geo={geo}
                   currentCode={revealing ? revealing.id : current.id}
                   passedCodes={passedCodes}
                   missedCodes={missedCodes}
+                  focus
                   variant={config.reveal ? "route" : "hint"}
                   // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
                   // 접혀 주행 중에 스크롤해야 한다.
                   className="h-[26vh] max-h-96 min-h-36 w-auto sm:h-[38vh]"
                 />
+                </div>
               )}
 
               {/*

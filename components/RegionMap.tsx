@@ -2,6 +2,7 @@
 
 import { memo, useMemo } from "react";
 import type { CourseGeo } from "@/data/geo/types";
+import { focusTransform } from "@/lib/geo/bbox";
 
 export type MapVariant =
   /** 퀴즈 문제 — 어디인지만 보여주고 이름은 절대 쓰지 않는다 */
@@ -18,6 +19,14 @@ interface RegionMapProps {
   /** 포기했거나 틀린 채로 지나온 지역 코드 */
   missedCodes?: string[];
   variant: MapVariant;
+  /**
+   * 지금 문제인 지역으로 지도를 당길지.
+   *
+   * 전국 코스에서 서울은 점만 하다. 당겨 주지 않으면 어디를 묻는지 눈으로
+   * 찾는 데만 시간이 걸리고, 그건 회상 능력과 아무 상관이 없다.
+   * 전체 맥락은 옆에 붙는 미니맵이 맡는다.
+   */
+  focus?: boolean;
   className?: string;
 }
 
@@ -38,13 +47,18 @@ export const RegionMap = memo(function RegionMap({
   passedCodes = EMPTY,
   missedCodes = EMPTY,
   variant,
+  focus = false,
   className,
 }: RegionMapProps) {
   const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
   const missed = useMemo(() => new Set(missedCodes), [missedCodes]);
-  const currentPath = useMemo(
-    () => geo.regions.find((r) => r.code === currentCode)?.d,
+  const current = useMemo(
+    () => geo.regions.find((r) => r.code === currentCode),
     [geo, currentCode],
+  );
+  const transform = useMemo(
+    () => (focus ? focusTransform(current, geo) : ""),
+    [focus, current, geo],
   );
 
   return (
@@ -58,7 +72,14 @@ export const RegionMap = memo(function RegionMap({
           : `${geo.regions.length}곳을 지나는 코스 지도`
       }
     >
-      <g>
+      <g
+        /*
+         * 문제가 바뀔 때 화면이 미끄러지듯 옮겨 가야 "달리고 있다"는 감각이
+         * 생긴다. viewBox 대신 transform을 쓰는 것이 이 한 줄을 위해서다.
+         */
+        style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
+        transform={transform}
+      >
         {geo.regions.map((r) => {
           const isCurrent = r.code === currentCode;
           const isPassed = passed.has(r.code);
@@ -92,6 +113,8 @@ export const RegionMap = memo(function RegionMap({
               stroke="var(--color-map-line)"
               strokeWidth={2}
               strokeLinejoin="round"
+              // 확대해도 경계선 두께는 그대로여야 지도가 뭉개지지 않는다.
+              vectorEffect={focus ? "non-scaling-stroke" : undefined}
               className="transition-[fill] duration-200"
             />
           );
@@ -104,7 +127,10 @@ export const RegionMap = memo(function RegionMap({
       */}
       {currentCode && (
         <path
-          d={currentPath}
+          // 테두리도 함께 움직여야 한다.
+          style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
+          transform={transform}
+          d={current?.d}
           fill="none"
           stroke="var(--color-ink)"
           strokeWidth={4}

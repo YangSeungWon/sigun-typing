@@ -7,6 +7,7 @@ import type { Course } from "@/data/types";
 import { MODES, MODE_LABELS } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { useGame } from "@/lib/game/useGame";
+import { romanizeRegion } from "@/lib/hangul/romanize";
 import { requestToken } from "@/lib/score/client";
 import { useIsHydrated } from "@/lib/useIsHydrated";
 import { beginGame, entrySource, readChallenge, track } from "@/lib/analytics/track";
@@ -501,6 +502,10 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   focused={focused}
                   masked={!config.reveal}
                   revealed={Boolean(revealing)}
+                  roman={romanizeRegion(
+                    revealing ? revealing.answer : current.answer,
+                    course.placeUnit,
+                  )}
                   hinted={state.hintShown}
                   erroredAt={erroredAt}
                   advancedAt={advancedAt}

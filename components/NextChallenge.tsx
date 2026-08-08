@@ -58,7 +58,26 @@ export function NextChallenge({ courseId, mode, score }: NextChallengeProps) {
     );
   }
 
-  // 본편을 깨끗하게 끝냈으면 다음 칸은 시간 압박이다.
+  /*
+   * 힌트를 짚어 가며 다 맞혔다면, 다음 칸은 시간 압박이 아니라
+   * "이제 진짜 아는가"다. 힌트 없이 한 번 더 하는 쪽이 자연스럽다.
+   */
+  if (mode === "quiz" && score.completed === score.total && score.hintsUsed > 0) {
+    return (
+      <Link
+        href={`/play/memorize/${courseId}?from=result_cta`}
+        onClick={() => go("memorize")}
+        className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-5 py-4 transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        <span className="text-lg font-medium">
+          {score.hintsUsed}곳에서 힌트를 썼어요
+        </span>
+        <span className="font-mono text-sm text-dim">힌트 없이 실력 테스트 →</span>
+      </Link>
+    );
+  }
+
+  // 힌트 없이 깨끗하게 끝냈으면 다음 칸은 시간 압박이다.
   if (mode === "quiz" && score.completed === score.total) {
     return (
       <Link

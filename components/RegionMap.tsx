@@ -14,7 +14,10 @@ interface RegionMapProps {
   geo: CourseGeo;
   /** 지금 목표인 지역 코드 */
   currentCode?: string;
-  /** 이미 지나온 지역 코드 */
+  /**
+   * 이미 지나온 지역 코드. **순서가 의미를 가진다** — 마지막 항목이 방금
+   * 맞힌 곳이고, 거기서만 색이 한 번 훑고 지나간다.
+   */
   passedCodes?: string[];
   /** 포기했거나 틀린 채로 지나온 지역 코드 */
   missedCodes?: string[];
@@ -52,6 +55,7 @@ export const RegionMap = memo(function RegionMap({
 }: RegionMapProps) {
   const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
   const missed = useMemo(() => new Set(missedCodes), [missedCodes]);
+  const justPassed = passedCodes[passedCodes.length - 1];
   const current = useMemo(
     () => geo.regions.find((r) => r.code === currentCode),
     [geo, currentCode],
@@ -86,7 +90,6 @@ export const RegionMap = memo(function RegionMap({
           const isMissed = missed.has(r.code);
           return (
             <path
-              key={r.code}
               d={r.d}
               /*
                * 노랑은 오직 "네가 답해야 할 것"만 가리킨다.
@@ -115,7 +118,16 @@ export const RegionMap = memo(function RegionMap({
               strokeLinejoin="round"
               // 확대해도 경계선 두께는 그대로여야 지도가 뭉개지지 않는다.
               vectorEffect={focus ? "non-scaling-stroke" : undefined}
-              className="transition-[fill] duration-200"
+              /*
+               * key를 바꿔 요소를 다시 붙이는 것으로 애니메이션을 재생한다.
+               * 클래스를 껐다 켜는 방식보다 어긋날 여지가 없다.
+               */
+              key={r.code === justPassed ? `pass-${r.code}` : r.code}
+              className={
+                r.code === justPassed
+                  ? "map-pass"
+                  : "transition-[fill] duration-200"
+              }
             />
           );
         })}

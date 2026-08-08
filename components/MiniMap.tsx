@@ -27,6 +27,7 @@ export const MiniMap = memo(function MiniMap({
   className,
 }: MiniMapProps) {
   const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
+  const justPassed = passedCodes[passedCodes.length - 1];
   const marker = useMemo(() => {
     const region = geo.regions.find((r) => r.code === currentCode);
     if (!region) return null;
@@ -44,14 +45,16 @@ export const MiniMap = memo(function MiniMap({
     >
       {geo.regions.map((r) => (
         <path
-          key={r.code}
+          key={r.code === justPassed ? `pass-${r.code}` : r.code}
           d={r.d}
           /*
            * 배경보다 확실히 어두워야 한다. 큰 지도에서 쓰는 회색을 그대로
            * 쓰면 이 크기에서는 배경에 묻혀 아무것도 안 보인다.
            */
           fill={passed.has(r.code) ? "var(--color-sign)" : "var(--color-concrete-deep)"}
-          className="transition-[fill] duration-200"
+          className={
+            r.code === justPassed ? "map-pass" : "transition-[fill] duration-200"
+          }
         />
       ))}
 

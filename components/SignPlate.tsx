@@ -105,12 +105,22 @@ export function SignPlate({
        * 지도의 현재 지역·커서·판 테두리 셋이 같은 세기로 주장하면 뜻이 사라진다.
        * 이제 노랑은 지도의 현재 지역과 입력 커서에만 남는다.
        */
-      className={`sign-face relative mx-auto w-full max-w-xl rounded-lg px-4 py-4 shadow-[0_4px_0_0_var(--color-sign-deep)] transition-opacity sm:px-10 sm:py-7 ${
+      /*
+       * 실제 표지판을 따른다.
+       *   · 모서리는 크게 굴린다 — 도로표지의 모서리 반경은 판 크기에 비해 크다
+       *   · 흰 내곽선은 가장자리에서 한 뼘 들어와 판면을 한 번 더 두른다
+       *   · 판면은 평면이다(그라디언트 없음)
+       *
+       * 폭은 답 길이를 따라가지 않는다. 가린 모드에서 판이 답 길이만큼
+       * 늘어나면 글자 수가 공짜로 새는데, 그건 초성 힌트가 5초를 받고 파는
+       * 정보다. 그래서 판은 늘 같은 폭이다.
+       */
+      className={`sign-face relative mx-auto w-full max-w-xl rounded-2xl px-4 py-4 shadow-[0_3px_0_0_var(--color-sign-deep)] transition-opacity sm:px-10 sm:py-6 ${
         focused ? "" : "opacity-70"
       }`}
     >
-      {/* 한국 도로표지판 특유의 흰 내곽선 */}
-      <div className="pointer-events-none absolute inset-1.5 rounded-md border border-paint/50" />
+      {/* 한국 도로표지판 특유의 흰 내곽선. 흐린 회색이 아니라 흰 선이다. */}
+      <div className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
 
       <div className="relative flex flex-col items-center gap-3">
         {idle ? (

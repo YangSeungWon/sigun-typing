@@ -90,8 +90,8 @@ export function ResultCard({
         그라데이션을 다 쓰면서 혼자 튀었다. 표지판이라는 정체성은 남기고
         두께만 줄인다 — 판면이 주인공인 곳은 플레이 화면이다.
       */}
-      <div className="sign-face relative rounded-xl px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)]">
-        <div className="pointer-events-none absolute inset-3 rounded-lg border border-paint/40" />
+      <div className="sign-face relative rounded-2xl px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)]">
+        <div className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-paint/80" />
         <p className="relative font-mono text-sm tracking-[0.22em] text-paint/60">
           {perfect ? "완주" : "도착"}
         </p>

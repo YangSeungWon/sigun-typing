@@ -36,14 +36,18 @@ body {
   font-family: var(--font-sans);
 }
 
-/* 표지판 판면의 질감 — 아주 옅은 수직 그라디언트로 금속판 느낌만 낸다. */
+/*
+ * 표지판 판면.
+ *
+ * 그라디언트를 뺐다. 실제 도로표지는 재귀반사 시트를 붙인 **평면**이라
+ * 위에서 아래로 밝기가 변하지 않는다. 위가 밝고 아래가 어두운 초록 판은
+ * 표지판이 아니라 칠판이나 UI 버튼처럼 읽힌다 — 이 게임이 도로표지를
+ * 빌려 쓰는 이유가 통째로 사라진다.
+ *
+ * 색은 도로표지 규격의 녹색에 가깝게 둔다(--color-sign).
+ */
 .sign-face {
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-sign-hi) 0%,
-    var(--color-sign) 42%,
-    var(--color-sign-deep) 100%
-  );
+  background-color: var(--color-sign);
 }
 
 /*

@@ -67,9 +67,9 @@ export const MiniMap = memo(function MiniMap({
           style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
           transform={`translate(${marker.x} ${marker.y})`}
         >
-          <circle r={Math.max(geo.width, geo.height) * 0.045} fill="var(--color-centerline)" />
+          <circle r={Math.max(geo.width, geo.height) * 0.06} fill="var(--color-centerline)" />
           <circle
-            r={Math.max(geo.width, geo.height) * 0.045}
+            r={Math.max(geo.width, geo.height) * 0.06}
             fill="none"
             stroke="var(--color-ink)"
             strokeWidth={2}

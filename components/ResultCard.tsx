@@ -95,24 +95,43 @@ export function ResultCard({
         <p className="relative font-mono text-sm tracking-[0.22em] text-paint/60">
           {perfect ? "완주" : "도착"}
         </p>
-        {emphasis === "time" ? (
+        {/*
+          다 맞히지 못한 판에서는 시간이 성적이 아니다.
+          열일곱 중 열여섯을 맞힌 사람에게 필요한 말은 "몇 초"가 아니라
+          "열여섯 곳"이다. 한 곳을 몰랐다고 해서 그 판에 한 일이 없어지지
+          않는다 — 성취를 무효로 만들면 다시 할 이유도 함께 사라진다.
+        */}
+        {emphasis === "time" && perfect ? (
           <p className="relative mt-2 font-mono text-5xl font-bold tabular-nums text-paint">
             {formatPrecise(score.elapsedMs)}
           </p>
         ) : (
           <p className="relative mt-2 text-5xl font-bold text-paint">
             {score.completed}
-            <span className="ml-1 text-2xl font-medium text-paint/70">곳</span>
+            <span className="ml-1 text-2xl font-medium text-paint/70">
+              / {score.total}
+            </span>
           </p>
         )}
         <p className="relative mt-3 font-mono text-sm text-paint/70">
-          {Math.round(score.cpm)}타/분 · 정확도 {(score.accuracy * 100).toFixed(1)}% ·{" "}
-          {score.completed}/{score.total}
+          {perfect
+            ? `${Math.round(score.cpm)}타/분 · 정확도 ${(score.accuracy * 100).toFixed(1)}%`
+            : `${formatPrecise(score.elapsedMs)} · ${Math.round(score.cpm)}타/분`}
         </p>
         <p className="relative mt-1 text-base text-paint/70">
           {courseName} · {modeLabel}
         </p>
       </div>
+
+      {/*
+        다 맞히지 못했다면 그 사실을 한 줄로만 말한다. 몇 곳을 못 맞혔는지는
+        아래 "다시 볼 곳"에 이름으로 있고, 여기서 또 나무랄 이유가 없다.
+      */}
+      {!perfect && score.completed > 0 && (
+        <p className="text-center text-base text-dim">
+          {score.total - score.completed}곳은 다음에 만나요
+        </p>
+      )}
 
       {/* 판이 끝난 직후 가장 센 충동. 여기 말고 다른 자리에 둘 이유가 없다. */}
       <button

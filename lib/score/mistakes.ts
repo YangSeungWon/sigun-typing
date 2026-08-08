@@ -51,10 +51,18 @@ export function loadMistakes(courseId: string): MistakeRecord[] {
   );
 }
 
-/** 자주 틀린 순, 같으면 최근에 틀린 순. */
+/**
+ * 아직 헷갈리는 곳이 먼저, 그 다음 자주 틀린 순, 같으면 최근에 틀린 순.
+ *
+ * 한 번 맞혀 둔 곳(거의 외운 곳)을 목록 맨 위에 두면, 정작 다시 봐야 할
+ * 곳이 아래로 밀린다.
+ */
 export function sortByPriority(records: MistakeRecord[]): MistakeRecord[] {
   return [...records].sort(
-    (a, b) => b.misses - a.misses || b.lastMissedAt - a.lastMissedAt,
+    (a, b) =>
+      a.cleanStreak - b.cleanStreak ||
+      b.misses - a.misses ||
+      b.lastMissedAt - a.lastMissedAt,
   );
 }
 

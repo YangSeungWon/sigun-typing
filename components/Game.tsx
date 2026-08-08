@@ -7,6 +7,7 @@ import type { Course } from "@/data/types";
 import { MODES, MODE_LABELS } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { useGame } from "@/lib/game/useGame";
+import { focusScale } from "@/lib/geo/bbox";
 import { romanizeRegion } from "@/lib/hangul/romanize";
 import { requestToken } from "@/lib/score/client";
 import { useIsHydrated } from "@/lib/useIsHydrated";
@@ -240,6 +241,19 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
    *
    * 이 순간 index는 이미 다음 문제를 가리키므로, 화면에 그릴 것은 직전 결과다.
    */
+  /**
+   * 미니맵은 충분히 당겼을 때만 띄운다.
+   *
+   * 서울 25구처럼 코스 지도가 곧 그 도시인 경우, 조금 당긴 화면에는 이미
+   * 전체가 거의 들어와 있다. 거기에 미니맵을 띄우면 같은 그림을 작게 한 번
+   * 더 그리는 꼴이라 도움이 아니라 소음이다.
+   */
+  const showMiniMap = useMemo(() => {
+    if (!geo) return false;
+    const code = state.items[state.index]?.id;
+    return focusScale(geo.regions.find((r) => r.code === code), geo) >= 2.2;
+  }, [geo, state.items, state.index]);
+
   const revealing =
     state.status === "revealing" && state.revealed
       ? { id: state.results[state.results.length - 1]?.id, answer: state.revealed.answer }
@@ -415,7 +429,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   }
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-4">
+    <main className="flex flex-1 flex-col px-6 py-2 sm:py-4">
       {/*
         모바일에서는 플레이 중 헤더를 감춘다. 키보드가 화면의 절반을 가져가는
         상황에서 세로 한 줄은 지도 한 줄과 같은 값이다. 나가는 길은 결과
@@ -513,36 +527,39 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 이름을 보여 주는 모드에서도 맞힐 때마다 칠해지는 진행 시각화다.
                 지도 없이 이름만 따라 치면 그냥 타자연습이 된다.
               */}
-              {/* 모바일에서 플레이 중 필요한 숫자는 둘뿐이다 — 어디까지 왔나, 얼마나 걸렸나. */}
-              <div className="flex w-full items-baseline justify-between font-mono text-sm tabular-nums text-dim sm:hidden">
+              {/*
+                진행도·시간·미니맵을 한 줄에 모은다.
+                미니맵을 지도 위에 얹었더니 정작 지도를 가렸다. 지도 밖으로
+                내보내면 겹칠 일이 없고, 세로도 한 줄이면 된다.
+              */}
+              <div className="flex w-full items-center justify-between gap-3 font-mono text-sm tabular-nums text-dim">
                 <span>
                   {state.index + (revealing ? 0 : 1)} / {state.items.length}
                 </span>
-                <span>
-                  {Number.isFinite(remaining)
-                    ? formatClock(remaining)
-                    : formatClock(score.elapsedMs)}
-                </span>
+                <div className="flex items-center gap-3">
+                  {geo && showMiniMap && (
+                    // 배경을 깔아 준다. 같은 회색 위에 얹으면 이 크기에서는
+                    // 지도가 아니라 얼룩으로 보인다.
+                    <span className="rounded-md border border-concrete-deep bg-paint/70 px-1.5 py-1">
+                      <MiniMap
+                        geo={geo}
+                        currentCode={revealing ? revealing.id : current.id}
+                        passedCodes={passedCodes}
+                        className="h-11 w-auto sm:h-14"
+                      />
+                    </span>
+                  )}
+                  <span className="sm:hidden">
+                    {Number.isFinite(remaining)
+                      ? formatClock(remaining)
+                      : formatClock(score.elapsedMs)}
+                  </span>
+                  {streak >= 3 && <span className="text-sign">무오타 ×{streak}</span>}
+                </div>
               </div>
 
               {geo && (
                 <div className="relative w-full overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
-                  {/*
-                    전체 맥락은 미니맵이, 지금 묻는 곳은 큰 지도가 맡는다.
-                    큰 지도만 당기면 "전체에서 여기가 어디인가"가 사라져
-                    확대된 모양만 보고 맞히는 도형 퀴즈가 된다.
-
-                    바탕을 깔아 주는 이유: 같은 회색 위에 얹으면 이 크기에서는
-                    지도가 아니라 얼룩으로 보인다.
-                  */}
-                  <div className="pointer-events-none absolute top-2 right-2 rounded-lg border border-concrete-deep bg-paint/80 p-1.5">
-                    <MiniMap
-                      geo={geo}
-                      currentCode={revealing ? revealing.id : current.id}
-                      passedCodes={passedCodes}
-                      className="h-16 w-auto sm:h-24"
-                    />
-                  </div>
                 <RegionMap
                   geo={geo}
                   currentCode={revealing ? revealing.id : current.id}
@@ -552,7 +569,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   variant={config.reveal ? "route" : "hint"}
                   // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
                   // 접혀 주행 중에 스크롤해야 한다.
-                  className="mx-auto h-[29vh] max-h-96 min-h-40 w-auto sm:h-[38vh]"
+                  className="mx-auto h-[29vh] max-h-96 min-h-36 w-auto sm:h-[38vh]"
                 />
                 </div>
               )}
@@ -566,17 +583,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 advancedAt={advancedAt}
                 onFocusChange={onFocusChange}
               >
-                <div className="mx-auto hidden w-full max-w-xl items-baseline justify-between pb-2 font-mono text-base text-dim sm:flex">
-                  <span className="tabular-nums">
-                    {/*
-                      정답을 보여 주는 동안에는 아직 그 문제에 머물러 있다.
-                      포기하는 순간 내부 index는 이미 다음으로 가 있어서, 그대로
-                      쓰면 판면에는 3번 답이 떠 있는데 번호는 4를 가리킨다.
-                    */}
-                    {state.index + (revealing ? 0 : 1)} / {state.items.length}
-                  </span>
-                  {streak >= 3 && <span className="text-sign">무오타 ×{streak}</span>}
-                </div>
                 <SignPlate
                   target={revealing ? revealing.answer : current.answer}
                   typed={revealing ? "" : state.input}

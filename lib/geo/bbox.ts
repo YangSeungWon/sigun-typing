@@ -70,6 +70,27 @@ export function mainPathBox(d: string): Box {
  * 꽉 채우도록 당기면 주변이 다 잘려 나가 "여기가 어디인가"를 물을 수 없다 —
  * 이 게임에서 주변 모양은 문제의 일부다.
  */
+/**
+ * 지금 지역을 보려면 몇 배로 당겨야 하는가.
+ *
+ * 미니맵을 띄울지 정하는 데 쓴다. 조금만 당긴 상태에서는 화면에 이미 전체가
+ * 거의 다 들어와 있어서, 미니맵이 같은 그림을 작게 한 번 더 그리는 꼴이 된다.
+ */
+export function focusScale(
+  region: RegionShape | undefined,
+  view: { width: number; height: number },
+  options: { fill?: number; maxScale?: number } = {},
+): number {
+  if (!region) return 1;
+  const box = mainPathBox(region.d);
+  if (box.width <= 0 || box.height <= 0) return 1;
+  const raw = Math.min(
+    (view.width * (options.fill ?? 0.34)) / box.width,
+    (view.height * (options.fill ?? 0.34)) / box.height,
+  );
+  return Math.min(Math.max(raw, 1), options.maxScale ?? 4);
+}
+
 export function focusTransform(
   region: RegionShape | undefined,
   view: { width: number; height: number },

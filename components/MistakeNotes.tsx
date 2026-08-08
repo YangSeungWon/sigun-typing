@@ -10,7 +10,7 @@ import {
   type MistakeRecord,
 } from "@/lib/score/mistakes";
 
-/** 한 번에 보여줄 오답 수. 그 이상은 목록이 아니라 벽이 된다. */
+/** 한 번에 보여줄 지역 수. 그 이상은 목록이 아니라 벽이 된다. */
 const VISIBLE = 12;
 
 interface Entry {
@@ -20,7 +20,7 @@ interface Entry {
 }
 
 /**
- * 오답노트.
+ * 헷갈리는 지역.
  *
  * 오답은 기기에만 남으므로 서버가 그릴 수 없다. 첫 렌더에서 한 번 읽고,
  * 지운 뒤에만 다시 읽는다.
@@ -55,7 +55,7 @@ export function MistakeNotes() {
     return (
       <div className="flex flex-col items-start gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-8">
         <p className="text-dim">
-          아직 틀린 곳이 없습니다. 지도 타이핑에서 틀린 지역이 여기 모입니다.
+아직 헷갈리는 곳이 없습니다. 틀리거나 힌트를 본 지역이 여기 모입니다.
         </p>
         <Link
           href="/play/map"
@@ -85,8 +85,17 @@ export function MistakeNotes() {
                 className="flex items-baseline gap-2 rounded-lg border border-concrete-deep bg-paint/60 px-3 py-2"
               >
                 <span className="text-lg font-medium">{r.name}</span>
-                <span className="font-mono text-base tabular-nums text-alert">
-                  {r.misses}회
+                {/*
+                  틀린 횟수는 시스템이 세는 값이고, 사용자가 알고 싶은 것은
+                  자기 상태다. 한 번 맞히면 남은 건 한 번뿐이라는 사실을
+                  규칙으로 설명하는 대신 "거의 외웠다"로 옮긴다.
+                */}
+                <span
+                  className={`font-mono text-sm ${
+                    r.cleanStreak > 0 ? "text-sign" : "text-dim"
+                  }`}
+                >
+                  {r.cleanStreak > 0 ? "거의 외움" : `${r.misses}번 헷갈림`}
                 </span>
               </li>
             ))}
@@ -102,7 +111,7 @@ export function MistakeNotes() {
               href={`/review/${entry.courseId}`}
               className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
-              오답만 연습
+              헷갈리는 곳만 연습
             </Link>
             <button
               type="button"

@@ -54,8 +54,6 @@ export function SignPlate({
   const chars = [...target];
   const typedChars = [...typed];
   const cursor = statuses.findIndex((s) => s === "untyped" || s === "pending");
-  // 가린 글자는 ○, 힌트를 열었으면 초성. 답을 다 주지 않으면서 실마리는 준다.
-  const veil = hinted ? [...initials(target)] : null;
   // 목표 길이를 넘겨 친 글자들. 보여 주지 않으면 몇 자를 지워야 할지 알 수 없다.
   const extra = typedChars.slice(chars.length);
 
@@ -85,7 +83,9 @@ export function SignPlate({
   const slotContent = (i: number): string => {
     // 포기했으면 가리는 이유가 없다. 이제 알려 주려고 띄운 것이다.
     if (revealed) return chars[i];
-    if (masked) return typedChars[i] ?? veil?.[i] ?? "○";
+    // 초성은 아래 한 줄로 따로 보여 준다. 글자 자리에도 겹쳐 그리면 같은 것이
+    // 두 번 보이고, 한 글자만 쳐도 그 자리의 초성이 사라진다.
+    if (masked) return typedChars[i] ?? "○";
     if (statuses[i] === "wrong") return typedChars[i] ?? chars[i];
     return chars[i];
   };
@@ -120,14 +120,19 @@ export function SignPlate({
            * 폰트와 커서 두께로만 정해지므로 한 글자면 충분하고, 글자 크기를
            * 나중에 바꿔도 두 상태가 저절로 같이 움직인다.
            */
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex w-full items-center justify-center">
+            {/*
+              w-full이 없으면 이 상자의 폭이 아래 보이지 않는 한 글자(약 25px)로
+              정해지고, 그 안에 absolute로 얹은 안내 문구가 25px 폭에 갇혀
+              한 글자씩 세로로 쌓인다. 높이만 빌리고 폭은 판면을 따라야 한다.
+            */}
             <div aria-hidden="true" className={`invisible ${CHAR_ROW}`}>
               <span className="relative flex flex-col items-center">
                 <span>가</span>
                 <span className="mt-1 h-1 w-full rounded-full" />
               </span>
             </div>
-            <p className="absolute inset-0 flex items-center justify-center gap-3 text-lg text-paint/70 sm:text-2xl">
+            <p className="absolute inset-0 flex items-center justify-center gap-3 whitespace-nowrap text-lg text-paint/70 sm:text-2xl">
               지역명을 입력하세요
               <span
                 className={`inline-block h-6 w-0.5 sm:h-8 ${
@@ -165,6 +170,18 @@ export function SignPlate({
             </span>
           ))}
         </div>
+        )}
+
+        {/*
+          초성은 따로 한 줄로 붙여 둔다.
+          판면의 글자 자리에만 그리면, 다른 글자를 치는 순간 그 자리를 입력이
+          덮어써서 힌트가 사라진다 — 정작 힌트가 필요한 상황(모르겠어서 아무거나
+          쳐 보는 중)에 힌트가 안 보이는 셈이다. 5초를 물고 산 정보다.
+        */}
+        {hinted && masked && !revealed && (
+          <span className="font-mono text-lg tracking-[0.3em] text-centerline sm:text-xl">
+            {initials(target)}
+          </span>
         )}
 
         {revealed && (

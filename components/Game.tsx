@@ -36,6 +36,12 @@ interface GameProps {
   practice?: boolean;
 }
 
+/**
+ * 초성을 본 뒤 같은 키로 정답까지 가려면 이만큼은 지나야 한다.
+ * 초성을 읽을 시간도 없이 정답이 떠 버리면 힌트가 있으나 마나다.
+ */
+const HINT_TO_GIVE_UP_GRACE_MS = 600;
+
 /** 도전장의 목표 시간. 결과 화면과 같은 표기여야 같은 값으로 읽힌다. */
 function formatChallengeTime(ms: number): string {
   const total = Math.floor(ms / 1000);
@@ -254,14 +260,39 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
       // Tab은 원래 포커스를 옮기므로 막아야 한다. 입력창을 벗어나면 게임이 멈춘다.
       if (e.key === "Tab" && config.allowHint) {
         e.preventDefault();
-        // progress를 함께 남긴다. 0이 많으면 사람들은 지도를 보는 대신
-        // 힌트를 열어 이름을 읽는 방식으로 게임을 우회하는 중이다.
-        onHintPressed();
+        /*
+         * 같은 키로 단계가 올라간다. 초성 → 정답.
+         * 막혔을 때 손가락을 옮기지 않아도 되고, 다음에 뭘 눌러야 하는지
+         * 생각할 것도 없다.
+         *
+         * 두 가지를 막아야 한다. 키를 누르고 있으면 반복 입력이 들어와
+         * 초성을 보기도 전에 정답이 뜨고(e.repeat), 확인하려고 두 번 두드리는
+         * 사람도 마찬가지다(GRACE). 정답 공개는 되돌릴 수 없으므로
+         * 실수로 도달하는 길을 열어 두면 안 된다.
+         */
+        if (!state.hintShown) {
+          onHintPressed();
+        } else if (
+          config.allowSkip &&
+          !e.repeat &&
+          state.hintShownAt !== null &&
+          Date.now() - state.hintShownAt > HINT_TO_GIVE_UP_GRACE_MS
+        ) {
+          giveUpItem();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.status, config.allowSkip, config.allowHint, giveUpItem, onHintPressed]);
+  }, [
+    state.status,
+    state.hintShown,
+    state.hintShownAt,
+    config.allowSkip,
+    config.allowHint,
+    giveUpItem,
+    onHintPressed,
+  ]);
 
   if (state.status === "finished") {
     return (
@@ -512,9 +543,11 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   "표지판을 눌러 계속 입력하세요"
                 ) : (
                   <>
-                    {config.allowHint && !state.hintShown && (
+                    {config.allowHint && (
                       <KeyHint keys="Tab">
-                        초성 힌트 · +{(config.hintPenaltyMs ?? 0) / 1000}초
+                        {state.hintShown
+                          ? "한 번 더 누르면 정답"
+                          : `초성 힌트 · +${(config.hintPenaltyMs ?? 0) / 1000}초`}
                       </KeyHint>
                     )}
                     {config.allowSkip && <KeyHint keys="Esc">모르겠어요</KeyHint>}

@@ -90,6 +90,9 @@ export default function GuidePage() {
             첫 글자들의 자음만 보여 줍니다(<Kbd>의정부</Kbd> → <Kbd>ㅇㅈㅂ</Kbd>).
             기록에 {hintSeconds}초가 더해지고, 시간 제한이 있는 모드에서는 남은
             시간에서 깎입니다. 한 문제에 한 번만 셉니다.
+            <br />
+            초성을 보고도 모르겠으면 <strong>같은 키를 한 번 더</strong> 누릅니다.
+            아래 <Kbd>Esc</Kbd>와 같게 동작합니다.
           </KeyRow>
           <KeyRow keys="Esc" label="모르겠어요">
             초성을 봐도 떠오르지 않을 때 씁니다. <strong>정답을 보여 준 뒤</strong>

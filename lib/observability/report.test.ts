@@ -4,7 +4,7 @@ import { cleanPath, toErrorRow } from "./report";
 describe("오류 기록", () => {
   it("주소에서 질의 문자열을 뗀다", () => {
     // 도전장 링크에는 닉네임과 기록이 실려 있다. 오류 기록에 남길 이유가 없다.
-    expect(cleanPath("/play/quiz/sido?beat=19220&by=승원")).toBe("/play/quiz/sido");
+    expect(cleanPath("/play/map/sido?beat=19220&by=승원")).toBe("/play/map/sido");
     expect(cleanPath("/notes#top")).toBe("/notes");
     expect(cleanPath(undefined)).toBeUndefined();
   });

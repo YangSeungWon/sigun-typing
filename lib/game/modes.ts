@@ -16,8 +16,8 @@ import type { ModeConfig, ModeId } from "./types";
  */
 export const MODES: Record<ModeId, ModeConfig> = {
   /** 지도만 보고 지역명을 떠올려 친다. 이게 본편이다. */
-  quiz: {
-    id: "quiz",
+  map: {
+    id: "map",
     reveal: false,
     shuffle: true,
     allowSkip: true,
@@ -31,8 +31,8 @@ export const MODES: Record<ModeId, ModeConfig> = {
    * 연습. 이름을 보고 따라 친다.
    * 본편이 어려운 사람이 지명과 위치를 먼저 익히는 자리다 — 입구가 아니다.
    */
-  single: {
-    id: "single",
+  learn: {
+    id: "learn",
     reveal: true,
     shuffle: false,
     allowSkip: false,
@@ -59,8 +59,8 @@ export const MODES: Record<ModeId, ModeConfig> = {
    * 끝낼 방법이 아예 없어져, 창을 닫는 것 말고는 길이 없었다.
    * 어려운 것과 막다른 길은 다르다.
    */
-  memorize: {
-    id: "memorize",
+  test: {
+    id: "test",
     reveal: false,
     shuffle: false,
     allowSkip: true,
@@ -97,11 +97,10 @@ export const MODES: Record<ModeId, ModeConfig> = {
  * id와 주소는 그대로 둔다. 이미 나간 도전장 링크가 살아 있어야 한다.
  */
 export const MODE_LABELS: Record<ModeId, string> = {
-  // 본편을 `퀴즈`라고 부르면 제품의 핵심이 부가 메뉴처럼 밀려난다.
-  quiz: "지도 타이핑",
+  map: "지도 타이핑",
   timeattack: "타임어택",
-  single: "이름 보고 익히기",
-  memorize: "실력 테스트",
+  learn: "이름 보고 익히기",
+  test: "실력 테스트",
   multi: "친구와 대결",
 };
 
@@ -112,15 +111,15 @@ export const MODE_LABELS: Record<ModeId, string> = {
  * 알고 싶은 것은 "힌트 없이 얼마나 아는지"다.
  */
 export const MODE_HINTS: Record<ModeId, string> = {
-  quiz: "지도를 보고 이름 맞히기",
+  map: "지도를 보고 이름 맞히기",
   timeattack: "60초 안에 최대한 많이",
-  single: "이름을 보며 따라 치기",
-  memorize: "힌트 없이 얼마나 아는지 확인",
+  learn: "이름을 보며 따라 치기",
+  test: "힌트 없이 얼마나 아는지 확인",
   multi: "최대 8명이 같은 지도를 놓고 동시에",
 };
 
 /** 화면에 나열하는 순서. 본편이 맨 앞이다. */
-export const MODE_LADDER: ModeId[] = ["quiz", "timeattack", "single", "memorize"];
+export const MODE_LADDER: ModeId[] = ["map", "timeattack", "learn", "test"];
 
 export function isModeId(value: string): value is ModeId {
   return value in MODES;

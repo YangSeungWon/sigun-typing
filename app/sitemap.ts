@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: at(`/play/${mode}/${course.id}`),
       changeFrequency: "monthly" as const,
       // 본편인 지도 타이핑을 조금 더 높게 둔다.
-      priority: mode === "quiz" ? 0.7 : 0.6,
+      priority: mode === "map" ? 0.7 : 0.6,
     })),
   );
 

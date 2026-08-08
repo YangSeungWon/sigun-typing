@@ -31,7 +31,7 @@ export function NextChallenge({ courseId, mode, score }: NextChallengeProps) {
     track({ name: "mode_switch", courseId, mode, toMode });
 
   // 틀린 게 있으면 그것부터가 다음 할 일이다.
-  if (mode !== "single" && missCount > 0) {
+  if (mode !== "learn" && missCount > 0) {
     return (
       <Link
         href={`/review/${courseId}`}
@@ -45,11 +45,11 @@ export function NextChallenge({ courseId, mode, score }: NextChallengeProps) {
   }
 
   // 연습을 마쳤으면 이제 본편이다.
-  if (mode === "single" && score.completed > 0) {
+  if (mode === "learn" && score.completed > 0) {
     return (
       <Link
-        href={`/play/quiz/${courseId}?from=result_cta`}
-        onClick={() => go("quiz")}
+        href={`/play/map/${courseId}?from=result_cta`}
+        onClick={() => go("map")}
         className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-5 py-4 transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <span className="text-lg font-medium">이제 이름 없이도 가능할까요?</span>
@@ -62,11 +62,11 @@ export function NextChallenge({ courseId, mode, score }: NextChallengeProps) {
    * 힌트를 짚어 가며 다 맞혔다면, 다음 칸은 시간 압박이 아니라
    * "이제 진짜 아는가"다. 힌트 없이 한 번 더 하는 쪽이 자연스럽다.
    */
-  if (mode === "quiz" && score.completed === score.total && score.hintsUsed > 0) {
+  if (mode === "map" && score.completed === score.total && score.hintsUsed > 0) {
     return (
       <Link
-        href={`/play/memorize/${courseId}?from=result_cta`}
-        onClick={() => go("memorize")}
+        href={`/play/test/${courseId}?from=result_cta`}
+        onClick={() => go("test")}
         className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-5 py-4 transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <span className="text-lg font-medium">
@@ -78,7 +78,7 @@ export function NextChallenge({ courseId, mode, score }: NextChallengeProps) {
   }
 
   // 힌트 없이 깨끗하게 끝냈으면 다음 칸은 시간 압박이다.
-  if (mode === "quiz" && score.completed === score.total) {
+  if (mode === "map" && score.completed === score.total) {
     return (
       <Link
         href={`/play/timeattack/${courseId}?from=result_cta`}

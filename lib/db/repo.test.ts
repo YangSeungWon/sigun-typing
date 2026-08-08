@@ -4,7 +4,7 @@ import type { NewScoreRow } from "./schema";
 
 const base: Omit<NewScoreRow, "sessionId" | "scoringVersion" | "courseVersion"> = {
   courseId: "sido",
-  mode: "quiz",
+  mode: "map",
   nickname: "테스터",
   deviceId: "dev-1",
   cpm: 300,
@@ -26,11 +26,11 @@ describe("채점 버전", () => {
     await repo.insert(row("s1", 1, 500));
     await repo.insert(row("s2", 2, 900));
 
-    const v1 = await repo.leaderboard("sido", "quiz", 10, 1, 1);
+    const v1 = await repo.leaderboard("sido", "map", 10, 1, 1);
     expect(v1).toHaveLength(1);
     expect(v1[0].cpm).toBe(500);
 
-    const v2 = await repo.leaderboard("sido", "quiz", 10, 2, 1);
+    const v2 = await repo.leaderboard("sido", "map", 10, 2, 1);
     expect(v2).toHaveLength(1);
     expect(v2[0].cpm).toBe(900);
   });
@@ -40,7 +40,7 @@ describe("채점 버전", () => {
     await repo.insert(row("a", 1, 300));
     await repo.insert(row("b", 1, 700));
     await repo.insert(row("c", 1, 500));
-    const board = await repo.leaderboard("sido", "quiz", 10, 1, 1);
+    const board = await repo.leaderboard("sido", "map", 10, 1, 1);
     expect(board.map((e) => e.cpm)).toEqual([700, 500, 300]);
   });
 
@@ -48,7 +48,7 @@ describe("채점 버전", () => {
     const repo = new MemoryScoreRepository();
     expect(await repo.insert(row("dup", 1, 400))).toBe(true);
     expect(await repo.insert(row("dup", 1, 900))).toBe(false);
-    expect(await repo.leaderboard("sido", "quiz", 10, 1, 1)).toHaveLength(1);
+    expect(await repo.leaderboard("sido", "map", 10, 1, 1)).toHaveLength(1);
   });
 });
 
@@ -71,25 +71,25 @@ describe("기간 필터", () => {
 
   it("since 이후 기록만 남는다", async () => {
     const repo = await seed();
-    const recent = await repo.leaderboard("sido", "quiz", 10, 1, 1, at("2026-08-05T00:00:00Z"));
+    const recent = await repo.leaderboard("sido", "map", 10, 1, 1, at("2026-08-05T00:00:00Z"));
     expect(recent.map((e) => e.cpm)).toEqual([700, 500]);
   });
 
   it("since가 없으면 전체 기간", async () => {
     const repo = await seed();
-    const all = await repo.leaderboard("sido", "quiz", 10, 1, 1, null);
+    const all = await repo.leaderboard("sido", "map", 10, 1, 1, null);
     expect(all).toHaveLength(3);
   });
 
   it("경계 시각의 기록은 포함된다", async () => {
     const repo = await seed();
-    const board = await repo.leaderboard("sido", "quiz", 10, 1, 1, at("2026-08-01T00:00:00Z"));
+    const board = await repo.leaderboard("sido", "map", 10, 1, 1, at("2026-08-01T00:00:00Z"));
     expect(board).toHaveLength(3);
   });
 
   it("기간 안에서도 타수순 정렬이 유지된다", async () => {
     const repo = await seed();
-    const board = await repo.leaderboard("sido", "quiz", 10, 1, 1, at("2026-08-04T00:00:00Z"));
+    const board = await repo.leaderboard("sido", "map", 10, 1, 1, at("2026-08-04T00:00:00Z"));
     expect(board.map((e) => e.cpm)).toEqual([700, 500]);
   });
 });
@@ -101,11 +101,11 @@ describe("지금 어디쯤인가", () => {
     await repo.insert(row("s2", 1, 300));
     await repo.insert(row("s3", 1, 200));
 
-    expect(await repo.standing("sido", "quiz", 1, 1, 350)).toEqual({
+    expect(await repo.standing("sido", "map", 1, 1, 350)).toEqual({
       better: 1,
       total: 3,
     });
-    expect(await repo.standing("sido", "quiz", 1, 1, 500)).toEqual({
+    expect(await repo.standing("sido", "map", 1, 1, 500)).toEqual({
       better: 0,
       total: 3,
     });
@@ -117,7 +117,7 @@ describe("지금 어디쯤인가", () => {
     await repo.insert(row("s1", 1, 400));
     await repo.insert(row("s2", 2, 400));
 
-    expect(await repo.standing("sido", "quiz", 1, 1, 100)).toEqual({
+    expect(await repo.standing("sido", "map", 1, 1, 100)).toEqual({
       better: 1,
       total: 1,
     });
@@ -125,7 +125,7 @@ describe("지금 어디쯤인가", () => {
 
   it("아직 아무 기록도 없으면 0이다", async () => {
     const repo = new MemoryScoreRepository();
-    expect(await repo.standing("sido", "quiz", 1, 1, 300)).toEqual({
+    expect(await repo.standing("sido", "map", 1, 1, 300)).toEqual({
       better: 0,
       total: 0,
     });

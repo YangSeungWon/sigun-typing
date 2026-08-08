@@ -22,7 +22,7 @@ export const metadata = {
  */
 export default function GuidePage() {
   const placeCount = COURSES.reduce((sum, c) => sum + c.regions.length, 0);
-  const hintSeconds = (MODES.quiz.hintPenaltyMs ?? 0) / 1000;
+  const hintSeconds = (MODES.map.hintPenaltyMs ?? 0) / 1000;
   const timeLimit = (MODES.timeattack.timeLimitMs ?? 0) / 1000;
   const wrongPenalty = (MODES.timeattack.penaltyMs ?? 0) / 1000;
 
@@ -130,13 +130,13 @@ export default function GuidePage() {
 
       <nav className="flex flex-wrap gap-3 border-t border-concrete-deep pt-8">
         <Link
-          href="/play/quiz/sido?from=guide"
+          href="/play/map/sido?from=guide"
           className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           전국 17 시도부터 해 보기
         </Link>
         <Link
-          href="/play/single/sido?from=guide"
+          href="/play/learn/sido?from=guide"
           className="rounded-lg border border-concrete-deep px-5 py-3 font-medium transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           이름 보고 연습하기
@@ -161,10 +161,10 @@ export default function GuidePage() {
  * 사람이 읽는 중이라 전제가 다르다.
  */
 const MODE_DESCRIPTIONS: Record<keyof typeof MODES, string> = {
-  quiz: "지도만 보고 이름을 떠올려 입력합니다. 순서는 매번 섞이고, 막히면 초성 힌트를 쓰거나 정답을 보고 넘어갈 수 있습니다.",
+  map: "지도만 보고 이름을 떠올려 입력합니다. 순서는 매번 섞이고, 막히면 초성 힌트를 쓰거나 정답을 보고 넘어갈 수 있습니다.",
   timeattack: "같은 규칙에 시간 제한이 붙습니다. 순서가 섞이고 오답은 시간을 깎습니다.",
-  single: "이름이 화면에 적혀 있고 그대로 따라 칩니다. 지명과 위치를 익히는 자리이지, 기억을 시험하는 모드가 아닙니다.",
-  memorize: "힌트 없이 코스 순서 그대로 끝까지 갑니다. 모르겠으면 정답을 보고 넘어갈 수는 있습니다.",
+  learn: "이름이 화면에 적혀 있고 그대로 따라 칩니다. 지명과 위치를 익히는 자리이지, 기억을 시험하는 모드가 아닙니다.",
+  test: "힌트 없이 코스 순서 그대로 끝까지 갑니다. 모르겠으면 정답을 보고 넘어갈 수는 있습니다.",
   multi: "최대 여덟 명이 같은 지도를 놓고 동시에 답합니다. 진행도가 실시간으로 보입니다.",
 };
 

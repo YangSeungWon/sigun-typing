@@ -13,12 +13,12 @@ describe("모드 구성", () => {
     const revealing = Object.values(MODES)
       .filter((mode) => mode.reveal)
       .map((mode) => mode.id);
-    expect(revealing).toEqual(["single"]);
+    expect(revealing).toEqual(["learn"]);
   });
 
   it("사다리는 본편에서 시작한다", () => {
-    expect(MODE_LADDER[0]).toBe("quiz");
-    expect(MODE_LADDER).toContain("single");
+    expect(MODE_LADDER[0]).toBe("map");
+    expect(MODE_LADDER).toContain("learn");
   });
 
   it("회상 모드에는 막혔을 때 빠져나갈 길이 있다", () => {

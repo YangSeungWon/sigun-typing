@@ -1,4 +1,4 @@
-export type ModeId = "single" | "timeattack" | "quiz" | "memorize" | "multi";
+export type ModeId = "learn" | "timeattack" | "map" | "test" | "multi";
 
 /** 코스에 담긴 한 항목 — 보통 하나의 시·군·구. */
 export interface GameItem {

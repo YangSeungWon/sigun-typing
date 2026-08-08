@@ -22,7 +22,7 @@ function score(over: Partial<Score> = {}): Score {
   };
 }
 
-const best = toRecord("gyeonggi", "quiz", score(), 1_000);
+const best = toRecord("gyeonggi", "map", score(), 1_000);
 
 describe("개인 최고 기록 비교", () => {
   it("더 빠르면 갱신된다", () => {
@@ -50,7 +50,7 @@ describe("개인 최고 기록 비교", () => {
 
   it("완주 수와 시간이 같으면 정확도로 가른다", () => {
     expect(isBetter(score({ accuracy: 0.99 }), best)).toBe(false);
-    const lower = toRecord("gyeonggi", "quiz", score({ accuracy: 0.9 }), 0);
+    const lower = toRecord("gyeonggi", "map", score({ accuracy: 0.9 }), 0);
     expect(isBetter(score({ accuracy: 0.95 }), lower)).toBe(true);
   });
 
@@ -83,34 +83,34 @@ function stubStorage() {
 describe("기록 격리", () => {
   it("코스가 다르면 최고 기록이 섞이지 않는다", () => {
     const map = stubStorage();
-    savePersonalBest("seoul", "quiz", score({ elapsedMs: 30_000 }), 0, 1);
-    savePersonalBest("gyeonggi", "quiz", score({ elapsedMs: 90_000 }), 0, 1);
+    savePersonalBest("seoul", "map", score({ elapsedMs: 30_000 }), 0, 1);
+    savePersonalBest("gyeonggi", "map", score({ elapsedMs: 90_000 }), 0, 1);
 
-    expect(loadPersonalBest("seoul", "quiz", 1)!.elapsedMs).toBe(30_000);
-    expect(loadPersonalBest("gyeonggi", "quiz", 1)!.elapsedMs).toBe(90_000);
+    expect(loadPersonalBest("seoul", "map", 1)!.elapsedMs).toBe(30_000);
+    expect(loadPersonalBest("gyeonggi", "map", 1)!.elapsedMs).toBe(90_000);
     expect(map.size).toBe(2);
   });
 
   it("모드가 다르면 최고 기록이 섞이지 않는다", () => {
     stubStorage();
-    savePersonalBest("seoul", "quiz", score({ elapsedMs: 30_000 }), 0, 1);
-    savePersonalBest("seoul", "single", score({ elapsedMs: 20_000 }), 0, 1);
-    expect(loadPersonalBest("seoul", "quiz", 1)!.elapsedMs).toBe(30_000);
-    expect(loadPersonalBest("seoul", "single", 1)!.elapsedMs).toBe(20_000);
+    savePersonalBest("seoul", "map", score({ elapsedMs: 30_000 }), 0, 1);
+    savePersonalBest("seoul", "learn", score({ elapsedMs: 20_000 }), 0, 1);
+    expect(loadPersonalBest("seoul", "map", 1)!.elapsedMs).toBe(30_000);
+    expect(loadPersonalBest("seoul", "learn", 1)!.elapsedMs).toBe(20_000);
   });
 
   it("채점 버전이 다른 기록은 없는 것으로 본다", () => {
     const map = stubStorage();
-    savePersonalBest("seoul", "quiz", score(), 0, 1);
+    savePersonalBest("seoul", "map", score(), 0, 1);
     // 저장된 레코드의 버전을 손으로 바꾸면 비교 대상에서 빠져야 한다.
     const [key] = [...map.keys()];
     map.set(key, JSON.stringify({ ...JSON.parse(map.get(key)!), scoringVersion: 999 }));
-    expect(loadPersonalBest("seoul", "quiz", 1)).toBeNull();
+    expect(loadPersonalBest("seoul", "map", 1)).toBeNull();
   });
 
   it("아무것도 끝내지 못한 판은 기록으로 남기지 않는다", () => {
     const map = stubStorage();
-    savePersonalBest("seoul", "quiz", score({ completed: 0 }), 0, 1);
+    savePersonalBest("seoul", "map", score({ completed: 0 }), 0, 1);
     expect(map.size).toBe(0);
   });
 });
@@ -118,19 +118,19 @@ describe("기록 격리", () => {
 describe("코스 판번호별 격리", () => {
   it("코스 내용이 바뀌면 옛 기록과 비교하지 않는다", () => {
     stubStorage();
-    savePersonalBest("incheon", "quiz", score({ elapsedMs: 30_000 }), 0, 1);
+    savePersonalBest("incheon", "map", score({ elapsedMs: 30_000 }), 0, 1);
     // 인천처럼 행정구역이 바뀌면 판번호가 오르고, 그때부터는 새 기록만 본다.
-    expect(loadPersonalBest("incheon", "quiz", 2)).toBeNull();
-    expect(loadPersonalBest("incheon", "quiz", 1)!.elapsedMs).toBe(30_000);
+    expect(loadPersonalBest("incheon", "map", 2)).toBeNull();
+    expect(loadPersonalBest("incheon", "map", 1)!.elapsedMs).toBe(30_000);
   });
 
   it("키에 세 축이 모두 들어간다", () => {
     const map = stubStorage();
-    savePersonalBest("seoul", "single", score(), 0, 3);
+    savePersonalBest("seoul", "learn", score(), 0, 3);
     const [key] = [...map.keys()];
     expect(key).toContain("s1");
     expect(key).toContain("c3");
-    expect(key).toContain("single");
+    expect(key).toContain("learn");
     expect(key).toContain("seoul");
   });
 });

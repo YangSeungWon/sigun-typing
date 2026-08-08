@@ -37,7 +37,7 @@ export default async function RankingPage({
   const rawPeriod = typeof params.period === "string" ? params.period : "";
 
   const course = getCourse(rawCourse) ?? COURSES[0];
-  const mode: ModeId = isModeId(rawMode) ? rawMode : "single";
+  const mode: ModeId = isModeId(rawMode) ? rawMode : "learn";
   const period = isRankingPeriod(rawPeriod) ? rawPeriod : "all";
   const href = (over: Record<string, string>) =>
     `/ranking?${new URLSearchParams({ course: course.id, mode, period, ...over })}`;

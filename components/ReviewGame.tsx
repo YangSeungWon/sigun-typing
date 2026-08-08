@@ -51,7 +51,7 @@ export function ReviewGame({ course, geo }: ReviewGameProps) {
         </p>
         <div className="flex gap-3">
           <Link
-            href={`/play/quiz/${course.id}`}
+            href={`/play/map/${course.id}`}
             className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             코스 전체 풀기
@@ -67,5 +67,5 @@ export function ReviewGame({ course, geo }: ReviewGameProps) {
     );
   }
 
-  return <Game course={reviewCourse} mode="quiz" geo={geo} practice />;
+  return <Game course={reviewCourse} mode="map" geo={geo} practice />;
 }

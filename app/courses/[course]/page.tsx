@@ -46,13 +46,13 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
 
       <div className="flex flex-wrap gap-3">
         <Link
-          href={`/play/quiz/${course.id}?from=course_select`}
+          href={`/play/map/${course.id}?from=course_select`}
           className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           지도 보고 맞히기
         </Link>
         <Link
-          href={`/play/single/${course.id}?from=course_select`}
+          href={`/play/learn/${course.id}?from=course_select`}
           className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           이름 보고 연습하기
@@ -88,7 +88,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold">이 코스로 할 수 있는 것</h2>
         <ul className="flex flex-col gap-2">
-          {(["quiz", "timeattack", "single", "memorize"] as const).map((mode) => (
+          {(["map", "timeattack", "learn", "test"] as const).map((mode) => (
             <li key={mode}>
               <Link
                 href={`/play/${mode}/${course.id}?from=course_select`}
@@ -135,10 +135,10 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
 }
 
 const MODE_SUMMARY = {
-  quiz: "지도만 보고 이름 맞히기",
+  map: "지도만 보고 이름 맞히기",
   timeattack: "60초 안에 최대한 많이",
-  single: "이름을 보며 따라 치기",
-  memorize: "힌트 없이 끝까지",
+  learn: "이름을 보며 따라 치기",
+  test: "힌트 없이 끝까지",
 } as const;
 
 export async function generateMetadata({ params }: PageProps<"/courses/[course]">) {

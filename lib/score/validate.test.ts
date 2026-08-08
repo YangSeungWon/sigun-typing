@@ -71,14 +71,14 @@ function makeRun(opts: RunOptions = {}) {
   };
 
   const { token } = issueToken(
-    { courseId: sidoCourse.id, courseVersion: sidoCourse.version, mode: "single", seed: 1 },
+    { courseId: sidoCourse.id, courseVersion: sidoCourse.version, mode: "learn", seed: 1 },
     ISSUED_AT,
   );
 
   const submission: ScoreSubmission = {
     token,
     courseId: sidoCourse.id,
-    mode: "single",
+    mode: "learn",
     seed: 1,
     nickname: "테스터",
     keystrokes,
@@ -136,7 +136,7 @@ describe("토큰", () => {
       JSON.stringify({
         sessionId: "x",
         courseId: "gyeonggi",
-        mode: "single",
+        mode: "learn",
         seed: 1,
         issuedAt: ISSUED_AT,
       }),
@@ -277,7 +277,7 @@ describe("초성 힌트 페널티", () => {
   function makeQuizRun(hintsUsed: number) {
     const items = createGame(
       sidoCourse.regions.map((r) => ({ id: r.code, answer: r.name, aliases: r.aliases })),
-      MODES.quiz,
+      MODES.map,
       ISSUED_AT,
       1,
     ).items;
@@ -306,13 +306,13 @@ describe("초성 힌트 페널티", () => {
 
     const correctKeystrokes = results.reduce((a, r) => a + r.keystrokes, 0);
     const { token } = issueToken(
-      { courseId: sidoCourse.id, courseVersion: sidoCourse.version, mode: "quiz", seed: 1 },
+      { courseId: sidoCourse.id, courseVersion: sidoCourse.version, mode: "map", seed: 1 },
       ISSUED_AT,
     );
     const submission: ScoreSubmission = {
       token,
       courseId: sidoCourse.id,
-      mode: "quiz",
+      mode: "map",
       seed: 1,
       nickname: "테스터",
       keystrokes,
@@ -371,7 +371,7 @@ describe("코스 판번호", () => {
     // 판을 시작한 뒤 배포로 코스가 바뀌면 서로 다른 문제를 푼 기록이 섞인다.
     const { submission, arrivedAt } = makeRun();
     const stale = issueToken(
-      { courseId: sidoCourse.id, courseVersion: sidoCourse.version + 1, mode: "single", seed: 1 },
+      { courseId: sidoCourse.id, courseVersion: sidoCourse.version + 1, mode: "learn", seed: 1 },
       ISSUED_AT,
     );
     const result = validateSubmission(

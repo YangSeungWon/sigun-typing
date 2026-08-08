@@ -34,7 +34,7 @@ function type(state: GameState, text: string, startAt = 0, stepMs = 100): GameSt
 
 describe("createGame", () => {
   it("싱글은 코스 순서를 유지한다", () => {
-    const g = createGame(ITEMS, MODES.single, 0);
+    const g = createGame(ITEMS, MODES.learn, 0);
     expect(g.items.map((i) => i.answer)).toEqual(["수원", "안양", "부천"]);
     expect(g.status).toBe("ready");
   });
@@ -52,7 +52,7 @@ describe("createGame", () => {
 
 describe("진행", () => {
   it("정답을 완성하면 자동으로 다음 항목으로 넘어간다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원");
     expect(g.index).toBe(1);
     expect(g.input).toBe("");
@@ -61,20 +61,20 @@ describe("진행", () => {
   });
 
   it("별칭도 정답으로 인정한다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원시");
     expect(g.index).toBe(1);
   });
 
   it("조합 중에는 넘어가지 않는다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "수", 100);
     expect(g.index).toBe(0);
     expect(g.itemErrors).toBe(0);
   });
 
   it("마지막 항목을 끝내면 게임이 종료된다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원", 0);
     g = type(g, "안양", 1000);
     g = type(g, "부천", 2000);
@@ -85,14 +85,14 @@ describe("진행", () => {
 
 describe("오타", () => {
   it("정답 경로를 벗어나면 오류 1회", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "소", 100);
     expect(g.itemErrors).toBe(1);
     expect(g.offTrack).toBe(true);
   });
 
   it("틀린 채로 계속 쳐도 오류는 늘지 않는다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "소", 100);
     g = setInput(g, "소어", 200);
     g = setInput(g, "소어라", 300);
@@ -100,7 +100,7 @@ describe("오타", () => {
   });
 
   it("지우고 다시 맞게 치면 경로에 복귀한다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "소", 100);
     g = setInput(g, "", 200);
     expect(g.offTrack).toBe(false);
@@ -138,12 +138,12 @@ describe("타임어택", () => {
 
 describe("건너뛰기", () => {
   it("싱글에서는 건너뛸 수 없다", () => {
-    const g = start(createGame(ITEMS, MODES.single, 0), 0);
+    const g = start(createGame(ITEMS, MODES.learn, 0), 0);
     expect(skip(g, 100).index).toBe(0);
   });
 
   it("퀴즈에서는 건너뛰면 다음으로 넘어가고 skipped로 기록된다", () => {
-    const g = skip(start(createGame(ITEMS, MODES.quiz, 0, 1), 0), 100);
+    const g = skip(start(createGame(ITEMS, MODES.map, 0, 1), 0), 100);
     expect(g.index).toBe(1);
     expect(g.results[0].skipped).toBe(true);
     expect(g.results[0].keystrokes).toBe(0);
@@ -152,7 +152,7 @@ describe("건너뛰기", () => {
 
 describe("score", () => {
   it("정답 타수와 경과 시간으로 CPM을 낸다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원", 0);
     g = type(g, "안양", 1000);
     g = type(g, "부천", 2000);
@@ -166,7 +166,7 @@ describe("score", () => {
   });
 
   it("오타 없이 끝내면 정확도 100%", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원", 0);
     g = type(g, "안양", 1000);
     g = type(g, "부천", 2000);
@@ -174,7 +174,7 @@ describe("score", () => {
   });
 
   it("오타가 섞이면 정확도가 떨어진다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "소", 100);
     g = setInput(g, "", 200);
     g = type(g, "수원", 200);
@@ -186,7 +186,7 @@ describe("score", () => {
   });
 
   it("시작만 하고 아무것도 안 치면 0타", () => {
-    const g = start(createGame(ITEMS, MODES.single, 0), 0);
+    const g = start(createGame(ITEMS, MODES.learn, 0), 0);
     const s = score(g, 5_000);
     expect(s.correctKeystrokes).toBe(0);
     expect(s.cpm).toBe(0);
@@ -196,12 +196,12 @@ describe("score", () => {
 
 describe("상태 보호", () => {
   it("ready 상태에서는 입력을 받지 않는다", () => {
-    const g = createGame(ITEMS, MODES.single, 0);
+    const g = createGame(ITEMS, MODES.learn, 0);
     expect(setInput(g, "수", 100)).toBe(g);
   });
 
   it("finished 상태에서는 입력을 받지 않는다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원", 0);
     g = type(g, "안양", 1000);
     g = type(g, "부천", 2000);
@@ -211,7 +211,7 @@ describe("상태 보호", () => {
 
 describe("모르겠어요", () => {
   it("정답을 보여 주고, 사람이 넘길 때까지 기다린다", () => {
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     const answer = g.items[0].answer;
     g = giveUp(g, 1_000);
     expect(g.status).toBe("revealing");
@@ -230,7 +230,7 @@ describe("모르겠어요", () => {
 
   it("정답을 봤다고 점수에서 이득이 없다", () => {
     // 이득이 생기면 힌트가 아니라 지름길이 된다.
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = giveUp(g, 1_000);
     expect(g.results[0].skipped).toBe(true);
     expect(g.results[0].keystrokes).toBe(0);
@@ -238,7 +238,7 @@ describe("모르겠어요", () => {
   });
 
   it("마지막 문제에서 포기하면 바로 끝난다", () => {
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     for (let i = 0; i < ITEMS.length; i++) {
       g = giveUp(g, 1_000 * (i + 1));
       g = settleReveal(g);
@@ -262,20 +262,20 @@ describe("모르겠어요", () => {
 
 describe("초성 힌트", () => {
   it("퀴즈에서는 힌트를 열 수 있다", () => {
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = revealHint(g);
     expect(g.hintShown).toBe(true);
     expect(g.hintsUsed).toBe(1);
   });
 
   it("같은 항목에서 두 번 눌러도 한 번만 센다", () => {
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = revealHint(revealHint(g));
     expect(g.hintsUsed).toBe(1);
   });
 
   it("다음 항목으로 넘어가면 힌트가 다시 닫힌다", () => {
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = revealHint(g);
     g = skip(g, 100);
     expect(g.hintShown).toBe(false);
@@ -283,19 +283,19 @@ describe("초성 힌트", () => {
   });
 
   it("정답을 보여주는 모드에서는 힌트가 없다", () => {
-    const g = start(createGame(ITEMS, MODES.single, 0), 0);
+    const g = start(createGame(ITEMS, MODES.learn, 0), 0);
     expect(revealHint(g)).toBe(g);
   });
 
   it("힌트 사용 횟수가 점수에 실린다", () => {
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = revealHint(g);
     expect(score(g, 1000).hintsUsed).toBe(1);
   });
 
   it("힌트에서 정답까지 걸린 시간이 항목 기록에 남는다", () => {
     // 힌트를 여는 순간만 세면 그 힌트가 통했는지 알 수 없다.
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     const answer = g.items[0].answer;
     g = revealHint(g, 3_000);
     // 한 글자당 100ms씩이므로 두 글자면 마지막 타건은 5_700이다.
@@ -306,7 +306,7 @@ describe("초성 힌트", () => {
 
   it("힌트를 보고도 건너뛴 항목에는 남지 않는다", () => {
     // 그 시간은 "초성을 보고도 답을 못 낸 시간"이지 힌트가 통한 시간이 아니다.
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = revealHint(g, 3_000);
     g = skip(g, 5_500);
     expect(g.results[0].hinted).toBe(true);
@@ -314,23 +314,23 @@ describe("초성 힌트", () => {
   });
 
   it("힌트를 안 본 항목에는 그 시간이 없다", () => {
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = skip(g, 1_000);
     expect(g.results[0].hintToAnswerMs).toBeUndefined();
     expect(g.results[0].hinted).toBe(false);
   });
 
   it("힌트는 기록에 시간으로 가산된다", () => {
-    const plain = score(start(createGame(ITEMS, MODES.quiz, 0, 1), 0), 10_000);
-    let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+    const plain = score(start(createGame(ITEMS, MODES.map, 0, 1), 0), 10_000);
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = revealHint(g);
     const hinted = score(g, 10_000);
-    expect(hinted.elapsedMs).toBe(plain.elapsedMs + MODES.quiz.hintPenaltyMs!);
+    expect(hinted.elapsedMs).toBe(plain.elapsedMs + MODES.map.hintPenaltyMs!);
   });
 
   it("힌트를 쓰면 같은 타수라도 타수/분이 낮아진다", () => {
     const run = (useHint: boolean) => {
-      let g = start(createGame(ITEMS, MODES.quiz, 0, 1), 0);
+      let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
       if (useHint) g = revealHint(g);
       const target = g.items[0].answer;
       g = type(g, target, 0);
@@ -349,20 +349,20 @@ describe("초성 힌트", () => {
 
 describe("전환 상태", () => {
   it("정답 직후에는 전환 상태가 된다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원");
     expect(g.status).toBe("transitioning");
   });
 
   it("전환 중에는 입력을 받지 않는다 — 이전 조합의 잔여물이기 때문", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원");
     const ignored = setInput(g, "ㄴ", 500);
     expect(ignored).toBe(g);
   });
 
   it("tick이 다음 프레임에 전환을 푼다 — 판이 잠기지 않는다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원");
     g = tick(g, 600);
     expect(g.status).toBe("playing");
@@ -370,7 +370,7 @@ describe("전환 상태", () => {
   });
 
   it("마지막 항목을 끝내면 전환이 아니라 종료다", () => {
-    let g = start(createGame(ITEMS, MODES.single, 0), 0);
+    let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = type(g, "수원", 0);
     g = type(g, "안양", 1000);
     g = type(g, "부천", 2000);

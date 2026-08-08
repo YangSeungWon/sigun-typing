@@ -24,7 +24,7 @@ export function HomeStatus() {
   // 기록은 기기에만 있다. 서버는 이 값을 모른다.
   const best = COURSES.map((course) => ({
     course,
-    record: loadPersonalBest(course.id, "quiz", course.version),
+    record: loadPersonalBest(course.id, "map", course.version),
   }))
     .filter((entry) => entry.record !== null)
     .sort((a, b) => (b.record!.achievedAt ?? 0) - (a.record!.achievedAt ?? 0))[0];
@@ -38,7 +38,7 @@ export function HomeStatus() {
     <section className="flex flex-wrap gap-3">
       {best && (
         <Link
-          href={`/play/quiz/${best.course.id}?from=home_challenge`}
+          href={`/play/map/${best.course.id}?from=home_challenge`}
           className="flex flex-1 flex-col gap-1 rounded-xl border border-concrete-deep bg-paint/60 px-5 py-4 transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           <span className="font-mono text-xs tracking-[0.18em] text-dim uppercase">

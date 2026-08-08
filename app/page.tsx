@@ -11,7 +11,7 @@ import { loadCourseGeo } from "@/lib/geo";
  * 이 게임은 설명보다 플레이가 빠르다 — 지도에 한 곳이 켜지고, 이름을 치면
  * 채워진다. 2초면 이해한다. 그래서 홈에서 읽는 시간이 길어질수록 손해다.
  *
- * 한때 타임어택·연습·암기·멀티를 코스 목록과 함께 첫 화면에 다 늘어놓았다.
+ * 한때 타임어택·이름 보고 익히기·실력 테스트·대결을 코스 목록과 함께 첫 화면에 다 늘어놓았다.
  * 하나하나는 있을 이유가 있는 기능이지만, 처음 온 사람에게는 "그래서 뭘
  * 눌러야 하지"가 먼저 생긴다. 나머지 모드는 한 판 끝낸 뒤에 만나도 늦지 않다.
  *
@@ -42,7 +42,7 @@ export default async function Home() {
 
       <section className="flex flex-col gap-3">
         <Link
-          href={`/play/quiz/${entry.id}?from=home_primary`}
+          href={`/play/map/${entry.id}?from=home_primary`}
           className="sign-face relative rounded-2xl px-8 py-6 text-center shadow-[0_3px_0_0_var(--color-sign-deep)] transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           <span className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-paint" />
@@ -55,7 +55,7 @@ export default async function Home() {
         </Link>
 
         <Link
-          href="/play/quiz"
+          href="/play/map"
           className="rounded-xl border border-concrete-deep px-6 py-4 text-center font-medium transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           지역 골라서 시작

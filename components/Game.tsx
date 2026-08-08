@@ -14,7 +14,7 @@ import { beginGame, entrySource, readChallenge, track } from "@/lib/analytics/tr
 import { NextChallenge } from "./NextChallenge";
 import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
-import { Odometer } from "./Odometer";
+import { formatClock, Odometer } from "./Odometer";
 import { KeyHint } from "./Keycap";
 import { CourseComplete } from "./CourseComplete";
 import { MiniMap } from "./MiniMap";
@@ -416,7 +416,12 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
 
   return (
     <main className="flex flex-1 flex-col px-6 py-4">
-      <header className="mx-auto flex w-full max-w-3xl items-center justify-between font-mono text-sm tracking-[0.12em] text-dim uppercase">
+      {/*
+        모바일에서는 플레이 중 헤더를 감춘다. 키보드가 화면의 절반을 가져가는
+        상황에서 세로 한 줄은 지도 한 줄과 같은 값이다. 나가는 길은 결과
+        화면과 브라우저 뒤로 가기가 있다.
+      */}
+      <header className="mx-auto hidden w-full max-w-3xl items-center justify-between font-mono text-sm tracking-[0.12em] text-dim uppercase sm:flex">
         <Link
           href={`/play/${mode}`}
           className="transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
@@ -450,7 +455,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
           모바일에서는 위로 붙인다. 가운데 정렬하면 위쪽 여백을 쓰느라
           입력판이 아래로 내려가는데, 키보드가 뜨면 그 자리가 가려진다.
         */
-        className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-start gap-3 pt-2 sm:gap-4 sm:pt-6">
+        className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-start gap-2 pt-1 sm:gap-4 sm:pt-6">
         {countdown !== null ? (
           <div className="flex flex-col items-center gap-4 text-center">
             <span
@@ -508,8 +513,20 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 이름을 보여 주는 모드에서도 맞힐 때마다 칠해지는 진행 시각화다.
                 지도 없이 이름만 따라 치면 그냥 타자연습이 된다.
               */}
+              {/* 모바일에서 플레이 중 필요한 숫자는 둘뿐이다 — 어디까지 왔나, 얼마나 걸렸나. */}
+              <div className="flex w-full items-baseline justify-between font-mono text-sm tabular-nums text-dim sm:hidden">
+                <span>
+                  {state.index + (revealing ? 0 : 1)} / {state.items.length}
+                </span>
+                <span>
+                  {Number.isFinite(remaining)
+                    ? formatClock(remaining)
+                    : formatClock(score.elapsedMs)}
+                </span>
+              </div>
+
               {geo && (
-                <div className="relative overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
+                <div className="relative w-full overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
                   {/*
                     전체 맥락은 미니맵이, 지금 묻는 곳은 큰 지도가 맡는다.
                     큰 지도만 당기면 "전체에서 여기가 어디인가"가 사라져
@@ -535,7 +552,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   variant={config.reveal ? "route" : "hint"}
                   // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
                   // 접혀 주행 중에 스크롤해야 한다.
-                  className="h-[26vh] max-h-96 min-h-36 w-auto sm:h-[38vh]"
+                  className="mx-auto h-[29vh] max-h-96 min-h-40 w-auto sm:h-[38vh]"
                 />
                 </div>
               )}
@@ -549,7 +566,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 advancedAt={advancedAt}
                 onFocusChange={onFocusChange}
               >
-                <div className="mx-auto flex w-full max-w-xl items-baseline justify-between pb-2 font-mono text-base text-dim">
+                <div className="mx-auto hidden w-full max-w-xl items-baseline justify-between pb-2 font-mono text-base text-dim sm:flex">
                   <span className="tabular-nums">
                     {/*
                       정답을 보여 주는 동안에는 아직 그 문제에 머물러 있다.
@@ -634,12 +651,18 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 )}
               </p>
 
-              <Odometer
-                cpm={score.cpm}
-                accuracy={score.accuracy}
-                elapsedMs={score.elapsedMs}
-                remainingMs={remaining}
-              />
+              {/*
+                타수와 정확도는 플레이 중 판단에 쓰이지 않는다. 좁은 화면에서는
+                그 자리를 지도에 준다.
+              */}
+              <div className="hidden w-full sm:block">
+                <Odometer
+                  cpm={score.cpm}
+                  accuracy={score.accuracy}
+                  elapsedMs={score.elapsedMs}
+                  remainingMs={remaining}
+                />
+              </div>
             </>
           )
         )}

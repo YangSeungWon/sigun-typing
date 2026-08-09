@@ -8,6 +8,7 @@ import { MODES, MODE_LABELS } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { useGame } from "@/lib/game/useGame";
 import { focusScale } from "@/lib/geo/bbox";
+import { playComplete, playCorrect, primeSound } from "@/lib/sound";
 import { romanizeRegion } from "@/lib/hangul/romanize";
 import { requestToken } from "@/lib/score/client";
 import { useIsHydrated } from "@/lib/useIsHydrated";
@@ -19,6 +20,7 @@ import { formatClock, Odometer } from "./Odometer";
 import { KeyHint } from "./Keycap";
 import { CourseComplete } from "./CourseComplete";
 import { MiniMap } from "./MiniMap";
+import { SoundToggle } from "./SoundToggle";
 import { RegionMap } from "./RegionMap";
 import { PersonalBestPanel } from "./PersonalBestPanel";
 import { ShareResult } from "./ShareResult";
@@ -110,6 +112,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     setCountdown(3);
     // 이 판의 모든 이벤트가 하나의 gameId로 묶인다.
     // 오답 연습(practice)은 개인화된 문제 집합이라 퍼널에서 제외한다.
+    primeSound();
     beginGame(practice);
     track({
       name: "game_start",
@@ -193,6 +196,22 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     () => state.results.filter((r) => r.skipped || r.errors > 0),
     [state.results],
   );
+
+  /*
+   * 한 곳 통과할 때마다 짧게. advancedAt은 항목이 확정될 때만 바뀌므로
+   * 오답이나 조합 중에는 울리지 않는다.
+   */
+  useEffect(() => {
+    if (advancedAt > 0) playCorrect();
+  }, [advancedAt]);
+
+  useEffect(() => {
+    if (state.status === "finished" && score.completed === score.total) {
+      playComplete();
+    }
+    // 판이 끝나는 순간 한 번만.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
 
   /**
    * 힌트를 연다. 키보드(Tab)와 모바일 버튼이 같은 길을 타야
@@ -554,6 +573,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                       ? formatClock(remaining)
                       : formatClock(score.elapsedMs)}
                   </span>
+                  <SoundToggle />
                   {streak >= 3 && <span className="text-sign">무오타 ×{streak}</span>}
                 </div>
               </div>

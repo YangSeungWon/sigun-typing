@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gt, gte } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ModeId } from "../game/types";
 import {
@@ -52,6 +52,20 @@ export interface ScoreRepository {
   recentCount(deviceId: string, windowMs: number, now: number): Promise<number>;
   /** 익명 이용 흐름 기록 */
   recordEvents(deviceId: string, batch: GameEvent[]): Promise<void>;
+  /**
+   * 내 기록 언저리의 몇 줄.
+   *
+   * 상위 10명만 보면 신규 사용자는 아무 감정이 없다 — 1위가 18초, 나는 2분.
+   * 바로 위와 바로 아래가 보여야 따라잡을 마음이 생긴다.
+   */
+  neighbors(
+    courseId: string,
+    mode: ModeId,
+    scoringVersion: number,
+    courseVersion: number,
+    cpm: number,
+    span: number,
+  ): Promise<{ above: LeaderboardEntry[]; below: LeaderboardEntry[] }>;
   /** 오류 기록. 이걸 남기다 실패해도 호출한 쪽이 죽으면 안 된다. */
   recordError(row: NewErrorRow): Promise<void>;
 }
@@ -127,6 +141,29 @@ export class MemoryScoreRepository implements ScoreRepository {
         r.courseVersion === courseVersion,
     );
     return { better: pool.filter((r) => r.cpm > cpm).length, total: pool.length };
+  }
+
+  async neighbors(
+    courseId: string,
+    mode: ModeId,
+    scoringVersion: number,
+    courseVersion: number,
+    cpm: number,
+    span: number,
+  ) {
+    const pool = this.rows
+      .filter(
+        (r) =>
+          r.courseId === courseId &&
+          r.mode === mode &&
+          r.scoringVersion === scoringVersion &&
+          r.courseVersion === courseVersion,
+      )
+      .sort((a, b) => b.cpm - a.cpm);
+    return {
+      above: pool.filter((r) => r.cpm > cpm).slice(-span).map(toEntry),
+      below: pool.filter((r) => r.cpm <= cpm).slice(0, span).map(toEntry),
+    };
   }
 
   async recentCount(deviceId: string, windowMs: number, now: number) {
@@ -250,6 +287,30 @@ export class PostgresScoreRepository implements ScoreRepository {
       // 같은 이벤트가 두 번 도착하면 버린다. beacon은 도착 확인이 불가능하고,
       // 중복이 그대로 쌓이면 판 수가 부풀어 퍼널이 조용히 틀린다.
       .onConflictDoNothing({ target: events.eventId });
+  }
+
+  async neighbors(
+    courseId: string,
+    mode: ModeId,
+    scoringVersion: number,
+    courseVersion: number,
+    cpm: number,
+    span: number,
+  ) {
+    const scope = and(
+      eq(scores.courseId, courseId),
+      eq(scores.mode, mode),
+      eq(scores.scoringVersion, scoringVersion),
+      eq(scores.courseVersion, courseVersion),
+    );
+    const [above, below] = await Promise.all([
+      // 나보다 나은 기록 중 가장 가까운 쪽. 오름차순으로 뽑아야 바로 위가 나온다.
+      this.db.select().from(scores).where(and(scope, gt(scores.cpm, cpm)))
+        .orderBy(asc(scores.cpm)).limit(span),
+      this.db.select().from(scores).where(and(scope, lte(scores.cpm, cpm)))
+        .orderBy(desc(scores.cpm)).limit(span),
+    ]);
+    return { above: above.reverse().map(toEntry), below: below.map(toEntry) };
   }
 
   async recordError(row: NewErrorRow) {

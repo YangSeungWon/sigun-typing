@@ -8,6 +8,7 @@ import {
   periodStart,
   RANKING_PERIODS,
 } from "@/lib/score/period";
+import { MyStanding } from "@/components/MyStanding";
 import { MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
 import { isModeId } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
@@ -121,6 +122,12 @@ export default async function RankingPage({
           ))}
         </div>
       </nav>
+
+      {/*
+        전체 상위권보다 이쪽이 먼저다. 1위가 18초이고 내가 2분이면 상위권은
+        남의 이야기지만, 바로 위 한 줄은 따라잡을 수 있는 거리다.
+      */}
+      <MyStanding courseId={course.id} courseVersion={course.version} mode={mode} />
 
       {entries.length === 0 ? (
         // 빈 화면은 상태 보고가 아니라 다음 행동을 권하는 자리다.

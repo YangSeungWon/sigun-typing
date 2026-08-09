@@ -26,14 +26,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "잘못된 요청입니다" }, { status: 400 });
   }
 
-  const { better, total } = await getScoreRepository().standing(
-    courseId,
-    mode,
-    SCORING_VERSION,
-    course.version,
-    cpm,
-  );
+  const repo = getScoreRepository();
+  const [{ better, total }, around] = await Promise.all([
+    repo.standing(courseId, mode, SCORING_VERSION, course.version, cpm),
+    // 바로 위·아래 두 줄씩. 상위 10명보다 이쪽이 따라잡을 마음을 만든다.
+    repo.neighbors(courseId, mode, SCORING_VERSION, course.version, cpm, 2),
+  ]);
 
   // 등록하면 앉게 될 자리. 나보다 나은 기록 수 + 1이다.
-  return NextResponse.json({ rank: better + 1, total });
+  return NextResponse.json({ rank: better + 1, total, ...around });
 }

@@ -3,6 +3,7 @@ import { HomeStatus } from "@/components/HomeStatus";
 import { HomeView } from "@/components/HomeView";
 import { HomeMap } from "@/components/HomeMap";
 import { COURSES, getCourse } from "@/data/courses";
+import { DATA_VINTAGE } from "@/data/vintage";
 import { loadCourseGeo } from "@/lib/geo";
 
 /**
@@ -94,7 +95,7 @@ export default async function Home() {
           코스 {COURSES.length}개 · 지역 {placeCount}곳
         </span>
         <span>
-          행정구역 데이터 기준 2025 · 통계청 SGIS 행정구역경계
+          행정구역 데이터 기준 {DATA_VINTAGE.year} · {DATA_VINTAGE.boundarySource}
         </span>
         <span className="flex gap-4 pt-1">
           <Link href="/privacy" className="transition-colors hover:text-ink">

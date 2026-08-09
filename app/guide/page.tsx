@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Keycap } from "@/components/Keycap";
 import { COURSES } from "@/data/courses";
+import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
 import { MODES, MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
 
 export const metadata = {
@@ -118,12 +119,13 @@ export default function GuidePage() {
 
         <Fold title="자료">
           <p>
-            코스 {COURSES.length}개, 지역 {placeCount}곳. 경계는 통계청 SGIS
-            행정구역경계(2025), 이름과 코드는 행정표준코드 법정동코드를 따릅니다.
+            코스 {COURSES.length}개, 지역 {placeCount}곳. 경계는{" "}
+            {DATA_VINTAGE.boundarySource}({DATA_VINTAGE.year}), 이름과 코드는{" "}
+            {DATA_VINTAGE.codeSource}를 따릅니다.
           </p>
           <p className="text-dim">
-            행정구역 데이터 기준은 2025년입니다. 이후 개편된 지역은 반영되어 있지
-            않을 수 있습니다.
+            {VINTAGE_LABEL}입니다. 이후 개편된 지역은 반영되어 있지 않을 수
+            있습니다.
           </p>
         </Fold>
       </div>

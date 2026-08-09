@@ -1,4 +1,5 @@
 import { LegalDoc, List, Section } from "@/components/LegalDoc";
+import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
 
 export const metadata = {
   title: "이용약관 — 시군 타이핑",
@@ -41,8 +42,8 @@ export default function TermsPage() {
 
       <Section title="4. 행정구역 자료에 대하여">
         <p>
-          이 게임의 지역 데이터는 <strong>2025년 행정구역 기준</strong>이며, 통계청
-          SGIS 행정구역경계 자료를 바탕으로 합니다. 이후 개편된 지역은 반영되어 있지
+          이 게임의 지역 데이터는 <strong>{VINTAGE_LABEL}</strong>이며,{" "}
+          {DATA_VINTAGE.boundarySource} 자료를 바탕으로 합니다. 이후 개편된 지역은 반영되어 있지
           않을 수 있습니다.
         </p>
         <p>

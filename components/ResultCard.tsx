@@ -205,13 +205,26 @@ export function ResultCard({
         </div>
       )}
 
-      <div className="flex flex-col">
-        <Row label="총 타수" value={`${score.correctKeystrokes}타`} />
-        <Row label="오타" value={`${score.totalErrors}회`} />
-        {score.hintsUsed > 0 && (
-          <Row label="초성 힌트" value={`${score.hintsUsed}회 · 기록에 가산됨`} />
-        )}
-      </div>
+      {/*
+        상세는 접어 둔다. 결과 화면에서 사람이 알고 싶은 것은 셋이다 —
+        잘했나, 전보다 나아졌나, 다음엔 뭘 하나. 타수와 오타 수는 그 셋에
+        답하지 않으면서 화면의 절반을 차지하고 있었다.
+      */}
+      <details className="group rounded-xl border border-concrete-deep px-5 py-3">
+        <summary className="cursor-pointer list-none font-mono text-sm text-dim marker:content-none">
+          <span className="flex items-center justify-between gap-4">
+            자세히 보기
+            <span className="transition-transform group-open:rotate-90">›</span>
+          </span>
+        </summary>
+        <div className="flex flex-col pt-2">
+          <Row label="총 타수" value={`${score.correctKeystrokes}타`} />
+          <Row label="오타" value={`${score.totalErrors}회`} />
+          {score.hintsUsed > 0 && (
+            <Row label="초성 힌트" value={`${score.hintsUsed}회 · 기록에 가산됨`} />
+          )}
+        </div>
+      </details>
 
       {nextSlot}
 

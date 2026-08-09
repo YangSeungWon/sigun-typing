@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HomeStatus } from "@/components/HomeStatus";
 import { HomeView } from "@/components/HomeView";
-import { RegionMap } from "@/components/RegionMap";
+import { HomeMap } from "@/components/HomeMap";
 import { COURSES, getCourse } from "@/data/courses";
 import { loadCourseGeo } from "@/lib/geo";
 
@@ -33,10 +33,13 @@ export default async function Home() {
         </p>
       </header>
 
-      {/* 설명 대신 지도를 먼저 보여 준다. 이 게임이 무엇인지 한 장이면 된다. */}
+      {/*
+        설명 대신 지도를 먼저 보여 준다. 이 게임이 무엇인지 한 장이면 된다.
+        해 본 사람에게는 같은 지도가 "내가 어디까지 아는가"로 읽힌다.
+      */}
       {geo && (
         <div className="flex justify-center">
-          <RegionMap geo={geo} variant="route" className="h-52 w-auto sm:h-64" />
+          <HomeMap geo={geo} courseId={entry.id} />
         </div>
       )}
 

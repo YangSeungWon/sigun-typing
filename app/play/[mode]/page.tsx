@@ -9,7 +9,6 @@ import {
   MODE_LABELS,
   MODE_LADDER,
 } from "@/lib/game/modes";
-import { keystrokeCount } from "@/lib/hangul/keystrokes";
 
 export function generateStaticParams() {
   return Object.keys(MODES).map((mode) => ({ mode }));
@@ -83,10 +82,6 @@ export default async function CoursePickerPage({
 
           <ul className="flex flex-col gap-3">
             {group.courses.map((course) => {
-              const strokes = course.regions.reduce(
-                (sum, r) => sum + keystrokeCount(r.name),
-                0,
-              );
               return (
                 <li key={course.id}>
                   <Link
@@ -96,18 +91,17 @@ export default async function CoursePickerPage({
                     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                       <span className="text-xl font-semibold">{course.name}</span>
                       <span className="font-mono text-sm tabular-nums text-dim">
-                        {course.regions.length}개 {course.placeUnit} · {strokes}타
+                        {course.regions.length}곳
                       </span>
                     </div>
+                    {/*
+                      지명 미리보기를 뺐다. 가린 모드에서 답의 일부를 미리
+                      보여 주는 셈이었고, 목록이 필요한 사람은 코스 소개
+                      페이지에서 전부 볼 수 있다.
+
+                      총 타수도 뺐다. 코스를 고르는 데 쓰는 값이 아니다.
+                    */}
                     <span className="text-base text-dim">{course.description}</span>
-                    {/* 어디서 시작해 어디로 가는지 미리 보여준다. */}
-                    <span className="font-mono text-sm text-dim">
-                      {course.regions
-                        .slice(0, 4)
-                        .map((r) => r.name)
-                        .join(" · ")}{" "}
-                      ⋯ {course.regions.at(-1)!.name}
-                    </span>
                   </Link>
                 </li>
               );

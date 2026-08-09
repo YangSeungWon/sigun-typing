@@ -461,7 +461,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
         >
           ← 코스 선택
         </Link>
-        <span className="text-ink">{course.name}</span>
+        {/* 시작 화면에는 같은 이름이 큰 글씨로 있다. 두 번 쓸 이유가 없다. */}
+        <span className="text-ink">{state.status === "ready" ? "" : course.name}</span>
       </header>
 
       {/*
@@ -488,7 +489,13 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
           모바일에서는 위로 붙인다. 가운데 정렬하면 위쪽 여백을 쓰느라
           입력판이 아래로 내려가는데, 키보드가 뜨면 그 자리가 가려진다.
         */
-        className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-start gap-2 pt-1 sm:gap-4 sm:pt-6">
+        className={`mx-auto flex w-full max-w-3xl flex-1 flex-col items-center gap-2 pt-1 sm:gap-4 sm:pt-6 ${
+          // 플레이 중에는 위로 붙인다 — 키보드가 아래를 가져가기 때문이다.
+          // 출발 전에는 가운데가 자연스럽다.
+          state.status === "ready" || countdown !== null
+            ? "justify-center"
+            : "justify-start"
+        }`}>
         {countdown !== null ? (
           <div className="flex flex-col items-center gap-4 text-center">
             <span
@@ -527,8 +534,13 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 <span className="text-base text-dim">이 기록을 깨 보세요</span>
               </div>
             )}
+            {/*
+              코스 설명은 빼 둔다. 여기까지 온 사람은 이미 그 코스를 고른
+              것이고, 지금 필요한 것은 시작하는 일뿐이다. 설명은 코스를
+              고르는 화면과 코스 소개 페이지에 있다.
+            */}
             <h1 className="text-4xl font-bold sm:text-5xl">{course.name}</h1>
-            <p className="max-w-sm text-dim">{course.description}</p>
+
             <button
               type="button"
               onClick={startRun}

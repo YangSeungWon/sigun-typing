@@ -39,6 +39,16 @@ export function primeSound(): void {
   } catch {
     // 오디오를 못 쓰는 환경. 게임은 그대로 돌아간다.
   }
+
+  /*
+   * 판이 알아서 시작하므로 이 페이지에서 아무것도 누르지 않았을 수 있고,
+   * 그러면 브라우저가 소리를 막아 둔 상태다. 첫 타건이 들어오는 순간 깨운다.
+   */
+  if (context && context.state === "suspended") {
+    const wake = () => void context?.resume();
+    window.addEventListener("keydown", wake, { once: true });
+    window.addEventListener("pointerdown", wake, { once: true });
+  }
 }
 
 /**

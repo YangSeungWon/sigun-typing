@@ -126,6 +126,21 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     if (!practice) requestToken(course.id, mode, seed).then(setToken);
   }, [course.id, course.regions.length, mode, seed, practice]);
 
+  /*
+   * 화면에 들어오면 알아서 센다.
+   *
+   * 코스를 고르고 들어온 사람에게 "출발"을 한 번 더 누르라고 할 이유가 없다.
+   * 대신 판을 미리 깔아 두고 셋을 센다 — 손을 자판에 올릴 시간은 필요하고,
+   * 그 사이에 화면이 어떻게 생겼는지도 눈에 익는다.
+   */
+  useEffect(() => {
+    if (state.status !== "ready" || countdown !== null) return;
+    const timer = setTimeout(startRun, 350);
+    return () => clearTimeout(timer);
+    // 판이 준비되는 순간 한 번만.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
+
   useEffect(() => {
     if (countdown === null) return;
     const timer = setTimeout(() => {
@@ -512,7 +527,11 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
         </span>
 
         <span className="ml-auto flex items-center gap-3">
-          {state.status !== "ready" && countdown === null && (
+          {/*
+            세는 동안에도 같은 줄을 채운다. 시작하면서 미니맵이 붙으면 그
+            높이만큼 아래가 통째로 밀린다 — 하필 첫 문제가 뜨는 순간이다.
+          */}
+          {(state.status !== "ready" || countdown !== null) && (
             <>
               <span>
                 {state.index + (revealing ? 0 : 1)} / {state.items.length}
@@ -529,7 +548,11 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 <span className="rounded-md border border-concrete-deep bg-paint/70 px-1.5 py-1">
                   <MiniMap
                     geo={geo}
-                    currentCode={revealing ? revealing.id : current?.id}
+                    // 세는 동안에는 표시점을 찍지 않는다. 미리 보여 주면
+                    // 시계가 돌기 전에 생각할 시간을 공짜로 준다.
+                    currentCode={
+                      countdown !== null ? undefined : revealing ? revealing.id : current?.id
+                    }
                     passedCodes={passedCodes}
                     className="h-9 w-auto sm:h-11"
                   />
@@ -566,26 +589,75 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
           입력판이 아래로 내려가는데, 키보드가 뜨면 그 자리가 가려진다.
         */
         className={`play-stage mx-auto flex w-full max-w-3xl flex-1 flex-col items-center gap-2 pt-1 sm:gap-4 sm:pt-6 ${
-          // 플레이 중에는 위로 붙인다 — 키보드가 아래를 가져가기 때문이다.
-          // 출발 전에는 가운데가 자연스럽다.
-          state.status === "ready" || countdown !== null
+          /*
+           * 세는 동안에도 판은 같은 자리에 있어야 한다. 가운데 두었다가
+           * 시작하면서 위로 붙이면, 첫 문제가 뜨는 순간 화면이 통째로 뛴다 —
+           * 하필 지도를 보려는 그 순간이다.
+           */
+          // 세는 동안에도 status는 아직 ready다. 카운트다운이 돌면 이미 판이다.
+          state.status === "ready" && countdown === null
             ? "justify-center"
             : "justify-start"
         }`}>
         {countdown !== null ? (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <span
-              // key로 매 초 요소를 다시 붙여 숫자마다 애니메이션이 새로 돈다.
-              key={countdown}
-              className="count-in font-mono text-8xl font-semibold tabular-nums text-sign sm:text-9xl"
-              aria-hidden="true"
-            >
-              {countdown}
-            </span>
-            <p className="font-mono text-base text-dim" role="status" aria-live="assertive">
-              {countdown}초 뒤 출발 — 손을 자판에 올려 두세요
-            </p>
-          </div>
+          <>
+            {/*
+              세는 동안에도 판은 그대로 있다. 빈 화면에 숫자만 튀는 것보다
+              어디에 무엇이 나올지 눈에 익히는 편이 낫다.
+
+              지도에는 아무 곳도 켜지 않는다. 미리 보여 주면 시계가 돌기 전에
+              생각할 시간을 공짜로 주는 셈이라 기록이 흔들린다.
+            */}
+            {geo && (
+              <div className="play-map relative w-full max-w-2xl overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
+                <RegionMap
+                  geo={geo}
+                  variant="route"
+                  className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto sm:h-[44vh]"
+                />
+
+                {/*
+                  도전장을 받고 온 사람은 무엇을 깨러 왔는지 봐야 한다.
+                  예전에는 출발 화면에 있었는데 그 화면이 없어졌다.
+
+                  지도 위에 겹쳐 둔다 — 자리를 차지하면 시작하는 순간 그 높이만큼
+                  아래가 밀리고, 하필 첫 문제가 뜨는 순간이다.
+                */}
+                {hydrated && challenge && (
+                  <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
+                    <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint/90 px-4 py-2">
+                      <span className="font-mono text-xs tracking-[0.18em] text-sign uppercase">
+                        도전
+                      </span>
+                      <span className="font-mono text-lg font-semibold tabular-nums">
+                        {formatChallengeTime(challenge.beatMs)}
+                      </span>
+                      {challenge.by && (
+                        <span className="text-sm text-dim">{challenge.by}</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="play-input flex w-full flex-col items-center gap-2 sm:gap-3">
+              <div className="sign-face relative mx-auto flex w-full max-w-2xl items-center justify-center rounded-2xl px-4 py-6 shadow-[0_3px_0_0_var(--color-sign-deep)] sm:px-10 sm:py-8">
+                <span className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
+                <span
+                  // key로 매 초 요소를 다시 붙여 숫자마다 애니메이션이 새로 돈다.
+                  key={countdown}
+                  className="count-in relative font-mono text-6xl font-bold tabular-nums text-paint sm:text-7xl"
+                  aria-hidden="true"
+                >
+                  {countdown}
+                </span>
+              </div>
+              <p className="font-mono text-xs text-dim/80" role="status" aria-live="assertive">
+                {countdown}초 뒤 시작 — 손을 자판에 올려 두세요
+              </p>
+            </div>
+          </>
         ) : state.status === "ready" ? (
           <div className="flex flex-col items-center gap-6 text-center">
             {/*
@@ -616,15 +688,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               고르는 화면과 코스 소개 페이지에 있다.
             */}
             <h1 className="text-4xl font-bold sm:text-5xl">{course.name}</h1>
-
-            <button
-              type="button"
-              onClick={startRun}
-              className="rounded-lg bg-sign px-8 py-4 text-lg font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              출발
-            </button>
-            <p className="font-mono text-sm text-dim">아무 키나 눌러도 출발합니다</p>
           </div>
         ) : (
           current && (
@@ -635,7 +698,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 지도 없이 이름만 따라 치면 그냥 타자연습이 된다.
               */}
               {geo && (
-                <div className="play-map relative w-full overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
+                <div className="play-map relative w-full max-w-2xl overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
                 <RegionMap
                   geo={geo}
                   currentCode={revealing ? revealing.id : current.id}
@@ -658,7 +721,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 지도 진행률인지 입력 진행률인지 소속을 알 수 없다.
               */}
               {/* 가로로 누우면 이 덩어리가 지도 오른쪽으로 간다. */}
-              <div className="play-input flex w-full flex-col items-center gap-2 sm:gap-4">
+              <div className="play-input flex w-full flex-col items-center gap-2 sm:gap-3">
               <TypingSurface
                 onType={type}
                 advancedAt={advancedAt}
@@ -716,7 +779,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
 
               {/* 포커스를 잃으면 아무리 쳐도 반응이 없다. 그 사실을 알려 준다. */}
               <p
-                className="hidden min-h-6 flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-dim sm:flex"
+                className="mt-2 hidden min-h-6 flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-dim/80 sm:flex"
                 role="status"
                 aria-live="polite"
               >

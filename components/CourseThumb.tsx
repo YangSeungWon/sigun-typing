@@ -38,9 +38,10 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
       />
 
       {/*
-        시작에서 끝으로. 평소에는 숨어 있다가 마우스를 올리면 나타난다.
-        "철원에서 휴전선을 따라 동해안으로, 다시 내륙을 돌아 춘천까지"라는
-        문장이 이 선 하나로 눈에 들어온다.
+        시작에서 끝으로 선이 그어진다.
+        마우스를 올리면 시작점에서 출발해 끝점까지 그어지고, 잠깐 쉬었다가
+        다시 그어진다. 범례로 "● 시작 ○ 끝"이라고 적어 두는 것보다 이쪽이
+        빠르다 — 움직임 자체가 "여기서 저기까지 가는 코스"라고 말한다.
       */}
       <line
         x1={thumb.from[0]}
@@ -48,9 +49,10 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
         x2={thumb.to[0]}
         y2={thumb.to[1]}
         stroke="var(--color-sign)"
-        strokeWidth={1.5}
-        strokeDasharray="3 3"
-        className="opacity-0 transition-opacity group-hover:opacity-70"
+        strokeWidth={2}
+        strokeLinecap="round"
+        pathLength={1}
+        className="course-line opacity-0 group-hover:opacity-80"
       />
 
       <circle cx={thumb.from[0]} cy={thumb.from[1]} r={3.5} fill="var(--color-sign)" />

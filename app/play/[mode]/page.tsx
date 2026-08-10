@@ -93,20 +93,6 @@ export default async function CoursePickerPage({
         ))}
       </nav>
 
-      <p className="flex items-center gap-4 font-mono text-xs text-dim">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-full bg-sign" aria-hidden="true" />
-          시작
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block h-2 w-2 rounded-full border-2 border-sign"
-            aria-hidden="true"
-          />
-          끝
-        </span>
-      </p>
-
       {/* 제목은 자기 아래 카드와 가깝게, 앞 묶음과는 멀게. 그래야 구조가 읽힌다. */}
       {groups.map((group) => (
         <section key={group.id} className="flex flex-col gap-2">

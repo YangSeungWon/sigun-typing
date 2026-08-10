@@ -51,6 +51,32 @@ body {
 }
 
 /*
+ * 코스 카드의 여정선.
+ *
+ * pathLength=1로 두었으므로 대시 길이도 0~1로 센다. 시작점에서 출발해
+ * 끝점까지 그어지고 잠깐 머문 뒤 처음부터 다시. 마우스를 올린 동안만 돈다.
+ */
+@keyframes course-line {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.course-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: opacity 200ms;
+}
+
+.group:hover .course-line {
+  animation: course-line 1.8s ease-in-out infinite;
+}
+
+/*
  * 가로로 눕힌 화면.
  *
  * 세로가 짧아지면 지도와 입력판을 위아래로 쌓을 수 없다 — 키보드까지 올라오면

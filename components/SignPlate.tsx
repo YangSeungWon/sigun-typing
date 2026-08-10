@@ -107,7 +107,7 @@ export function SignPlate({
     {/* plate-area: 표지판과 그 아래 안내를 함께 가리키는 이름 */}
     <div
       key={`pop-${advancedAt}`}
-      className={`plate-area ${advancedAt > 0 ? "plate-pop" : ""}`}
+      className={`plate-area relative ${advancedAt > 0 ? "plate-pop" : ""}`}
     >
     <div
       /*
@@ -131,7 +131,7 @@ export function SignPlate({
          * 가린 모드에서 그러면 판 너비가 곧 글자 수를 알려 준다 — 초성 힌트가
          * 5초를 받고 파는 정보를 공짜로 주는 셈이다.
          */
-        masked ? "w-full max-w-xl" : "w-fit min-w-64 max-w-xl sm:min-w-80"
+        masked ? "w-full max-w-2xl" : "w-fit min-w-64 max-w-2xl sm:min-w-80"
       } ${focused ? "" : "opacity-70"}`}
     >
       {/* 한국 도로표지판 특유의 흰 내곽선. 흐린 회색이 아니라 흰 선이다. */}
@@ -242,12 +242,11 @@ export function SignPlate({
     </div>
 
     {/*
-      판면에는 글자만 둔다.
-      힌트·안내는 표지판 밖 아래로 내린다. 판면은 "지금 치고 있는 것"을
-      보여 주는 자리인데 거기에 설명이 섞이면 무엇이 답이고 무엇이 도움말인지
-      한눈에 갈리지 않는다.
+      판 아래 안내.
+      늘 자리를 비워 두면(min-height) 아무 일도 없는 동안 36px이 그냥 빈다.
+      겹쳐 두면 자리를 먹지 않으면서, 뜰 때 지도나 판이 밀리지도 않는다.
     */}
-    <div className="mt-3 flex min-h-6 flex-col items-center gap-1">
+    <div className="pointer-events-none absolute top-full right-0 left-0 mt-2 flex flex-col items-center gap-1">
       {revealed && (
         <span className="font-mono text-sm text-dim" role="status">
           오답노트에 담았습니다

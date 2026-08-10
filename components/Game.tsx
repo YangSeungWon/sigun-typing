@@ -835,7 +835,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                     onClick={onHintPressed}
                     className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
                   >
-                    초성 힌트
+                    힌트
                     <span className="ml-1.5 font-mono text-sm text-dim">
                       +{(config.hintPenaltyMs ?? 0) / 1000}초
                     </span>
@@ -865,12 +865,19 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   "표지판을 눌러 계속 입력하세요"
                 ) : (
                   <>
-                    <KeyHint keys="Space">제출</KeyHint>
+                    {/*
+                      제출은 여기서 말하지 않는다. 판 오른쪽 화살표가 이미
+                      그 자리에서 말하고 있고, 같은 말을 두 곳에서 하면
+                      읽어야 할 것만 늘어난다.
+
+                      "초성 힌트"도 "힌트"로 줄인다 — 눌러 보면 초성이
+                      뜨므로 시스템 용어를 미리 가르칠 이유가 없다.
+                    */}
                     {config.allowHint && (
                       <KeyHint keys="Tab">
                         {state.hintShown
                           ? "한 번 더 누르면 정답"
-                          : `초성 힌트 · +${(config.hintPenaltyMs ?? 0) / 1000}초`}
+                          : `힌트 +${(config.hintPenaltyMs ?? 0) / 1000}초`}
                       </KeyHint>
                     )}
                     {config.allowSkip && <KeyHint keys="Esc">모르겠어요</KeyHint>}

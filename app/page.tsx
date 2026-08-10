@@ -39,7 +39,6 @@ export default async function Home() {
     name: pick.name,
     aliases: pick.aliases ?? [],
   };
-  const placeCount = COURSES.reduce((n, c) => n + c.regions.length, 0);
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-10 px-6 py-14">
@@ -97,9 +96,6 @@ export default async function Home() {
       </nav>
 
       <footer className="mt-auto flex flex-col gap-2 border-t border-concrete-deep pt-6 font-mono text-xs text-dim">
-        <span>
-          코스 {COURSES.length}개 · 지역 {placeCount}곳
-        </span>
         <span>
           행정구역 데이터 기준 {DATA_VINTAGE.year} · {DATA_VINTAGE.boundarySource}
         </span>

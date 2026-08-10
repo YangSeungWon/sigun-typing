@@ -136,6 +136,9 @@ export function ResultCard({
         </p>
       )}
 
+      {/* 전보다 나아졌는가. 성적 바로 아래에 붙어야 견줄 수 있다. */}
+      {bestSlot}
+
       {/*
         판이 끝난 직후 가장 센 충동은 "한 번 더"다. 다만 못 맞힌 곳이 있으면
         그쪽이 먼저다 — 열일곱 중 셋을 몰랐는데 열일곱을 다시 도는 것보다
@@ -153,16 +156,7 @@ export function ResultCard({
         }`}
       >
         {reviewSlot ? "전체 다시 하기" : "한 번 더"}
-        {!reviewSlot && emphasis === "time" && score.completed > 0 && (
-          <span className="ml-2 font-mono text-base text-paint/80">
-            {formatPrecise(score.elapsedMs)} 깨기
-          </span>
-        )}
       </button>
-
-      {bestSlot}
-      {shareSlot}
-      {submitSlot}
 
       {missed.length > 0 && (
         /*
@@ -216,17 +210,22 @@ export function ResultCard({
             variant="route"
             className="h-40 w-auto sm:h-52"
           />
-          <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-sm text-dim">
-            {/* 색만으로 설명하면 색을 구분하기 어려운 사람에게는 아무 말도 아니다. */}
-            <Legend color="var(--color-sign)" label={`맞힘 ${score.completed}`} />
-            {missed.some((r) => r.skipped) && (
+          {/*
+            한 종류밖에 없으면 그건 범례가 아니라 설명문이다. 다 맞힌 판에서
+            초록이 무엇인지 알려 줄 이유가 없다 — 지도 자체가 결과다.
+            섞였을 때만, 두 상태를 나란히 놓는다. 색만으로 가르면 색을
+            구분하기 어려운 사람에게는 아무 말도 아니므로 빗금도 함께 쓴다.
+          */}
+          {missed.some((r) => r.skipped) && (
+            <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-sm text-dim">
+              <Legend color="var(--color-sign)" label={`맞힘 ${score.completed}`} />
               <Legend
                 hatched
                 color="var(--color-alert)"
-                label={`못 맞힘 ${missed.filter((r) => r.skipped).length}`}
+                label={`다시 볼 곳 ${missed.filter((r) => r.skipped).length}`}
               />
-            )}
-          </span>
+            </span>
+          )}
         </div>
       )}
 
@@ -259,14 +258,40 @@ export function ResultCard({
         </div>
       </details>
 
-      {nextSlot}
-
       <Link
         href={coursesHref}
         className="rounded-lg border border-concrete-deep px-5 py-3 text-center font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         다른 코스
       </Link>
+
+      {/*
+        자랑과 등록은 여기까지 내려온다.
+
+        판을 끝낸 사람의 다음 행동은 대개 "한 번 더"이고, 남에게 보이는 일은
+        그 다음이다. 다섯 개의 버튼을 같은 크기로 늘어놓으면 다 끝낸 순간에
+        메뉴를 다시 읽게 된다. 선을 하나 긋고 아래로 내리면, 하려는 사람은
+        그대로 하고 안 할 사람은 눈을 주지 않아도 된다.
+
+        경쟁이 축인 모드에서는 순서를 뒤집는다 — 타임어택을 한 사람에게
+        먼저 필요한 것은 공유가 아니라 순위다.
+      */}
+      {(shareSlot || submitSlot || nextSlot) && (
+        <div className="flex flex-col gap-3 border-t border-concrete-deep pt-5">
+          {emphasis === "count" ? (
+            <>
+              {submitSlot}
+              {shareSlot}
+            </>
+          ) : (
+            <>
+              {shareSlot}
+              {submitSlot}
+            </>
+          )}
+          {nextSlot}
+        </div>
+      )}
     </div>
   );
 }

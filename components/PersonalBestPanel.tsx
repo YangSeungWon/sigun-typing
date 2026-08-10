@@ -56,49 +56,46 @@ export function PersonalBestPanel({
 
   const renewed = !previous || isBetter(score, previous);
 
+  /*
+   * 숫자를 되풀이하지 않는다. **의미만 더한다.**
+   *
+   * 바로 위 기록 카드에 이 판의 시간이 크게 적혀 있다. 여기서 같은 숫자를
+   * 한 번 더 적으면 화면에 같은 값이 세 번 나오면서(카드·이 줄·버튼) 무엇을
+   * 봐야 하는지가 흐려진다. 첫 판에 알려 줄 것은 "이게 네 첫 기록이다"
+   * 하나뿐이고, 그 다음부터는 "전보다 나아졌는가"뿐이다.
+   */
   if (!previous) {
     return (
-      <p className="rounded-lg border border-sign/40 bg-sign/10 px-4 py-3 font-mono text-base text-ink">
-        첫 기록 — {formatPrecise(score.elapsedMs)}
-      </p>
+      <p className="text-center font-mono text-base text-dim">첫 기록</p>
     );
   }
+
+  // 완주 수가 다르면 시간을 견줄 수 없다. 서로 다른 문제를 푼 셈이다.
+  const comparable = previous.completed === score.completed;
 
   if (!renewed) {
-    const gap = score.elapsedMs - previous.elapsedMs;
+    const gap = (score.elapsedMs - previous.elapsedMs) / 1000;
     return (
-      <p className="rounded-lg border border-concrete-deep px-4 py-3 font-mono text-base text-dim">
-        내 최고 기록 {formatPrecise(previous.elapsedMs)}
-        {previous.completed === score.completed && gap > 0 && (
-          <span className="text-ink"> · +{(gap / 1000).toFixed(2)}초</span>
-        )}
+      <p className="text-center font-mono text-base text-dim">
+        {comparable && gap > 0
+          ? `내 최고 기록보다 ${gap.toFixed(2)}초 느림`
+          : `내 최고 기록 ${formatPrecise(previous.elapsedMs)}`}
       </p>
     );
   }
 
-  const gained = previous.elapsedMs - score.elapsedMs;
+  const gained = (previous.elapsedMs - score.elapsedMs) / 1000;
   return (
-    <div
-      className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-4 py-3"
-      role="status"
-    >
-      <span className="font-mono text-sm tracking-[0.18em] text-sign uppercase">
-        개인 최고 기록 경신
-      </span>
-      <span className="font-mono text-base text-ink">
-        {formatPrecise(previous.elapsedMs)} → {formatPrecise(score.elapsedMs)}
-        {/* 완주 수가 늘어난 갱신에서는 시간 차이가 의미가 없다. */}
-        {previous.completed === score.completed && gained > 0 && (
-          <span className="ml-2 font-semibold text-sign">
-            −{(gained / 1000).toFixed(2)}초
-          </span>
-        )}
-      </span>
-      {previous.completed !== score.completed && (
-        <span className="font-mono text-sm text-dim">
-          완주 {previous.completed} → {score.completed}
-        </span>
-      )}
-    </div>
+    /*
+     * 상자를 두르지 않는다. 이건 누르는 것이 아니라 읽는 한 줄인데, 테두리를
+     * 치면 바로 아래 "한 번 더"와 같은 무게로 보여 무엇이 다음 행동인지가
+     * 흐려진다.
+     */
+    <p className="text-center font-mono text-base text-ink" role="status">
+      <span className="font-semibold text-sign">새 최고 기록</span>
+      {comparable && gained > 0
+        ? ` · ${gained.toFixed(2)}초 단축`
+        : ` · 완주 ${previous.completed} → ${score.completed}`}
+    </p>
   );
 }

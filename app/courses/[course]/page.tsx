@@ -16,10 +16,11 @@ export function generateStaticParams() {
  * 찾지 않는다. 그 사람에게 필요한 건 목록과 지도이고, 그걸 읽다가 바로
  * 게임으로 들어가게 하는 것이 이 페이지의 일이다.
  *
- * 지명을 다 적어 두는 것이 게임의 답을 흘리는 것 아닌가 — 아니다.
- * 여기는 게임 화면이 아니라 자료 화면이고, 애초에 이 목록을 찾으러 온
- * 사람에게 목록을 감추면 페이지가 존재할 이유가 없다. 게임 쪽은 순서를
- * 매번 섞으므로 목록을 외워도 지도를 못 읽으면 못 맞힌다.
+ * 다만 지명 목록은 **접어 둔다.** 본편이 "지도만 보고 떠올리기"인데 시작
+ * 버튼 옆에 답이 다 적혀 있으면 규칙이 스스로를 부정한다. 검색으로 목록을
+ * 찾아온 사람은 한 번 눌러서 펼치면 되고, 게임을 하러 온 사람은 실수로
+ * 답을 보게 되지 않는다. 문구를 "미리 보기"가 아니라 "지역 목록 보기"로
+ * 둔 것도 같은 이유다 — 미리 보기는 게임 전에 보는 것이 권장되는 말이다.
  */
 export default async function CoursePage({ params }: PageProps<"/courses/[course]">) {
   const { course: courseId } = await params;
@@ -65,11 +66,14 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
         </div>
       )}
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">
-          {course.name} 목록 · {course.regions.length}곳
-        </h2>
-        <ol className="flex flex-wrap gap-2">
+      <details className="group flex flex-col gap-4 rounded-xl border border-concrete-deep px-5 py-3">
+        <summary className="cursor-pointer list-none text-base text-dim marker:content-none">
+          <span className="flex items-center justify-between gap-4">
+            지역 목록 보기 · {course.regions.length}곳
+            <span className="transition-transform group-open:rotate-90">›</span>
+          </span>
+        </summary>
+        <ol className="flex flex-wrap gap-2 pt-3">
           {course.regions.map((region) => (
             <li
               key={region.code}
@@ -79,11 +83,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
             </li>
           ))}
         </ol>
-        <p className="text-sm text-dim">
-          순서는 가나다순이 아니라 인접한 지역을 따라가는 경로입니다.
-          게임에서는 매번 다른 순서로 나옵니다.
-        </p>
-      </section>
+      </details>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold">이 코스로 할 수 있는 것</h2>

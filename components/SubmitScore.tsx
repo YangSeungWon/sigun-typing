@@ -114,7 +114,8 @@ export function SubmitScore({
           type="button"
           onClick={send}
           disabled={status.kind === "sending"}
-          className="rounded-lg border border-concrete-deep bg-paint px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          // 줄바꿈을 막는다. 좁은 칸에서 "랭킹 등 록"으로 접혔다.
+          className="rounded-lg border border-concrete-deep bg-paint px-5 py-3 font-medium whitespace-nowrap text-ink transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           {status.kind === "sending" ? "올리는 중" : "랭킹 등록"}
         </button>

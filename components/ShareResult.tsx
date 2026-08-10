@@ -80,7 +80,11 @@ export function ShareResult({ courseId, courseName, mode, score }: ShareResultPr
     <button
       type="button"
       onClick={share}
-      className="rounded-lg border border-sign bg-sign/10 px-5 py-3 font-medium text-ink transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      /*
+       * 선 아래에서는 아무것도 "한 번 더"와 경쟁하지 않아야 한다. 초록 테두리는
+       * 이 화면에서 주 행동의 표시다.
+       */
+      className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
       {copied ? "복사했습니다 — 붙여 넣어 보내세요" : "내 기록으로 도전장 보내기"}
     </button>

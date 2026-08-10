@@ -1,11 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
 import { track } from "@/lib/analytics/track";
 import type { ModeId, Score } from "@/lib/game/types";
-import { loadMistakes } from "@/lib/score/mistakes";
-import { useIsHydrated } from "@/lib/useIsHydrated";
 
 interface NextChallengeProps {
   courseId: string;
@@ -20,76 +17,28 @@ interface NextChallengeProps {
  * 핵심이다 — 이름 보고 쳤으면 이제 이름 없이, 본편에서 틀렸으면 오답만.
  */
 export function NextChallenge({ courseId, mode, score }: NextChallengeProps) {
-  const hydrated = useIsHydrated();
-
-  const missCount = useMemo(
-    () => (hydrated ? loadMistakes(courseId).length : 0),
-    [hydrated, courseId],
-  );
-
-  const go = (toMode: string) =>
-    track({ name: "mode_switch", courseId, mode, toMode });
-
-  // 틀린 게 있으면 그것부터가 다음 할 일이다.
-  if (mode !== "learn" && missCount > 0) {
-    return (
-      <Link
-        href={`/review/${courseId}`}
-        onClick={() => go("review")}
-        className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-5 py-4 transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        <span className="text-lg font-medium">틀린 {missCount}곳, 다시 풀어볼까요?</span>
-        <span className="font-mono text-sm text-dim">오답만 연습 →</span>
-      </Link>
-    );
-  }
-
-  // 연습을 마쳤으면 이제 본편이다.
-  if (mode === "learn" && score.completed > 0) {
-    return (
-      <Link
-        href={`/play/map/${courseId}?from=result_cta`}
-        onClick={() => go("map")}
-        className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-5 py-4 transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        <span className="text-lg font-medium">이제 이름 없이도 가능할까요?</span>
-        <span className="font-mono text-sm text-dim">지도 타이핑 도전 →</span>
-      </Link>
-    );
-  }
-
   /*
-   * 힌트를 짚어 가며 다 맞혔다면, 다음 칸은 시간 압박이 아니라
-   * "이제 진짜 아는가"다. 힌트 없이 한 번 더 하는 쪽이 자연스럽다.
+   * 사다리는 한 칸만 남긴다 — **따라치기 → 지도 타이핑**.
+   *
+   * 예전에는 결과마다 다음 모드를 권했다(틀렸으면 오답 연습, 힌트를 썼으면
+   * 실력 테스트, 깨끗하게 끝냈으면 타임어택). 그런데 오답 연습은 이미 결과
+   * 화면 맨 위에 큰 버튼으로 있어 같은 말이 두 번이었고, 나머지 둘은 판을
+   * 끝낼 때마다 "다음은 이걸 하세요"가 붙는 셈이라 제품이 사람을 계속
+   * 밀어내는 느낌이 된다. 모드는 위쪽 코스 화면에서 언제든 고를 수 있다.
+   *
+   * 따라치기만 예외로 두는 이유: 그 모드는 그 자체가 목적이 아니라 본편을
+   * 위한 준비다. 이름을 보며 다 쳐 본 사람에게 "이제 이름 없이"는 권유가
+   * 아니라 그 연습의 결론이다.
    */
-  if (mode === "map" && score.completed === score.total && score.hintsUsed > 0) {
-    return (
-      <Link
-        href={`/play/test/${courseId}?from=result_cta`}
-        onClick={() => go("test")}
-        className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-5 py-4 transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        <span className="text-lg font-medium">
-          {score.hintsUsed}곳에서 힌트를 썼어요
-        </span>
-        <span className="font-mono text-sm text-dim">힌트 없이 실력 테스트 →</span>
-      </Link>
-    );
-  }
+  if (mode !== "learn" || score.completed === 0) return null;
 
-  // 힌트 없이 깨끗하게 끝냈으면 다음 칸은 시간 압박이다.
-  if (mode === "map" && score.completed === score.total) {
-    return (
-      <Link
-        href={`/play/timeattack/${courseId}?from=result_cta`}
-        onClick={() => go("timeattack")}
-        className="flex flex-col gap-1 rounded-lg border border-sign bg-sign/10 px-5 py-4 transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        <span className="text-lg font-medium">60초 안에도 가능할까요?</span>
-        <span className="font-mono text-sm text-dim">타임어택 도전 →</span>
-      </Link>
-    );
-  }
-
-  return null;
+  return (
+    <Link
+      href={`/play/map/${courseId}?from=result_cta`}
+      onClick={() => track({ name: "mode_switch", courseId, mode, toMode: "map" })}
+      className="rounded-lg border border-concrete-deep px-5 py-3 text-center text-base text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+    >
+      이제 이름 없이 — 지도 타이핑 →
+    </Link>
+  );
 }

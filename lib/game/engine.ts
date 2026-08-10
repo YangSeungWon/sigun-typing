@@ -170,6 +170,28 @@ export function tick(state: GameState, now: number): GameState {
 export function setInput(state: GameState, text: string, now: number): GameState {
   if (state.status !== "playing") return state;
 
+  /*
+   * 스페이스는 제출이다.
+   *
+   * 키를 가로채지 않고 **입력에 들어온 공백을 보고** 판단한다. 한글 IME에서
+   * 스페이스는 조합을 끝내는 키이기도 해서, keydown을 가로채면 아직 조합
+   * 중인 마지막 글자가 확정되기 전에 제출이 나간다. 값에 공백이 들어온
+   * 시점에는 조합이 이미 끝나 있다.
+   *
+   * 공백은 타수로 세지 않는다. 엔터로 내는 사람과 값이 달라지면 같은 실력이
+   * 다른 타수로 찍히고, 서버가 다시 계산한 값과도 어긋난다. 지역 이름에
+   * 공백이 든 것은 하나도 없으므로 이 규칙이 정답을 가로막는 일은 없다.
+   */
+  if (/\s/.test(text)) {
+    /*
+     * 공백을 떼어 낸 값으로 한 번 더 들어갔다 나온다. 그래야 마지막 글자까지
+     * 타수에 들어간다 — 값이 통째로 들어오는 경우(붙여넣기, 자동완성, 조합을
+     * 한 번에 확정하는 자판)에 그 글자들이 통째로 빠지고 타수가 0이 된다.
+     * 떼어 낸 값에는 공백이 없으므로 여기로 다시 오지 않는다.
+     */
+    return submit(setInput(state, text.replace(/\s+/g, ""), now), now);
+  }
+
   const item = state.items[state.index];
   const count = keystrokeCount(text);
   const delta = count - state.lastKeystrokeCount;
@@ -186,16 +208,20 @@ export function setInput(state: GameState, text: string, now: number): GameState
   };
 
   /*
-   * 여기서 오답을 세는 것은 `live` 모드뿐이다.
+   * 다 쳤다고 저절로 넘어가지 않는다.
    *
-   * 회상 모드에서 치는 도중에 판정하면 두 가지가 무너진다. 답을 다 떠올리기
-   * 전에 "그 초성은 아니다"를 알려 주게 되고(그건 공짜 힌트다), 틀린 답을
-   * 끝까지 쳐 볼 수가 없어 무엇으로 착각했는지가 남지 않는다.
-   * 그쪽 판정은 submit()이 한다.
+   * 예전에는 정답과 일치하는 순간 넘겼다. 빠르기는 한데, `전남`을 칠 때
+   * `전나`에서 ㅁ을 누르는 그 순간 화면이 바뀐다 — 조합이 끝나기도 전에
+   * 판이 손을 잡아채는 느낌이라 리듬이 끊긴다. 게다가 맞으면 키가 필요
+   * 없고 틀리면 필요한, 두 개의 다른 흐름이 생긴다.
+   *
+   * 이제 제출은 언제나 사람이 한다(스페이스·엔터). 넘어가는 순간을 내가
+   * 정하므로 화면이 예고 없이 바뀌는 일이 없다.
    */
-  if (state.config.judge === "enter") {
-    return matchesAnswer(item, text) ? commitItem(next, now, false) : next;
-  }
+
+  // 치는 도중의 오답 표시는 답이 화면에 있는 모드에서만. 가린 모드에서
+  // 색이 바뀌면 그게 곧 답을 알려 주는 셈이라 회상 게임이 성립하지 않는다.
+  if (state.config.judge === "enter") return next;
 
   // 경로를 벗어난 순간에만 오류 1회. 틀린 채로 계속 치는 동안 중복 집계하지 않는다.
   if (!ok && !state.offTrack) {
@@ -209,12 +235,11 @@ export function setInput(state: GameState, text: string, now: number): GameState
     next = { ...next, offTrack: false };
   }
 
-  if (matchesAnswer(item, text)) return commitItem(next, now, false);
   return next;
 }
 
 /**
- * 답을 제출한다(엔터).
+ * 답을 제출한다. 스페이스와 엔터가 같은 일을 한다.
  *
  * 맞으면 다음으로, 틀리면 오답 1회로 적고 입력을 비운다. 판은 그 자리에
  * 그대로 있으므로 다시 떠올려 볼 수 있다 — 회상 게임에서 한 번 틀린 것은
@@ -224,7 +249,7 @@ export function setInput(state: GameState, text: string, now: number): GameState
  * 쓰이고, 그게 이 게임이 만들어 낼 수 있는 가장 값진 데이터다.
  */
 export function submit(state: GameState, now: number): GameState {
-  if (state.status !== "playing" || state.config.judge !== "enter") return state;
+  if (state.status !== "playing") return state;
 
   const text = state.input.trim();
   // 빈 채로 엔터를 치는 것은 실수다. 벌을 주지 않는다.
@@ -243,11 +268,18 @@ export function submit(state: GameState, now: number): GameState {
     itemKeystrokes: 0,
     lastKeystrokeCount: 0,
     offTrack: false,
-    itemErrors: state.itemErrors + 1,
+    /*
+     * 답이 화면에 있는 모드에서는 여기서 또 세지 않는다. 틀린 답은 반드시
+     * 정답 경로를 벗어나며 지나왔고 그 순간에 이미 한 번 세었다. 두 번 세면
+     * 같은 실수가 두 개가 된다.
+     */
+    itemErrors: state.itemErrors + (state.config.judge === "enter" ? 1 : 0),
     itemWrong: [...state.itemWrong, text],
     rejectedAt: now,
-    // 시간 제한이 있는 모드에서는 오답이 시간을 깎는다.
-    penaltyMs: state.penaltyMs + (state.config.penaltyMs ?? 0),
+    // 시간 제한이 있는 모드에서는 오답이 시간을 깎는다. 이유는 위와 같다.
+    penaltyMs:
+      state.penaltyMs +
+      (state.config.judge === "enter" ? (state.config.penaltyMs ?? 0) : 0),
   };
 }
 

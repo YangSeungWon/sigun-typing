@@ -23,7 +23,11 @@ const ITEMS: GameItem[] = [
   { id: "41190", answer: "부천" },
 ];
 
-/** 한 글자씩(자모 단위가 아닌 완성 글자 단위) 쳐 넣는 헬퍼. */
+/**
+ * 한 글자씩(자모 단위가 아닌 완성 글자 단위) 쳐 넣고 스페이스로 제출한다.
+ *
+ * 제출까지가 한 항목이다 — 다 쳤다고 저절로 넘어가지 않는다.
+ */
 function type(state: GameState, text: string, startAt = 0, stepMs = 100): GameState {
   // 정답 직후에는 전환 상태다. 화면에서는 다음 프레임의 tick이 풀어 준다.
   let s = settle(state);
@@ -31,7 +35,7 @@ function type(state: GameState, text: string, startAt = 0, stepMs = 100): GameSt
   for (let i = 0; i < chars.length; i++) {
     s = setInput(s, chars.slice(0, i + 1).join(""), startAt + (i + 1) * stepMs);
   }
-  return s;
+  return setInput(s, `${text} `, startAt + (chars.length + 1) * stepMs);
 }
 
 describe("createGame", () => {
@@ -307,7 +311,8 @@ describe("초성 힌트", () => {
     // 한 글자당 100ms씩이므로 두 글자면 마지막 타건은 5_700이다.
     g = type(g, answer, 5_500);
     expect(answer.length).toBe(2);
-    expect(g.results[0].hintToAnswerMs).toBe(2_700);
+    // 두 글자 + 제출까지 세 번. 제출이 정답의 일부이므로 그 시간도 들어간다.
+    expect(g.results[0].hintToAnswerMs).toBe(2_800);
   });
 
   it("힌트를 보고도 건너뛴 항목에는 남지 않는다", () => {
@@ -420,7 +425,7 @@ describe("엔터 제출", () => {
     const answer = g.items[0].answer;
     const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
     g = submit(setInput(g, wrong, 100), 200);
-    g = setInput(g, answer, 300);
+    g = submit(setInput(g, answer, 300), 400);
     expect(g.results[0].attempts).toBe(2);
     expect(g.results[0].wrongAnswers).toEqual([wrong]);
     expect(g.results[0].skipped).toBe(false);
@@ -428,15 +433,39 @@ describe("엔터 제출", () => {
 
   it("한 번에 맞히면 시도는 1이고 오답 목록은 없다", () => {
     let g = recall();
-    g = setInput(g, g.items[0].answer, 100);
+    g = submit(setInput(g, g.items[0].answer, 100), 200);
     expect(g.results[0].attempts).toBe(1);
     expect(g.results[0].wrongAnswers).toBeUndefined();
   });
 
-  it("정답은 엔터 없이도 넘어간다 — 엔터는 틀린 사람만 쓰게 된다", () => {
+  /*
+   * 다 쳤다고 저절로 넘어가지 않는다. `전남`을 칠 때 ㅁ을 누르는 순간
+   * 화면이 바뀌면, 조합이 끝나기도 전에 판이 손을 잡아채는 느낌이 된다.
+   */
+  it("다 쳐도 제출하기 전에는 넘어가지 않는다", () => {
     let g = recall();
     g = setInput(g, g.items[0].answer, 100);
+    expect(g.index).toBe(0);
+    expect(g.results).toHaveLength(0);
+    g = submit(g, 200);
     expect(g.index).toBe(1);
+  });
+
+  it("스페이스도 제출이다 — 타수로는 세지 않는다", () => {
+    let g = recall();
+    const answer = g.items[0].answer;
+    g = setInput(g, answer, 100);
+    const before = g.lastKeystrokeCount;
+    g = setInput(g, `${answer} `, 200);
+    expect(g.index).toBe(1);
+    expect(g.results[0].keystrokes).toBe(before);
+  });
+
+  it("빈 칸에서 스페이스를 눌러도 아무 일도 없다", () => {
+    let g = recall();
+    g = setInput(g, " ", 100);
+    expect(g.index).toBe(0);
+    expect(g.itemErrors).toBe(0);
   });
 
   it("빈 채로 엔터를 쳐도 벌하지 않는다", () => {
@@ -446,13 +475,15 @@ describe("엔터 제출", () => {
     expect(g).toBe(before);
   });
 
-  it("따라치기에서는 엔터가 아무 일도 하지 않는다", () => {
+  it("따라치기도 제출로 넘어가되 오답을 두 번 세지 않는다", () => {
     let g = start(createGame(ITEMS, MODES.learn, 0, 1), 0);
     g = setInput(g, "쿄", 100);
-    const before = g;
-    expect(submit(g, 200)).toBe(before);
-    // 대신 치는 즉시 오답으로 센다 — 답이 화면에 있으니 그게 맞다.
+    // 답이 화면에 있는 모드에서는 치는 즉시 오답으로 센다.
     expect(g.itemErrors).toBe(1);
+    g = submit(g, 200);
+    // 제출에서 또 세면 같은 실수가 두 개가 된다.
+    expect(g.itemErrors).toBe(1);
+    expect(g.itemWrong).toEqual(["쿄"]);
   });
 
   it("오답 제출 전의 타수는 정답 타수로 치지 않는다", () => {
@@ -460,10 +491,10 @@ describe("엔터 제출", () => {
     const answer = g.items[0].answer;
     const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
     g = submit(setInput(g, wrong, 100), 200);
-    g = setInput(g, answer, 300);
+    g = submit(setInput(g, answer, 300), 400);
     // 정답에 든 타수만 남는다. 헛친 타수는 분모(친 타수)에만 남아 정확도를 낮춘다.
     expect(g.results[0].keystrokes).toBe(keystrokeCount(answer));
-    expect(score(g, 400).accuracy).toBeLessThan(1);
+    expect(score(g, 500).accuracy).toBeLessThan(1);
   });
 
   it("첫 제출에 맞힌 수가 정답률이 된다", () => {
@@ -472,8 +503,8 @@ describe("엔터 제출", () => {
     // 첫 곳만 한 번 틀리고, 나머지는 한 번에 맞힌다.
     g = submit(setInput(g, wrongFor(g.items[0].answer), 100), 200);
     for (let i = 0; i < ITEMS.length; i++) {
-      g = tick(g, 300 + i * 100);
-      g = setInput(g, g.items[g.index].answer, 300 + i * 100);
+      g = tick(g, 300 + i * 200);
+      g = submit(setInput(g, g.items[g.index].answer, 300 + i * 200), 400 + i * 200);
     }
     const s = score(g, 1_000);
     expect(s.completed).toBe(3);

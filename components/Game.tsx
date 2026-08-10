@@ -392,14 +392,12 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   }, [state.status, skipReveal]);
 
   /*
-   * 엔터로 제출한다.
-   *
-   * 정답과 정확히 일치하면 엔터를 치기 전에 이미 넘어가 있다. 그래서 이 키를
-   * 실제로 쓰게 되는 것은 **틀렸거나 확신이 없는 사람뿐**이다. 잘 아는 사람의
-   * 손놀림은 예전 그대로다.
+   * 엔터로 제출한다. 스페이스도 같은 일을 하지만 그쪽은 엔진이 값에 들어온
+   * 공백을 보고 처리한다 — 한글 IME에서 스페이스는 조합을 끝내는 키이기도
+   * 해서, 키를 가로채면 마지막 글자가 확정되기 전에 제출이 나간다.
    */
   useEffect(() => {
-    if (state.status !== "playing" || config.judge !== "enter") return;
+    if (state.status !== "playing") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
       // IME가 조합을 끝내려고 누른 엔터는 제출이 아니다. 이걸 빼면 조합 중인
@@ -410,7 +408,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.status, config.judge, submitAnswer]);
+  }, [state.status, submitAnswer]);
 
   // 모르겠어요는 Esc. 허용된 모드에서만 동작한다.
   useEffect(() => {
@@ -820,7 +818,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   한글 조합을 끝내는 데 쓰이거나 자판만 닫히기도 한다.
                   제출이 유일한 통로인 모드에서 그 키가 안 먹으면 판이 막힌다.
                 */}
-                {config.judge === "enter" && !revealing && (
+                {!revealing && (
                   <button
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
@@ -867,9 +865,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   "표지판을 눌러 계속 입력하세요"
                 ) : (
                   <>
-                    {config.judge === "enter" && (
-                      <KeyHint keys="Enter">제출</KeyHint>
-                    )}
+                    <KeyHint keys="Space">제출</KeyHint>
                     {config.allowHint && (
                       <KeyHint keys="Tab">
                         {state.hintShown

@@ -170,7 +170,7 @@ export function MultiRace({
             </TypingSurface>
 
             <p className="flex min-h-6 items-center justify-center text-sm text-dim">
-              <KeyHint keys="Enter">제출</KeyHint>
+              <KeyHint keys="Space">제출</KeyHint>
               {!state.hintShown && (
                 // 추가 시간을 물리지 않는다. 경주에서는 힌트를 여는 동안
                 // 상대가 달리는 것이 이미 값이다.

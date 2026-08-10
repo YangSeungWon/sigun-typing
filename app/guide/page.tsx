@@ -58,10 +58,10 @@ export default function GuidePage() {
       <div className="flex flex-col gap-2">
         <Fold title="키보드">
           <dl className="flex flex-col gap-3">
-            <KeyRow keys="Enter" label="제출">
-              떠오른 이름을 확정합니다. 정답이면 엔터를 치기 전에 이미
-              넘어가 있으므로, 이 키를 쓰게 되는 것은 헷갈릴 때뿐입니다.
-              틀려도 그 자리에 그대로 있고 다시 떠올려 볼 수 있습니다.
+            <KeyRow keys="Space" label="제출">
+              다 쳤으면 스페이스로 넘깁니다. 엔터도 같습니다. 저절로 넘어가지
+              않으므로 넘어가는 순간은 언제나 내가 정합니다. 틀려도 그 자리에
+              그대로 있고 다시 떠올려 볼 수 있습니다.
             </KeyRow>
             <KeyRow keys="Tab" label="힌트">
               초성을 보여 줍니다(<Kbd>의정부</Kbd> → <Kbd>ㅇㅈㅂ</Kbd>). 기록에{" "}
@@ -76,7 +76,7 @@ export default function GuidePage() {
 
         <Fold title="틀리면 어떻게 되나요">
           <p>
-            엔터로 낸 답이 틀리면 오답 한 번으로 적고 그 자리에 그대로
+            스페이스로 낸 답이 틀리면 오답 한 번으로 적고 그 자리에 그대로
             머무릅니다. 몇 번이든 다시 떠올려 볼 수 있고, 정 모르겠으면{" "}
             <Kbd>Esc</Kbd>로 정답을 보고 넘어갑니다.
           </p>

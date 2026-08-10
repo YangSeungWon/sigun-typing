@@ -208,15 +208,52 @@ ls -lh backups/
 `./backups`는 **같은 디스크에 있다.** `down -v`와 실수 삭제는 막지만 디스크가
 통째로 죽으면 백업도 함께 사라진다. 여기까지 해 둬야 진짜 백업이다.
 
-호스트 crontab에 한 줄이면 된다(다른 기기나 저장소로).
+```bash
+OFFSITE_DEST=/mnt/backup-disk/sigun        sh scripts/backup-offsite.sh
+OFFSITE_DEST=user@nas.local:/volume1/sigun sh scripts/backup-offsite.sh
+```
+
+옮기고 끝내지 않고 **저쪽에서 개수를 세어** 모자라면 실패로 끝난다. 원본은
+지우지 않는다(`--delete`를 쓰지 않는다) — 서버 쪽 보존 기간이 짧아져도 밖에
+있는 사본까지 함께 사라지면 이 사본의 존재 이유가 없어진다.
+
+호스트 crontab에 한 줄. 백업이 뜬 뒤 시각으로 잡는다.
 
 ```cron
-# 매일 새벽 4시, 어제 이후 것만 보낸다
-0 4 * * * rsync -a --delete /home/whysw/Documents/sigun-typing/backups/ backup-host:/srv/sigun-typing/
+0 6 * * * cd /srv/sigun-typing && OFFSITE_DEST=... sh scripts/backup-offsite.sh >> /var/log/sigun-offsite.log 2>&1
 ```
 
 원격이 없다면 최소한 다른 물리 디스크로 복사한다. 같은 디스크 안에서 옮기는
 것은 백업이 아니다.
+
+### 복구 예행연습
+
+백업이 매일 도는 것과 그 파일로 되살릴 수 있다는 것은 다른 이야기다. 둘
+사이의 거리는 대개 정작 필요한 날에 발견된다.
+
+```bash
+sh scripts/restore-drill.sh            # 가장 최근 백업으로
+sh scripts/restore-drill.sh <파일>     # 특정 백업으로
+```
+
+일회용 포스트그레스를 띄워 실제로 부어 넣고, 압축이 온전한지 · 복원 중
+오류가 없었는지 · **스키마가 지금 운영 DB와 같은지** · 표마다 몇 행이
+들어왔는지를 본다. 운영 DB는 읽기만 한다.
+
+행 수는 백업 이후에 쌓인 만큼 당연히 다르므로 참고로만 보고, 판정은
+스키마가 가른다 — "이 백업으로 지금 코드를 그대로 띄울 수 있는가"가 알고
+싶은 것이기 때문이다.
+
+한 달에 한 번, 그리고 **마이그레이션을 배포한 직후**에 돌린다. 스키마를
+바꾼 날은 백업과 코드가 어긋나기 가장 쉬운 날이다.
+
+> 덤프에는 소유자를 운영 계정(`sigun`)으로 돌리는 구문이 들어 있다. 빈
+> 서버에 복구할 때는 그 역할을 먼저 만들어야 한다. 예행연습 스크립트는
+> 그 한 줄을 대신 해 주지만, 손으로 복구할 때는 잊기 쉽다.
+>
+> ```sql
+> CREATE ROLE sigun LOGIN PASSWORD '...';
+> ```
 
 ### 복구
 
@@ -225,16 +262,8 @@ gunzip -c backups/sigun-<날짜>.sql.gz | \
   docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 ```
 
-덮어쓰기 전에 **빈 데이터베이스에 먼저 복구해 보고 행 수를 확인할 것.**
-복구되지 않는 백업은 없느니만 못하다.
-
-```bash
-docker compose exec -T db psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE restore_test"
-gunzip -c backups/sigun-<날짜>.sql.gz | \
-  docker compose exec -T db psql -q -U "$POSTGRES_USER" -d restore_test
-docker compose exec -T db psql -U "$POSTGRES_USER" -d restore_test -c "SELECT count(*) FROM scores"
-docker compose exec -T db psql -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE restore_test"
-```
+덮어쓰기 전에 위의 예행연습을 먼저 돌릴 것. 복구되지 않는 백업은 없느니만
+못하다.
 
 ## 공유 카드
 
@@ -340,3 +369,31 @@ docker compose logs web socket | grep 지문
 다르면 둘 다 멀쩡히 뜨지만 **멀티로 완주한 기록만 서명 오류로 거부된다.**
 가장 알아채기 어려운 형태의 고장이라 부팅 때 눈으로 대조할 수 있게 해 뒀다.
 지문은 비밀키의 SHA-256 앞 8자이며 비밀키 자체는 로그에 남지 않는다.
+
+### 방어선이 실제로 서 있는지
+
+```bash
+npm run drill:ops                                  # 로컬 컨테이너
+TARGET=https://sigun-typing.ysw.kr npm run drill:ops   # 운영
+```
+
+유닛 테스트는 규칙이 옳은지를 보고, 이건 **그 규칙이 지금 떠 있는 서버에
+붙어 있는지**를 본다. 둘은 다르다 — 라우트를 옮기거나 프록시를 손대면
+규칙은 그대로인 채 길만 비켜 갈 수 있고, 그때 유닛 테스트는 전부 초록이다.
+
+확인하는 것:
+
+| | |
+| --- | --- |
+| 이벤트 레이트리밋 | 기기당 분당 30건에서 막히고, 다른 기기는 안 막힌다 |
+| 타수 부풀리기 | 지역명에서 나오는 최대 타수를 넘으면 거부 |
+| 기계 리듬 | 타건 간격이 지나치게 일정하면 거부 |
+| 불가능한 속도 | 사람이 낼 수 없는 간격이면 거부 |
+| 토큰 없음·코스 바꿔치기·모드 바꿔치기 | 각각 거부 |
+| **정직한 기록** | **받아 준다** |
+
+마지막 줄이 없으면 "전부 막는 서버"도 위의 검사를 모두 통과한다. 방어선이
+아니라 벽이 되어 있어도 모른다.
+
+운영에 대고 돌리면 닉네임 `예행연습`으로 기록이 한 줄 남는다. 지우는
+명령은 실행이 끝나면서 화면에 나온다.

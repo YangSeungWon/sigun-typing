@@ -85,8 +85,8 @@ export function focusScale(
   const box = mainPathBox(region.d);
   if (box.width <= 0 || box.height <= 0) return 1;
   const raw = Math.min(
-    (view.width * (options.fill ?? 0.34)) / box.width,
-    (view.height * (options.fill ?? 0.34)) / box.height,
+    (view.width * (options.fill ?? 0.42)) / box.width,
+    (view.height * (options.fill ?? 0.42)) / box.height,
   );
   return Math.min(Math.max(raw, 1), options.maxScale ?? 4);
 }
@@ -98,7 +98,14 @@ export function focusTransform(
 ): string {
   if (!region) return "";
 
-  const fill = options.fill ?? 0.34;
+  /*
+   * 지역이 화면에서 차지할 비율.
+   *
+   * 0.34에서 올렸다. 형태와 인접 관계를 읽는 것이 이 게임의 일인데, 타깃이
+   * 작으면 그걸 읽기 전에 "어디를 봐야 하지"부터 찾게 된다. 주변이 잘리지
+   * 않는 선에서 최대한 크게 잡는다.
+   */
+  const fill = options.fill ?? 0.42;
   const maxScale = options.maxScale ?? 4;
 
   const box = mainPathBox(region.d);

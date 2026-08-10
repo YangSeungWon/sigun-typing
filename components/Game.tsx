@@ -479,19 +479,55 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   return (
     <main className="flex flex-1 flex-col px-6 py-2 sm:py-4">
       {/*
-        모바일에서는 플레이 중 헤더를 감춘다. 키보드가 화면의 절반을 가져가는
-        상황에서 세로 한 줄은 지도 한 줄과 같은 값이다. 나가는 길은 결과
-        화면과 브라우저 뒤로 가기가 있다.
+        플레이 중 화면 위쪽 정보는 한 줄뿐이다.
+        나가는 길·코스·진행·시간·미니맵이 좌상단과 우상단에 흩어져 있으면
+        시선이 갈린다. 한 줄로 묶으면 그 아래 지도가 무대 전체를 쓴다.
       */}
-      <header className="mx-auto hidden w-full max-w-3xl items-center justify-between font-mono text-sm tracking-[0.12em] text-dim uppercase sm:flex">
+      <header className="mx-auto flex w-full max-w-3xl items-center gap-3 font-mono text-sm tabular-nums text-dim">
         <Link
           href={`/play/${mode}`}
+          aria-label="코스 선택으로"
           className="transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          ← 코스 선택
+          <span aria-hidden="true">←</span>
+          <span className="ml-2 hidden tracking-[0.12em] uppercase sm:inline">
+            코스 선택
+          </span>
         </Link>
+
         {/* 시작 화면에는 같은 이름이 큰 글씨로 있다. 두 번 쓸 이유가 없다. */}
-        <span className="text-ink">{state.status === "ready" ? "" : course.name}</span>
+        <span className="hidden truncate text-ink sm:inline">
+          {state.status === "ready" ? "" : course.name}
+        </span>
+
+        <span className="ml-auto flex items-center gap-3">
+          {state.status !== "ready" && countdown === null && (
+            <>
+              <span>
+                {state.index + (revealing ? 0 : 1)} / {state.items.length}
+              </span>
+              <span>
+                {Number.isFinite(remaining)
+                  ? formatClock(remaining)
+                  : formatClock(score.elapsedMs)}
+              </span>
+              {streak >= 3 && <span className="text-sign">무오타 ×{streak}</span>}
+              {geo && showMiniMap && (
+                // 배경을 깔아 준다. 같은 회색 위에 얹으면 이 크기에서는
+                // 지도가 아니라 얼룩으로 보인다.
+                <span className="rounded-md border border-concrete-deep bg-paint/70 px-1.5 py-1">
+                  <MiniMap
+                    geo={geo}
+                    currentCode={revealing ? revealing.id : current?.id}
+                    passedCodes={passedCodes}
+                    className="h-9 w-auto sm:h-11"
+                  />
+                </span>
+              )}
+            </>
+          )}
+          <SoundToggle />
+        </span>
       </header>
 
       {/*
@@ -587,38 +623,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 이름을 보여 주는 모드에서도 맞힐 때마다 칠해지는 진행 시각화다.
                 지도 없이 이름만 따라 치면 그냥 타자연습이 된다.
               */}
-              {/*
-                진행도·시간·미니맵을 한 줄에 모은다.
-                미니맵을 지도 위에 얹었더니 정작 지도를 가렸다. 지도 밖으로
-                내보내면 겹칠 일이 없고, 세로도 한 줄이면 된다.
-              */}
-              <div className="flex w-full items-center justify-between gap-3 font-mono text-sm tabular-nums text-dim">
-                <span>
-                  {state.index + (revealing ? 0 : 1)} / {state.items.length}
-                </span>
-                <div className="flex items-center gap-3">
-                  {geo && showMiniMap && (
-                    // 배경을 깔아 준다. 같은 회색 위에 얹으면 이 크기에서는
-                    // 지도가 아니라 얼룩으로 보인다.
-                    <span className="rounded-md border border-concrete-deep bg-paint/70 px-1.5 py-1">
-                      <MiniMap
-                        geo={geo}
-                        currentCode={revealing ? revealing.id : current.id}
-                        passedCodes={passedCodes}
-                        className="h-11 w-auto sm:h-14"
-                      />
-                    </span>
-                  )}
-                  <span className="sm:hidden">
-                    {Number.isFinite(remaining)
-                      ? formatClock(remaining)
-                      : formatClock(score.elapsedMs)}
-                  </span>
-                  <SoundToggle />
-                  {streak >= 3 && <span className="text-sign">무오타 ×{streak}</span>}
-                </div>
-              </div>
-
               {geo && (
                 <div className="relative w-full overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
                 <RegionMap
@@ -633,7 +637,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   variant={config.reveal ? "route" : "hint"}
                   // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
                   // 접혀 주행 중에 스크롤해야 한다.
-                  className="mx-auto h-[29vh] max-h-96 min-h-36 w-auto sm:h-[38vh]"
+                  className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto sm:h-[44vh]"
                 />
                 </div>
               )}
@@ -734,15 +738,20 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 시간 제한이 있는 모드는 예외다. 거기서는 남은 시간이 곧 게임이고,
                 타수도 성적의 일부다.
               */}
-              <div className="hidden w-full sm:block">
-                <Odometer
-                  cpm={score.cpm}
-                  accuracy={score.accuracy}
-                  elapsedMs={score.elapsedMs}
-                  remainingMs={remaining}
-                  compact={config.timeLimitMs === undefined}
-                />
-              </div>
+              {/*
+                시간은 이미 위 한 줄에 있다. 제한 시간이 있는 모드에서만
+                큰 숫자로 한 번 더 보여 준다 — 거기서는 남은 시간이 곧 게임이다.
+              */}
+              {config.timeLimitMs !== undefined && (
+                <div className="hidden w-full sm:block">
+                  <Odometer
+                    cpm={score.cpm}
+                    accuracy={score.accuracy}
+                    elapsedMs={score.elapsedMs}
+                    remainingMs={remaining}
+                  />
+                </div>
+              )}
             </>
           )
         )}

@@ -7,7 +7,16 @@ import type { Course } from "@/data/types";
 import { MODES, MODE_LABELS } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { useGame } from "@/lib/game/useGame";
-import { playComplete, playCorrect, primeSound } from "@/lib/sound";
+import {
+  playComplete,
+  playCorrect,
+  playGiveUp,
+  playHint,
+  playStart,
+  playTick,
+  playUrgent,
+  primeSound,
+} from "@/lib/sound";
 import { romanizeRegion } from "@/lib/hangul/romanize";
 import { requestToken } from "@/lib/score/client";
 import { useIsHydrated } from "@/lib/useIsHydrated";
@@ -145,6 +154,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     const timer = setTimeout(() => {
       if (countdown <= 1) {
         setCountdown(null);
+        playStart();
         begin();
       } else {
         setCountdown(countdown - 1);
@@ -217,8 +227,45 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
    * 오답이나 조합 중에는 울리지 않는다.
    */
   useEffect(() => {
-    if (advancedAt > 0) playCorrect();
+    // 포기해도 항목은 확정되므로 advancedAt이 움직인다. 그때는 울리지 않는다 —
+    // 모르겠다고 넘긴 자리에서 맞힘 소리가 나면 신호가 거짓말을 하는 것이다.
+    if (advancedAt > 0 && !state.results[state.results.length - 1]?.skipped) {
+      playCorrect(streak);
+    }
+    // 소리는 항목이 확정될 때만. streak는 그 순간의 값을 읽는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [advancedAt]);
+
+  /*
+   * 아래 소리들은 버튼이 아니라 **상태**에 붙인다. 포기 하나만 해도 Esc,
+   * Tab 두 번, 화면의 버튼, 모바일 버튼까지 길이 넷이라 각 자리에 소리를
+   * 넣으면 언젠가 한 길이 빠진다.
+   */
+  useEffect(() => {
+    if (state.hintShown) playHint();
+  }, [state.hintShown]);
+
+  const skippedCount = state.results.filter((r) => r.skipped).length;
+  useEffect(() => {
+    if (skippedCount > 0) playGiveUp();
+  }, [skippedCount]);
+
+  useEffect(() => {
+    if (countdown !== null) playTick();
+  }, [countdown]);
+
+  /*
+   * 타임어택 마지막 5초. 초마다 한 번이고 정답 소리보다 낮다 —
+   * 시계를 보려고 눈을 떼지 않아도 시간이 어디쯤인지 알 수 있어야 한다.
+   */
+  const urgentSecond = useRef(0);
+  useEffect(() => {
+    if (state.status !== "playing" || !Number.isFinite(remaining)) return;
+    const left = Math.ceil(remaining / 1000);
+    if (left > 5 || left <= 0 || urgentSecond.current === left) return;
+    urgentSecond.current = left;
+    playUrgent();
+  }, [remaining, state.status]);
 
   useEffect(() => {
     if (state.status === "finished" && score.completed === score.total) {
@@ -228,33 +275,16 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
 
-  /**
-   * 방금 맞힌 곳. 지도가 그 자리에서 이름을 말해 준다.
+  /*
+   * 맞히면 바로 넘어간다. 붙잡아 두는 것이 없다.
    *
-   * 게임 루프가 "위치를 본다 → 떠올린다 → 친다 → 다음"에서
-   * "…→ **위치와 이름을 함께 확인한다** → 다음"이 된다. 그 0.5초가
-   * 모양과 이름을 묶는 자리다.
-   *
-   * **입력을 막지 않는다.** 판면은 이미 다음 문제로 넘어가 있고 타이핑도
-   * 바로 된다. 머무는 것은 카메라와 이름표뿐이다. 여기서 사람을 기다리게
-   * 하면 그 시간이 고스란히 기록에 들어가고, 스무 문제면 10초가 된다.
-   *
-   * **정해진 시간이 지나면 사라지는 것이 아니라, 다음 글자를 치면 사라진다.**
-   * 읽는 속도는 사람마다 다르고, 화면이 저절로 넘어가면 읽던 중에 뺏긴다.
-   * 다음 지역은 대개 방금 맞힌 곳 옆이므로(코스가 인접한 지역을 잇는 경로다)
-   * 카메라가 머물러 있어도 다음 문제가 대체로 함께 보인다.
-   *
-   * 다만 상한은 둔다. 코스가 멀리 건너뛰는 자리에서 다음 문제가 화면 밖에
-   * 있으면, 아무것도 안 친 사람이 빈 지도를 보고 있게 된다.
+   * 한때 방금 맞힌 곳의 이름을 지도에 띄우고 카메라를 그 자리에 세워 뒀다.
+   * 모양과 이름을 묶어 주려던 것인데, 사라지는 조건을 "다음 글자를 치면"으로
+   * 두니 안 치고 있으면 화면이 계속 이전 문제에 머물렀고, 상한 4초는
+   * 빠르게 치는 리듬과 정면으로 부딪혔다. 이 게임의 손맛은 **맞히는 순간
+   * 곧바로 다음**이다. 확인은 소리와 지도에 칠해지는 색으로 충분하고,
+   * 이름을 다시 봐야 하는 사람에게는 결과 화면의 "다시 볼 곳"이 있다.
    */
-  const solvedLabel = useMemo(() => {
-    const done = state.results[state.results.length - 1];
-    if (!done || done.skipped || state.status !== "playing") return null;
-    // 다음 글자를 치기 시작했으면 이미 다음 문제를 보고 있다는 뜻이다.
-    if (state.input.length > 0) return null;
-    if (now - state.itemStartedAt > 4_000) return null;
-    return { code: done.id, text: done.answer };
-  }, [state.results, state.status, state.input, state.itemStartedAt, now]);
 
   /**
    * 힌트를 연다. 키보드(Tab)와 모바일 버튼이 같은 길을 타야
@@ -295,6 +325,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     setCountdown(null);
     setCelebrated(false);
     reportedHints.current = 0;
+    urgentSecond.current = 0;
     restart();
   }, [restart]);
 
@@ -703,9 +734,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 <RegionMap
                   geo={geo}
                   currentCode={revealing ? revealing.id : current.id}
-                  // 이름을 읽는 동안에는 카메라가 그 자리에 머문다.
-                  focusCode={solvedLabel?.code}
-                  label={solvedLabel}
                   passedCodes={passedCodes}
                   missedCodes={missedCodes}
                   focus

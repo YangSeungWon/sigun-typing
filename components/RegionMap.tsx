@@ -14,15 +14,8 @@ interface RegionMapProps {
   geo: CourseGeo;
   /** 지금 목표인 지역 코드 */
   currentCode?: string;
-  /**
-   * 카메라가 볼 지역. 없으면 지금 문제를 본다.
-   *
-   * 방금 맞힌 곳에 잠깐 머무를 때만 다르다 — 이름을 읽을 시간을 주되
-   * 입력은 막지 않는다.
-   */
+  /** 카메라가 볼 지역. 없으면 지금 문제를 본다. */
   focusCode?: string;
-  /** 지도 위에 직접 적을 이름. 방금 맞힌 곳에만 쓴다. */
-  label?: { code: string; text: string } | null;
   /**
    * 이미 지나온 지역 코드. **순서가 의미를 가진다** — 마지막 항목이 방금
    * 맞힌 곳이고, 거기서만 색이 한 번 훑고 지나간다.
@@ -57,7 +50,6 @@ export const RegionMap = memo(function RegionMap({
   geo,
   currentCode,
   focusCode,
-  label = null,
   passedCodes = EMPTY,
   missedCodes = EMPTY,
   variant,
@@ -78,10 +70,6 @@ export const RegionMap = memo(function RegionMap({
   const transform = useMemo(
     () => (focus ? focusTransform(camera, geo) : ""),
     [focus, camera, geo],
-  );
-  const labelled = useMemo(
-    () => (label ? geo.regions.find((r) => r.code === label.code) : undefined),
-    [geo, label],
   );
 
   return (
@@ -199,40 +187,6 @@ export const RegionMap = memo(function RegionMap({
               <path key={r.code} d={r.d} fill="url(#missed-hatch)" />
             ))}
         </g>
-      )}
-
-      {/*
-        방금 맞힌 곳의 이름.
-        따로 화면을 띄우지 않고 지도가 직접 말하게 한다 — 이 게임에서 굳혀야
-        하는 것은 "그 모양의 이름이 무엇이었나"이고, 그건 그 자리에 적혀야
-        결합된다.
-
-        위치는 빌드 때 구해 둔 라벨 점(cx, cy)을 쓴다. 단순 중심점은 오목한
-        지역에서 폴리곤 밖으로 나간다 — 인천과 안산이 실제로 그랬다.
-
-        흰 테두리를 두르는 이유: 회색 위든 초록 위든 노랑 위든 읽혀야 한다.
-      */}
-      {labelled && (
-        <text
-          x={labelled.cx}
-          y={labelled.cy}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="map-label"
-          style={{
-            // 지역 크기에 맞춰 줄이되 너무 작아지지는 않게 한다.
-            fontSize: `${Math.max(14, Math.min(geo.width, geo.height) * 0.045)}px`,
-            transform,
-            transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)",
-          }}
-          fill="var(--color-ink)"
-          stroke="var(--color-paint)"
-          strokeWidth={5}
-          paintOrder="stroke"
-          vectorEffect="non-scaling-stroke"
-        >
-          {label!.text}
-        </text>
       )}
 
       {currentCode && (

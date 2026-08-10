@@ -175,21 +175,6 @@ body {
   }
 }
 
-/* 방금 맞힌 곳의 이름. 나타날 때만 아주 짧게 움직이고 그대로 선다. */
-@keyframes map-label {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.map-label {
-  animation: map-label 150ms ease-out;
-  font-weight: 700;
-  paint-order: stroke;
-}
 
 .map-pass {
   animation: map-pass 700ms ease-out;

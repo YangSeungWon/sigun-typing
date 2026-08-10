@@ -7,6 +7,7 @@ import {
   loadPersonalBest,
   savePersonalBest,
 } from "@/lib/score/personalBest";
+import { playRecord } from "@/lib/sound";
 import { formatClock } from "./Odometer";
 
 interface PersonalBestPanelProps {
@@ -38,6 +39,15 @@ export function PersonalBestPanel({
 
   useEffect(() => {
     savePersonalBest(courseId, mode, score, Date.now(), courseVersion);
+    /*
+     * 기록을 갈아 치웠으면 한 번 더 울린다. 완주 소리가 끝난 뒤에 얹어야
+     * 두 소리가 겹쳐 뭉개지지 않는다. 첫 기록에는 울리지 않는다 — 비교할
+     * 대상이 없으면 갱신이 아니다.
+     */
+    if (previous && score.completed > 0 && isBetter(score, previous)) {
+      const timer = setTimeout(playRecord, 450);
+      return () => clearTimeout(timer);
+    }
     // 결과가 확정된 뒤 한 번만 저장한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

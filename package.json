@@ -9,6 +9,7 @@
     "lint": "eslint",
     "build:geo": "node scripts/build-geo.mts",
     "build:og": "node scripts/build-og.mts",
+    "build:thumbs": "node scripts/build-thumbs.mts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",

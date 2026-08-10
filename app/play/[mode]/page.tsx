@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CourseThumb } from "@/components/CourseThumb";
 import { COURSES } from "@/data/courses";
 import { COURSE_GROUPS } from "@/data/groups";
 import {
@@ -86,8 +87,14 @@ export default async function CoursePickerPage({
                 <li key={course.id}>
                   <Link
                     href={`/play/${mode}/${course.id}?from=course_select`}
-                    className="flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-5 transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                    className="flex items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-5 transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                   >
+                    {/* 글자 카드가 아니라 지도 조각으로 읽히게 한다. */}
+                    <CourseThumb
+                      courseId={course.id}
+                      className="h-20 w-20 shrink-0 sm:h-24 sm:w-24"
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col gap-2">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                       <span className="text-xl font-semibold">{course.name}</span>
                       <span className="font-mono text-sm tabular-nums text-dim">
@@ -102,6 +109,7 @@ export default async function CoursePickerPage({
                       총 타수도 뺐다. 코스를 고르는 데 쓰는 값이 아니다.
                     */}
                     <span className="text-base text-dim">{course.description}</span>
+                    </span>
                   </Link>
                 </li>
               );

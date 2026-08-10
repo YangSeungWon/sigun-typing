@@ -71,6 +71,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   const {
     state,
     current,
+    now,
     remaining,
     score,
     advancedAt,
@@ -212,6 +213,34 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     // 판이 끝나는 순간 한 번만.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
+
+  /**
+   * 방금 맞힌 곳. 지도가 그 자리에서 이름을 말해 준다.
+   *
+   * 게임 루프가 "위치를 본다 → 떠올린다 → 친다 → 다음"에서
+   * "…→ **위치와 이름을 함께 확인한다** → 다음"이 된다. 그 0.5초가
+   * 모양과 이름을 묶는 자리다.
+   *
+   * **입력을 막지 않는다.** 판면은 이미 다음 문제로 넘어가 있고 타이핑도
+   * 바로 된다. 머무는 것은 카메라와 이름표뿐이다. 여기서 사람을 기다리게
+   * 하면 그 시간이 고스란히 기록에 들어가고, 스무 문제면 10초가 된다.
+   *
+   * **정해진 시간이 지나면 사라지는 것이 아니라, 다음 글자를 치면 사라진다.**
+   * 읽는 속도는 사람마다 다르고, 화면이 저절로 넘어가면 읽던 중에 뺏긴다.
+   * 다음 지역은 대개 방금 맞힌 곳 옆이므로(코스가 인접한 지역을 잇는 경로다)
+   * 카메라가 머물러 있어도 다음 문제가 대체로 함께 보인다.
+   *
+   * 다만 상한은 둔다. 코스가 멀리 건너뛰는 자리에서 다음 문제가 화면 밖에
+   * 있으면, 아무것도 안 친 사람이 빈 지도를 보고 있게 된다.
+   */
+  const solvedLabel = useMemo(() => {
+    const done = state.results[state.results.length - 1];
+    if (!done || done.skipped || state.status !== "playing") return null;
+    // 다음 글자를 치기 시작했으면 이미 다음 문제를 보고 있다는 뜻이다.
+    if (state.input.length > 0) return null;
+    if (now - state.itemStartedAt > 4_000) return null;
+    return { code: done.id, text: done.answer };
+  }, [state.results, state.status, state.input, state.itemStartedAt, now]);
 
   /**
    * 힌트를 연다. 키보드(Tab)와 모바일 버튼이 같은 길을 타야
@@ -595,6 +624,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 <RegionMap
                   geo={geo}
                   currentCode={revealing ? revealing.id : current.id}
+                  // 이름을 읽는 동안에는 카메라가 그 자리에 머문다.
+                  focusCode={solvedLabel?.code}
+                  label={solvedLabel}
                   passedCodes={passedCodes}
                   missedCodes={missedCodes}
                   focus

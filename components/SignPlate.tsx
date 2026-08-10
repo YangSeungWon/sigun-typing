@@ -188,9 +188,9 @@ export function SignPlate({
               {showHint && (
                 <span
                   aria-hidden="true"
-                  // 글자의 3분의 1쯤. 더 작으면 장식처럼 보이고, 더 크면
-                  // 무엇이 답이고 무엇이 힌트인지 헷갈린다.
-                  className={`mb-0.5 font-mono text-base leading-none transition-opacity duration-200 sm:text-xl ${
+                  // 글자의 절반쯤. 더 작으면 장식처럼 보여 힌트라는 사실
+                  // 자체가 안 읽힌다.
+                  className={`mb-1 font-mono text-xl leading-none transition-opacity duration-200 sm:text-3xl ${
                     statuses[i] === "correct"
                       ? "text-paint/25"
                       : "text-centerline/80"

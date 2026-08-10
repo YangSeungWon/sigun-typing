@@ -554,7 +554,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
           모바일에서는 위로 붙인다. 가운데 정렬하면 위쪽 여백을 쓰느라
           입력판이 아래로 내려가는데, 키보드가 뜨면 그 자리가 가려진다.
         */
-        className={`mx-auto flex w-full max-w-3xl flex-1 flex-col items-center gap-2 pt-1 sm:gap-4 sm:pt-6 ${
+        className={`play-stage mx-auto flex w-full max-w-3xl flex-1 flex-col items-center gap-2 pt-1 sm:gap-4 sm:pt-6 ${
           // 플레이 중에는 위로 붙인다 — 키보드가 아래를 가져가기 때문이다.
           // 출발 전에는 가운데가 자연스럽다.
           state.status === "ready" || countdown !== null
@@ -624,7 +624,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 지도 없이 이름만 따라 치면 그냥 타자연습이 된다.
               */}
               {geo && (
-                <div className="relative w-full overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
+                <div className="play-map relative w-full overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
                 <RegionMap
                   geo={geo}
                   currentCode={revealing ? revealing.id : current.id}
@@ -646,6 +646,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 진행 표시는 입력판에 바로 붙인다. 지도와 판 사이에 띄워 두면
                 지도 진행률인지 입력 진행률인지 소속을 알 수 없다.
               */}
+              {/* 가로로 누우면 이 덩어리가 지도 오른쪽으로 간다. */}
+              <div className="play-input flex w-full flex-col items-center gap-2 sm:gap-4">
               <TypingSurface
                 onType={type}
                 advancedAt={advancedAt}
@@ -742,6 +744,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 시간은 이미 위 한 줄에 있다. 제한 시간이 있는 모드에서만
                 큰 숫자로 한 번 더 보여 준다 — 거기서는 남은 시간이 곧 게임이다.
               */}
+              </div>
+
               {config.timeLimitMs !== undefined && (
                 <div className="hidden w-full sm:block">
                   <Odometer

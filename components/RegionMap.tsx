@@ -89,12 +89,42 @@ export const RegionMap = memo(function RegionMap({
       viewBox={`0 0 ${geo.width} ${geo.height}`}
       className={className}
       role="img"
+      /*
+       * 화면을 못 보는 사람에게도 진행이 전달되어야 한다. 지도는 그림이지만
+       * 여기 담긴 정보는 "몇 곳 중 몇 곳을 했는가"이고 그건 말로 옮길 수 있다.
+       * 가린 모드에서는 지역 이름을 절대 넣지 않는다 — 그게 답이다.
+       */
       aria-label={
         variant === "hint"
-          ? "지도에 표시된 지역"
-          : `${geo.regions.length}곳을 지나는 코스 지도`
+          ? `지도에 표시된 지역 — ${geo.regions.length}곳 중 ${passed.size}곳 완료`
+          : `${geo.regions.length}곳을 지나는 코스 지도 — ${passed.size}곳 맞힘` +
+            (missed.size > 0 ? `, ${missed.size}곳 못 맞힘` : "")
       }
     >
+      <defs>
+        {/*
+          못 맞힌 곳에는 색 위에 빗금을 덧댄다.
+          초록과 빨강은 색각 이상에서 가장 흔히 겹치는 짝이다. 색만으로 가르면
+          어떤 사람에게는 두 상태가 같은 그림이 된다.
+        */}
+        <pattern
+          id="missed-hatch"
+          width={10}
+          height={10}
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <line
+            x1={0}
+            y1={0}
+            x2={0}
+            y2={10}
+            stroke="var(--color-paint)"
+            strokeWidth={3}
+            opacity={0.7}
+          />
+        </pattern>
+      </defs>
       <g
         /*
          * 문제가 바뀔 때 화면이 미끄러지듯 옮겨 가야 "달리고 있다"는 감각이
@@ -156,6 +186,21 @@ export const RegionMap = memo(function RegionMap({
         현재 지역을 한 번 더 감싼다. 전국 지도에서 서울처럼 작은 지역은
         채우기만으로는 눈에 띄지 않는다. 이름은 쓰지 않는다 — 그게 문제니까.
       */}
+      {/* 색 위에 얹는 빗금. 채우기와 별개의 층이라 색을 가리지 않는다. */}
+      {missedCodes.length > 0 && (
+        <g
+          aria-hidden="true"
+          style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
+          transform={transform}
+        >
+          {geo.regions
+            .filter((r) => missed.has(r.code))
+            .map((r) => (
+              <path key={r.code} d={r.d} fill="url(#missed-hatch)" />
+            ))}
+        </g>
+      )}
+
       {/*
         방금 맞힌 곳의 이름.
         따로 화면을 띄우지 않고 지도가 직접 말하게 한다 — 이 게임에서 굳혀야

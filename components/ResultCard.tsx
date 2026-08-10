@@ -197,6 +197,7 @@ export function ResultCard({
             <Legend color="var(--color-sign)" label={`맞힘 ${score.completed}`} />
             {missed.some((r) => r.skipped) && (
               <Legend
+                hatched
                 color="var(--color-alert)"
                 label={`못 맞힘 ${missed.filter((r) => r.skipped).length}`}
               />
@@ -238,12 +239,29 @@ export function ResultCard({
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
+function Legend({
+  color,
+  label,
+  hatched = false,
+}: {
+  color: string;
+  label: string;
+  hatched?: boolean;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5">
+      {/*
+        색 견본에도 지도와 같은 빗금을 넣는다. 범례와 지도가 다른 그림이면
+        범례가 오히려 헷갈리게 한다.
+      */}
       <span
         className="inline-block h-3 w-3 rounded-sm"
-        style={{ backgroundColor: color }}
+        style={{
+          backgroundColor: color,
+          backgroundImage: hatched
+            ? "repeating-linear-gradient(45deg, transparent 0 2px, var(--color-paint) 2px 4px)"
+            : undefined,
+        }}
         aria-hidden="true"
       />
       {label}

@@ -51,6 +51,60 @@ body {
 }
 
 /*
+ * 가로로 눕힌 화면.
+ *
+ * 세로가 짧아지면 지도와 입력판을 위아래로 쌓을 수 없다 — 키보드까지 올라오면
+ * 지도가 손톱만 해진다. 가로로 누우면 폭은 남으므로 지도를 왼쪽에, 입력을
+ * 오른쪽에 둔다. 태블릿에서도 같은 이유로 이 배치가 낫다.
+ *
+ * 세로가 기본이고 이건 덤이다. "가로로 돌려 주세요"라고 요구하지 않는다.
+ */
+@media (orientation: landscape) and (max-height: 720px) {
+  .play-stage {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .play-stage > .play-map {
+    flex: 1 1 58%;
+    min-width: 0;
+  }
+
+  .play-stage > .play-input {
+    display: flex;
+    flex: 1 1 42%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  /* 가로에서는 높이가 곧 자원이다. 지도가 남는 세로를 다 쓴다. */
+  .play-stage .play-map svg {
+    height: min(74vh, 22rem);
+  }
+}
+
+/*
+ * 움직임을 줄여 달라고 한 사람에게는 줄여 준다.
+ *
+ * 지도가 미끄러지고 판면이 튀는 것은 "무슨 일이 일어났는지" 알리는 장치이지만,
+ * 어지럼증을 겪는 사람에게는 그 자체가 장벽이다. 상태 변화는 색과 글자로
+ * 이미 전달되므로 움직임만 빼도 게임은 그대로 돌아간다.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
  * 완주.
  *
  * 마지막 한 곳을 맞힌 순간이 이 게임에서 가장 중요한 순간인데, 그동안은

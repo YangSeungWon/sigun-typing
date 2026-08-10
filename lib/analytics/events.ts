@@ -59,6 +59,16 @@ export type EventName = (typeof EVENT_NAMES)[number];
  */
 export const EXPERIMENT = "map-recall-v1";
 
+/**
+ * 지금 돌고 있는 화면의 판번호. 빌드할 때 박힌다.
+ *
+ *   UI_REVISION=$(git rev-parse --short HEAD) docker compose build web
+ *
+ * 안 넣고 빌드해도 게임은 돌아간다. 다만 그 배포의 숫자는 `dev`로 뭉쳐
+ * 나중에 가를 수 없다.
+ */
+export const REVISION = process.env.NEXT_PUBLIC_UI_REVISION || "dev";
+
 /** game_start를 유발한 화면. 결과 화면 CTA의 전환율을 따로 보려면 필요하다. */
 export const ENTRY_SOURCES = [
   "home_primary",
@@ -123,6 +133,17 @@ export interface GameEvent {
   /** 이 이벤트가 속한 실험 버전 */
   experiment?: string;
   /**
+   * 이 이벤트가 나온 화면의 판번호.
+   *
+   * 화면을 계속 고치면서도 숫자를 볼 수 있게 하는 유일한 장치다. 판번호가
+   * 없으면 "어느 화면에서 첫 정답 이탈이 높았는가"를 영영 가를 수 없어,
+   * 결국 데이터를 기다리느라 개선을 멈추게 된다. 붙여 두면 계속 고쳐도 된다.
+   *
+   * 실험 버전(experiment)과 다르다 — 그쪽은 가설이 바뀔 때만 올리고,
+   * 이쪽은 배포할 때마다 바뀐다.
+   */
+  revision?: string;
+  /**
    * 개발·QA 트래픽 표시. 배포 시각으로 거르는 것보다 구조적으로 확실하다 —
    * 시각을 매 실험마다 기억할 필요가 없다.
    */
@@ -160,6 +181,7 @@ export function sanitizeEvent(raw: unknown): GameEvent | null {
     toMode: str(e.toMode, 20),
     source: isEntrySource(e.source) ? e.source : undefined,
     experiment: str(e.experiment, 40),
+    revision: str(e.revision, 40),
     gameId: str(e.gameId, 64),
     internal: e.internal === true ? true : undefined,
   };

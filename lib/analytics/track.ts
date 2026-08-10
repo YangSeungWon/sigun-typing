@@ -1,7 +1,7 @@
 "use client";
 
 import { getDeviceId } from "../score/client";
-import { ENTRY_SOURCES, EXPERIMENT, type GameEvent } from "./events";
+import { ENTRY_SOURCES, EXPERIMENT, REVISION, type GameEvent } from "./events";
 
 /**
  * 이벤트를 모아 보낸다.
@@ -88,6 +88,7 @@ export function track(event: GameEvent) {
   queue.push({
     id: crypto.randomUUID(),
     experiment: EXPERIMENT,
+    revision: REVISION,
     ...(gameId ? { gameId } : {}),
     ...(runStartedAt !== null ? { atMs: Date.now() - runStartedAt } : {}),
     ...(internal ? { internal: true } : {}),

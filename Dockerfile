@@ -13,6 +13,9 @@ FROM base AS build
 # sitemap.xml·robots.txt의 절대 주소는 빌드 시점에 박힌다.
 ARG SITE_URL=https://sigun-typing.ysw.kr
 ENV SITE_URL=$SITE_URL
+# 화면 판번호. 이벤트마다 함께 저장돼, 화면을 고치면서도 숫자를 가를 수 있게 한다.
+ARG UI_REVISION=dev
+ENV NEXT_PUBLIC_UI_REVISION=$UI_REVISION
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm exec next build

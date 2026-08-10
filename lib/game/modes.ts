@@ -113,8 +113,8 @@ export const MODE_LABELS: Record<ModeId, string> = {
 export const MODE_HINTS: Record<ModeId, string> = {
   map: "지도를 보고 이름 맞히기",
   timeattack: "60초 안에 최대한 많이",
-  learn: "이름을 보며 따라 치기",
-  test: "힌트 없이 얼마나 아는지 확인",
+  learn: "이름을 보며 위치 익히기",
+  test: "무작위 문제로 실력 확인",
   multi: "최대 8명이 같은 지도를 놓고 동시에",
 };
 

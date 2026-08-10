@@ -34,6 +34,8 @@ services:
       target: web
       args:
         SITE_URL: ${SITE_URL:-https://sigun-typing.ysw.kr}
+        # UI_REVISION=$(git rev-parse --short HEAD) docker compose build web
+        UI_REVISION: ${UI_REVISION:-dev}
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-sigun}:${POSTGRES_PASSWORD:-sigun}@db:5432/${POSTGRES_DB:-sigun}
       SCORE_SECRET: ${SCORE_SECRET:?SCORE_SECRET을 설정하세요}

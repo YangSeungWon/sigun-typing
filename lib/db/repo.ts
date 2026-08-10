@@ -280,6 +280,7 @@ export class PostgresScoreRepository implements ScoreRepository {
           toMode: e.toMode,
           source: e.source,
           experiment: e.experiment,
+          revision: e.revision,
           gameId: e.gameId,
           internal: e.internal ?? false,
         })),

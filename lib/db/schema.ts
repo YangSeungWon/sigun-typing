@@ -99,6 +99,8 @@ export const events = pgTable(
     source: text("source"),
     /** 실험 버전. 다른 버전의 이벤트와 섞어서 해석하면 안 된다. */
     experiment: text("experiment"),
+    /** 화면 판번호. 화면을 고치면서도 숫자를 가를 수 있게 한다. */
+    revision: text("revision"),
     /** 한 판을 묶는 값. 퍼널의 분모를 사람·판 단위로 셀 수 있게 한다. */
     gameId: text("game_id"),
     /** 개발·QA 트래픽. 분석에서 항상 제외한다. */

@@ -203,8 +203,20 @@ ls -lh backups/
 | `BACKUP_RETAIN_DAYS` | `14` | 이보다 오래된 덤프는 지운다 |
 | `BACKUP_INTERVAL_SECONDS` | `86400` | 회차 간격 |
 
-`./backups`는 같은 디스크에 있다. 디스크가 통째로 죽는 경우까지 대비하려면
-이 디렉터리를 서버 밖으로 한 번 더 옮겨 두어야 한다(rsync·오브젝트 스토리지 등).
+### 서버 밖으로 한 벌 더
+
+`./backups`는 **같은 디스크에 있다.** `down -v`와 실수 삭제는 막지만 디스크가
+통째로 죽으면 백업도 함께 사라진다. 여기까지 해 둬야 진짜 백업이다.
+
+호스트 crontab에 한 줄이면 된다(다른 기기나 저장소로).
+
+```cron
+# 매일 새벽 4시, 어제 이후 것만 보낸다
+0 4 * * * rsync -a --delete /home/whysw/Documents/sigun-typing/backups/ backup-host:/srv/sigun-typing/
+```
+
+원격이 없다면 최소한 다른 물리 디스크로 복사한다. 같은 디스크 안에서 옮기는
+것은 백업이 아니다.
 
 ### 복구
 
@@ -240,6 +252,25 @@ satori가 woff2를 읽지 못해 한글 폰트를 따로 넣어야 하기 때문
 카드의 제목·설명은 이미지가 아니라 `metadata`에서 온다. 그래서 문구를 고칠
 때 이미지를 다시 뜰 필요는 없다. `metadataBase`가 빠지면 상대 경로가 절대
 주소로 바뀌지 않아 크롤러가 이미지를 통째로 무시한다.
+
+## 배포할 때 화면 판번호를 박는다
+
+이벤트마다 함께 저장돼, 화면을 계속 고치면서도 **어느 화면의 숫자인지** 가를
+수 있다. 안 넣고 빌드해도 게임은 돌아가지만 그 배포의 숫자는 `dev`로 뭉쳐
+나중에 구분할 수 없다.
+
+```bash
+UI_REVISION=$(git rev-parse --short HEAD) docker compose build web
+docker compose up -d web
+```
+
+```sql
+-- 어느 화면에서 첫 정답까지 갔는가
+SELECT revision,
+       count(*) FILTER (WHERE name = 'game_start')    AS 시작,
+       count(*) FILTER (WHERE name = 'first_correct') AS 첫정답
+FROM events WHERE NOT internal GROUP BY revision ORDER BY revision;
+```
 
 ## 오류 보기
 

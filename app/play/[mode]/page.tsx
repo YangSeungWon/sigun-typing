@@ -65,16 +65,27 @@ export default async function CoursePickerPage({
         코스 목록까지 내려온 사람이 모드를 바꾸려고 홈으로 되돌아갈 이유는 없다.
         네 모드가 같은 코스 목록을 공유하므로 여기서 갈아탈 수 있게 한다.
       */}
-      <nav className="flex flex-wrap gap-2" aria-label="모드 고르기">
+      {/*
+        넷 다 테두리를 두르면 설정 패널처럼 보인다. 지금 고른 것만 물성을
+        갖고 나머지는 조용한 글자로 둔다 — 이 화면의 주인공은 모드 선택기가
+        아니라 아래 코스 지도다.
+
+        좁은 화면에서는 줄바꿈 대신 가로로 흐르게 한다. 네 개가 두 줄로
+        접히면 그것대로 덩어리가 커진다.
+      */}
+      <nav
+        className="-mx-6 flex gap-1 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="모드 고르기"
+      >
         {MODE_LADDER.map((m) => (
           <Link
             key={m}
             href={`/play/${m}`}
             aria-current={m === mode ? "page" : undefined}
-            className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+            className={`shrink-0 rounded-full px-4 py-2 text-base whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               m === mode
-                ? "bg-sign-deep text-paint"
-                : "border border-concrete-deep text-ink/70 hover:bg-concrete-deep hover:text-ink"
+                ? "bg-sign-deep font-medium text-paint"
+                : "text-ink/60 hover:bg-concrete-deep hover:text-ink"
             }`}
           >
             {MODE_LABELS[m]}
@@ -109,7 +120,7 @@ export default async function CoursePickerPage({
                 <li key={course.id}>
                   <Link
                     href={`/play/${mode}/${course.id}?from=course_select`}
-                    className="group flex items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-3 transition-colors hover:border-dim hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:gap-5 sm:p-4"
+                    className="group flex items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-2 pr-4 transition-colors hover:border-dim hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:gap-5 sm:p-3 sm:pr-5"
                   >
                     {/*
                       글자 카드가 아니라 지도 조각으로 읽히게 한다.
@@ -118,7 +129,7 @@ export default async function CoursePickerPage({
                     */}
                     <CourseThumb
                       courseId={course.id}
-                      className="h-24 w-24 shrink-0 sm:h-28 sm:w-28"
+                      className="h-28 w-28 shrink-0 sm:h-32 sm:w-32"
                     />
                     <span className="flex min-w-0 flex-1 flex-col gap-1">
                       <span className="flex flex-wrap items-baseline justify-between gap-x-3">

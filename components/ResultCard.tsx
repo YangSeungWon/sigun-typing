@@ -28,6 +28,8 @@ interface ResultCardProps {
   submitSlot?: ReactNode;
   /** 자랑하기 영역 */
   shareSlot?: ReactNode;
+  /** 틀린 곳만 다시 푸는 자리. 있으면 이쪽이 주 버튼이 된다. */
+  reviewSlot?: ReactNode;
   /** 다른 코스를 고르러 갈 주소 */
   coursesHref: string;
   /** 개인 최고 기록 영역 */
@@ -71,6 +73,7 @@ export function ResultCard({
   missed = [],
   submitSlot,
   shareSlot,
+  reviewSlot,
   bestSlot,
   nextSlot,
   coursesHref,
@@ -133,14 +136,24 @@ export function ResultCard({
         </p>
       )}
 
-      {/* 판이 끝난 직후 가장 센 충동. 여기 말고 다른 자리에 둘 이유가 없다. */}
+      {/*
+        판이 끝난 직후 가장 센 충동은 "한 번 더"다. 다만 못 맞힌 곳이 있으면
+        그쪽이 먼저다 — 열일곱 중 셋을 몰랐는데 열일곱을 다시 도는 것보다
+        그 셋을 보는 편이 배우는 데도 빠르고 부담도 적다.
+      */}
+      {reviewSlot}
+
       <button
         type="button"
         onClick={onRestart}
-        className="rounded-lg bg-sign px-5 py-4 text-lg font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className={`rounded-lg px-5 py-4 text-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+          reviewSlot
+            ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
+            : "bg-sign text-paint hover:bg-sign-deep"
+        }`}
       >
-        한 번 더
-        {emphasis === "time" && score.completed > 0 && (
+        {reviewSlot ? "전체 다시 하기" : "한 번 더"}
+        {!reviewSlot && emphasis === "time" && score.completed > 0 && (
           <span className="ml-2 font-mono text-base text-paint/80">
             {formatPrecise(score.elapsedMs)} 깨기
           </span>

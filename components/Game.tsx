@@ -7,7 +7,6 @@ import type { Course } from "@/data/types";
 import { MODES, MODE_LABELS } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { useGame } from "@/lib/game/useGame";
-import { focusScale } from "@/lib/geo/bbox";
 import { playComplete, playCorrect, primeSound } from "@/lib/sound";
 import { romanizeRegion } from "@/lib/hangul/romanize";
 import { requestToken } from "@/lib/score/client";
@@ -305,17 +304,19 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
    * 이 순간 index는 이미 다음 문제를 가리키므로, 화면에 그릴 것은 직전 결과다.
    */
   /**
-   * 미니맵은 충분히 당겼을 때만 띄운다.
+   * 미니맵은 항상 띄운다.
    *
-   * 서울 25구처럼 코스 지도가 곧 그 도시인 경우, 조금 당긴 화면에는 이미
-   * 전체가 거의 들어와 있다. 거기에 미니맵을 띄우면 같은 그림을 작게 한 번
-   * 더 그리는 꼴이라 도움이 아니라 소음이다.
+   * 한때 배율을 보고 켜고 껐다 — 당기지 않는 코스에서는 같은 그림을 작게 한
+   * 번 더 그리는 셈이니까. 그런데 그 판단을 문제마다 했더니 경기·서울처럼 큰
+   * 지역과 작은 지역이 섞인 코스에서 미니맵이 나타났다 사라지기를 반복했고,
+   * 그때마다 계기판 높이가 20px↔54px로 뛰어 지도까지 통째로 밀렸다.
+   *
+   * 코스 단위로 한 번만 정하는 것으로 흔들림은 잡히지만, 그러면 코스마다
+   * 계기판이 다르게 생긴다. 미니맵은 "지금 여기"를 알려 주는 자리이고 그
+   * 자리가 코스에 따라 있다 없다 하면 매번 다시 찾아야 한다. 전국 코스를
+   * 붙이면 어차피 모든 코스가 당기는 쪽이 된다.
    */
-  const showMiniMap = useMemo(() => {
-    if (!geo) return false;
-    const code = state.items[state.index]?.id;
-    return focusScale(geo.regions.find((r) => r.code === code), geo) >= 2.2;
-  }, [geo, state.items, state.index]);
+  const showMiniMap = !!geo;
 
   const revealing =
     state.status === "revealing" && state.revealed

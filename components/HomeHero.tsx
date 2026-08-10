@@ -53,42 +53,33 @@ export function HomeHero({ geo, region, courseId }: HomeHeroProps) {
         className="h-52 w-auto sm:h-60"
       />
 
-      {known.length > 0 && (
-        <p className="font-mono text-sm text-dim">
-          {geo.regions.length}곳 중 <span className="text-sign">{known.length}곳</span>{" "}
-          익힘
-          {confusing.length > 0 && ` · ${confusing.length}곳 헷갈림`}
-        </p>
-      )}
-
       {solved ? (
         <p className="py-2 text-2xl font-bold">
           <span className="text-sign">정답</span> — {region.name}
         </p>
       ) : (
-        <>
-          <p className="text-lg text-dim">여기는 어디일까요?</p>
-          <TypingSurface onType={onType} advancedAt={0} autoFocus={false} onFocusChange={setFocused}>
-            <SignPlate target={region.name} typed={typed} focused={focused} masked />
-          </TypingSurface>
-        </>
+        /*
+         * "여기는 어디일까요?"를 뺐다. 판에 이미 `지역명을 입력하세요`가 있고,
+         * 지도에는 한 곳이 노랗게 켜져 있다. 같은 질문이 세 번인 셈이었다.
+         */
+        <TypingSurface onType={onType} advancedAt={0} autoFocus={false} onFocusChange={setFocused}>
+          <SignPlate target={region.name} typed={typed} focused={focused} masked />
+        </TypingSurface>
       )}
 
       {/*
-        주 버튼은 히어로가 갖는다. 이 아래에 같은 버튼을 하나 더 두면 화면에
-        초록 표지판이 둘이 되고, 무엇이 먼저인지 알 수 없어진다.
+        시작 버튼에서 표지판 옷을 벗겼다.
+
+        입력판도 표지판이고 이 버튼도 표지판이라, 같은 초록 판 두 장이 같은
+        폭으로 붙어 있었다. 그러면 형태만으로는 어느 쪽이 치는 곳이고 어느
+        쪽이 누르는 곳인지 알 수 없다. 표지판은 이 화면에서 하나여야 하고,
+        그 하나는 **답을 쓰는 판**이다. 버튼은 버튼처럼 생기면 된다.
       */}
       <Link
         href={`/play/map/${courseId}?from=${solved ? "home_hero" : "home_primary"}`}
-        className="sign-face relative mt-2 w-full rounded-2xl px-8 py-6 text-center shadow-[0_3px_0_0_var(--color-sign-deep)] transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="mt-1 w-full rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
-        <span className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-paint" />
-        <span className="relative block text-2xl font-bold text-paint sm:text-3xl">
-          {solved ? "이어서 17곳 전부" : "전국 도전 시작"}
-        </span>
-        <span className="relative mt-1 block font-mono text-sm text-paint/75">
-          17개 시·도 모두 맞히기
-        </span>
+        {solved ? "이어서 17곳 전부" : "전국 17곳 도전"}
       </Link>
     </section>
   );

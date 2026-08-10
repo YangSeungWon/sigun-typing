@@ -77,6 +77,10 @@ export default async function Home() {
       {/* 기록이 있는 사람에게만 보인다. 첫 방문자에게 빈 상자를 줄 이유가 없다. */}
       <HomeStatus />
 
+      {/*
+        `헷갈리는 지역`은 여기 두지 않는다. 틀린 곳이 있는 사람에게는 바로
+        위 카드가 그 자리로 데려가고, 없는 사람에게 그 링크는 빈 페이지다.
+      */}
       <nav
         className="flex flex-wrap gap-x-5 gap-y-2 font-mono text-sm text-dim"
         aria-label="더 보기"
@@ -86,9 +90,6 @@ export default async function Home() {
         </Link>
         <Link href="/ranking" className="transition-colors hover:text-ink">
           랭킹
-        </Link>
-        <Link href="/notes" className="transition-colors hover:text-ink">
-          헷갈리는 지역
         </Link>
         <Link href="/guide" className="transition-colors hover:text-ink">
           이용안내

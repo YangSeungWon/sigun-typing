@@ -13,12 +13,16 @@ import { fileURLToPath } from "node:url";
  * 눈에 보이지도 않을 작은 섬은 버린다. 내부 경계선은 아예 그리지 않으므로
  * 도형들이 겹쳐 하나의 덩어리로 읽힌다.
  *
- * 결과는 파일 하나(data/geo/thumbs.json)이고 코스당 1KB 안팎이다.
+ * 결과는 파일 하나(data/thumbs.json)이고 코스당 1.5KB 안팎이다.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const GEO_DIR = join(here, "..", "data", "geo");
-const OUT = join(GEO_DIR, "thumbs.json");
+/*
+ * 코스 지도 폴더 밖에 둔다. 안에 두면 `./*.json`을 훑는 코드가 이 파일까지
+ * 코스 지도로 집는다 — 실제로 지도 검사 여섯 개가 그렇게 깨졌다.
+ */
+const OUT = join(here, "..", "data", "thumbs.json");
 
 /** 한 지역에 남길 점의 수. 64px 카드에서는 이 정도면 형태가 산다. */
 const POINTS_PER_REGION = 14;
@@ -108,9 +112,7 @@ function thumbOf(geo: CourseGeo): Thumb {
   };
 }
 
-const files = (await readdir(GEO_DIR)).filter(
-  (f) => f.endsWith(".json") && f !== "thumbs.json",
-);
+const files = (await readdir(GEO_DIR)).filter((f) => f.endsWith(".json"));
 
 const thumbs: Record<string, Thumb> = {};
 for (const file of files.sort()) {

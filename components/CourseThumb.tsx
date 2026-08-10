@@ -1,4 +1,4 @@
-import thumbs from "@/data/geo/thumbs.json";
+import thumbs from "@/data/thumbs.json";
 
 interface CourseThumbProps {
   courseId: string;

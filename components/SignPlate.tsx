@@ -155,6 +155,34 @@ export function SignPlate({
       {/* 한국 도로표지판 특유의 흰 내곽선. 흐린 회색이 아니라 흰 선이다. */}
       <div className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
 
+      {/*
+        제출할 수 있다는 표시.
+
+        저절로 넘어가지 않게 되면서, 첫 문제에서 다 쳐 놓고 아무 일도 일어나지
+        않아 멈추는 사람이 생긴다. 다음 동작이 있다는 것을 손이 있는 자리에서
+        알려 줘야 한다.
+
+        **맞았는지는 알려 주지 않는다.** 글자가 하나라도 있으면 켜지고 비면
+        꺼진다. 정답일 때만 켜면 후보를 하나씩 쳐 보는 것만으로 답을 찾을 수
+        있게 되어, 색을 걷어낸 이유가 통째로 무너진다.
+
+        화살표인 것은 여기가 도로표지판이기 때문이다 — 실제 표지판에서
+        화살표는 "이쪽으로 갈 수 있다"는 말이고, 지금 필요한 말이 그것이다.
+        자리는 absolute라 켜지고 꺼져도 글자가 밀리지 않는다.
+      */}
+      {!revealed && (
+        <span
+          aria-hidden="true"
+          // 흰 내곽선 안쪽에 놓는다. 선 위에 겹치면 표지판이 아니라
+          // 인쇄가 밀린 것처럼 보인다.
+          className={`pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 font-bold text-3xl leading-none transition-opacity duration-150 sm:right-7 sm:text-4xl ${
+            typedChars.length > 0 ? "text-paint/85 submit-nudge" : "opacity-0"
+          }`}
+        >
+          ›
+        </span>
+      )}
+
       <div className="relative flex flex-col items-center gap-3">
         {idle ? (
           /*

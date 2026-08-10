@@ -186,6 +186,28 @@ body {
  */
 
 /* 오타 — 표지판이 옆으로 살짝 튕긴다. 소리 없이 실패를 알리는 가장 빠른 방법. */
+/*
+  제출할 수 있다는 화살표. 한 번만 살짝 밀렸다 제자리로 온다 —
+  계속 깜빡이면 글자를 읽는 동안 눈이 그쪽으로 끌린다.
+*/
+@keyframes submit-nudge {
+  0% {
+    opacity: 0;
+    transform: translate(-0.4rem, -50%);
+  }
+  60% {
+    transform: translate(0.15rem, -50%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
+.submit-nudge {
+  animation: submit-nudge 220ms ease-out;
+}
+
 @keyframes plate-shake {
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-7px); }

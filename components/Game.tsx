@@ -693,12 +693,22 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 타수와 정확도는 플레이 중 판단에 쓰이지 않는다. 좁은 화면에서는
                 그 자리를 지도에 준다.
               */}
+              {/*
+                플레이 중 판단에 쓰는 것은 지도와 입력판이다. 타수와 정확도는
+                거기에 답하지 않으면서 매 타건마다 바뀌어 시선을 끌어간다 —
+                특히 첫 문제를 풀기 전에는 `0타/분 · 0.0%`가 그냥 소음이다.
+                결과 화면에 다 있으니 여기서는 시간만 남긴다.
+
+                시간 제한이 있는 모드는 예외다. 거기서는 남은 시간이 곧 게임이고,
+                타수도 성적의 일부다.
+              */}
               <div className="hidden w-full sm:block">
                 <Odometer
                   cpm={score.cpm}
                   accuracy={score.accuracy}
                   elapsedMs={score.elapsedMs}
                   remainingMs={remaining}
+                  compact={config.timeLimitMs === undefined}
                 />
               </div>
             </>

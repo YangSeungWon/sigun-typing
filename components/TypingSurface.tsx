@@ -8,6 +8,13 @@ interface TypingSurfaceProps {
   /** 항목이 확정될 때마다 증가하는 값. 바뀌면 입력창을 비운다. */
   advancedAt: number;
   disabled?: boolean;
+  /**
+   * 뜨자마자 입력창을 잡을지.
+   *
+   * 게임 화면에서는 당연히 잡아야 하지만, 홈에서 그러면 페이지를 열자마자
+   * 휴대폰 키보드가 올라온다. 읽으러 온 사람에게는 방해다.
+   */
+  autoFocus?: boolean;
   onFocusChange?: (focused: boolean) => void;
   children: ReactNode;
 }
@@ -24,6 +31,7 @@ export function TypingSurface({
   onType,
   advancedAt,
   disabled,
+  autoFocus = true,
   onFocusChange,
   children,
 }: TypingSurfaceProps) {
@@ -35,8 +43,8 @@ export function TypingSurface({
 
   // 시작할 때와 다시 활성화될 때 포커스를 가져온다.
   useEffect(() => {
-    if (!disabled) inputRef.current?.focus();
-  }, [disabled]);
+    if (!disabled && autoFocus) inputRef.current?.focus();
+  }, [disabled, autoFocus]);
 
   // 항목이 넘어갈 때마다 입력창을 비운다.
   useEffect(() => {

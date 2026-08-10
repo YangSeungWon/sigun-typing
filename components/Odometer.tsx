@@ -6,6 +6,8 @@ interface OdometerProps {
   elapsedMs: number;
   /** 제한 시간이 있는 모드에서 남은 시간. 무제한이면 Infinity. */
   remainingMs: number;
+  /** 시간만 보여 준다. 플레이 중에는 이쪽이 기본이다. */
+  compact?: boolean;
 }
 
 export function formatClock(ms: number): string {
@@ -45,14 +47,24 @@ function Readout({
 }
 
 /** 계기판. 주행 중 읽는 숫자이므로 전부 모노스페이스 고정폭이다. */
-export function Odometer({ cpm, accuracy, elapsedMs, remainingMs }: OdometerProps) {
+export function Odometer({
+  cpm,
+  accuracy,
+  elapsedMs,
+  remainingMs,
+  compact = false,
+}: OdometerProps) {
   const timed = Number.isFinite(remainingMs);
   const low = timed && remainingMs <= 10_000;
 
   return (
     <div className="flex w-full items-start justify-center gap-8 border-t border-concrete-deep pt-4 sm:gap-12">
-      <Readout label="타/분" value={String(Math.round(cpm))} emphasis />
-      <Readout label="정확도" value={`${(accuracy * 100).toFixed(1)}%`} />
+      {!compact && (
+        <>
+          <Readout label="타/분" value={String(Math.round(cpm))} emphasis />
+          <Readout label="정확도" value={`${(accuracy * 100).toFixed(1)}%`} />
+        </>
+      )}
       {timed ? (
         <div className={low ? "animate-pulse" : undefined}>
           <Readout label="남은 시간" value={formatClock(remainingMs)} />

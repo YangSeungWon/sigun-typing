@@ -76,6 +76,10 @@ export function SignPlate({
    */
   const idle = masked && typedChars.length === 0 && !hinted && !revealed;
 
+  /** 초성 트랙. 자리를 잡아 두므로 입력이 바뀌어도 움직이지 않는다. */
+  const showHint = hinted && masked && !revealed;
+  const hintInitials = showHint ? [...initials(target)] : [];
+
   /**
    * 한 칸에 무엇을 그릴 것인가.
    *
@@ -171,6 +175,30 @@ export function SignPlate({
         <div className={CHAR_ROW} aria-label={masked && !revealed ? "지역명" : target}>
           {chars.map((_, i) => (
             <span key={i} className="relative flex flex-col items-center">
+              {/*
+                초성은 글자 자리 **바로 위에 고정**한다.
+                판 밖에 한 줄로 떼어 놓았더니 `ㄴ ㄷ`가 무엇을 뜻하는지
+                연결되지 않았고, 글자 자리에 겹쳐 그렸더니 한 글자만 쳐도
+                입력이 덮어 버렸다. 위에 두면 둘 다 아니다.
+
+                맞힌 글자의 초성만 흐려진다. 지워지지 않는 이유: 틀린 순간에
+                힌트가 사라지면 정작 필요할 때 없다. `님`이라고 잘못 쳤어도
+                첫 글자가 ㄴ이라는 사실은 계속 보여야 한다.
+              */}
+              {showHint && (
+                <span
+                  aria-hidden="true"
+                  // 글자의 3분의 1쯤. 더 작으면 장식처럼 보이고, 더 크면
+                  // 무엇이 답이고 무엇이 힌트인지 헷갈린다.
+                  className={`mb-0.5 font-mono text-base leading-none transition-opacity duration-200 sm:text-xl ${
+                    statuses[i] === "correct"
+                      ? "text-paint/25"
+                      : "text-centerline/80"
+                  }`}
+                >
+                  {hintInitials[i]}
+                </span>
+              )}
               <span
                 className={`${
                   // 맞힌 것처럼 하얗게 두면 방금 포기한 것과 구분이 안 된다.
@@ -220,17 +248,6 @@ export function SignPlate({
       한눈에 갈리지 않는다.
     */}
     <div className="mt-3 flex min-h-6 flex-col items-center gap-1">
-      {hinted && masked && !revealed && (
-        /*
-         * 초성을 글자 자리에 겹쳐 그리면, 다른 글자를 치는 순간 입력이 덮어써서
-         * 힌트가 사라진다 — 정작 힌트가 필요한 상황(모르겠어서 아무거나 쳐 보는
-         * 중)에 안 보이는 셈이다. 5초를 물고 산 정보다.
-         */
-        <span className="font-mono text-lg tracking-[0.3em] text-centerline sm:text-xl">
-          {initials(target)}
-        </span>
-      )}
-
       {revealed && (
         <span className="font-mono text-sm text-dim" role="status">
           오답노트에 담았습니다

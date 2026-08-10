@@ -62,6 +62,8 @@ export const EXPERIMENT = "map-recall-v1";
 /** game_start를 유발한 화면. 결과 화면 CTA의 전환율을 따로 보려면 필요하다. */
 export const ENTRY_SOURCES = [
   "home_primary",
+  /** 홈에서 한 문제를 풀고 이어서 시작했다 */
+  "home_hero",
   "home_secondary",
   "home_challenge",
   "course_select",

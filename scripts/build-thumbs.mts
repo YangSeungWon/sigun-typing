@@ -27,7 +27,7 @@ const OUT = join(here, "..", "data", "thumbs.json");
 /** 한 지역에 남길 점의 수. 64px 카드에서는 이 정도면 형태가 산다. */
 const POINTS_PER_REGION = 14;
 /** 지도 넓이의 이 비율보다 작은 덩어리는 버린다. */
-const MIN_AREA_RATIO = 0.002;
+const MIN_AREA_RATIO = 0.004;
 
 interface RegionShape {
   code: string;
@@ -79,36 +79,67 @@ function area(points: [number, number][]): number {
 }
 
 function thumbOf(geo: CourseGeo): Thumb {
-  const scale = 100 / Math.max(geo.width, geo.height);
-  // 세로로 긴 지도가 가운데 오도록 남는 쪽을 반씩 나눈다.
-  const offsetX = (100 - geo.width * scale) / 2;
-  const offsetY = (100 - geo.height * scale) / 2;
-  const grid = ([x, y]: [number, number]) =>
-    `${Math.round(x * scale + offsetX)},${Math.round(y * scale + offsetY)}`;
-
   const mapArea = geo.width * geo.height;
-  const parts: string[] = [];
 
+  /*
+   * 남길 덩어리를 먼저 고른다.
+   *
+   * 원본 지도 전체에 맞춰 크기를 정하면, 인천처럼 먼 섬을 가진 코스는
+   * 본토가 손톱만 해진다. 여기는 지도 화면이 아니라 **고르는 데 쓰는 썸네일**
+   * 이므로, 실제로 그릴 것들의 범위에 맞춰 채우는 편이 낫다. 그래야 코스마다
+   * 시각적 크기가 고르게 나온다.
+   */
+  const shapes: [number, number][][] = [];
   for (const region of geo.regions) {
-    for (const points of subpaths(region.d)) {
-      if (points.length < 3) continue;
-      // 카드 크기에서 보이지도 않을 섬은 버린다.
-      if (area(points) / mapArea < MIN_AREA_RATIO) continue;
+    const parts = subpaths(region.d).filter((points) => points.length >= 3);
+    if (parts.length === 0) continue;
 
+    /*
+     * 지역마다 **가장 큰 덩어리는 무조건 남긴다.**
+     *
+     * 넓이만으로 걸렀더니 제주가 통째로 빠지고 끝 표시만 바다에 떠 있었다.
+     * 코스에 든 지역은 작든 크든 그 코스의 일부다. 버리는 것은 한 지역 안의
+     * 부속 섬들뿐이다.
+     */
+    const largest = parts.reduce((a, b) => (area(a) >= area(b) ? a : b));
+    for (const points of parts) {
+      if (points !== largest && area(points) / mapArea < MIN_AREA_RATIO) continue;
       const step = Math.max(1, Math.floor(points.length / POINTS_PER_REGION));
       const kept = points.filter((_, i) => i % step === 0);
-      if (kept.length < 3) continue;
-
-      parts.push(`M${kept.map(grid).join("L")}Z`);
+      if (kept.length >= 3) shapes.push(kept);
     }
   }
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const points of shapes) {
+    for (const [x, y] of points) {
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (!Number.isFinite(minX)) {
+    minX = 0; minY = 0; maxX = geo.width; maxY = geo.height;
+  }
+
+  // 가장자리가 잘리지 않도록 여백을 조금 남긴다.
+  const span = Math.max(maxX - minX, maxY - minY) || 1;
+  const scale = 92 / span;
+  const offsetX = (100 - (maxX - minX) * scale) / 2 - minX * scale;
+  const offsetY = (100 - (maxY - minY) * scale) / 2 - minY * scale;
+  const place = (x: number, y: number): [number, number] => [
+    Math.round(x * scale + offsetX),
+    Math.round(y * scale + offsetY),
+  ];
+  const grid = ([x, y]: [number, number]) => place(x, y).join(",");
 
   const first = geo.regions[0];
   const last = geo.regions[geo.regions.length - 1];
   return {
-    d: parts.join(""),
-    from: [Math.round(first.cx * scale + offsetX), Math.round(first.cy * scale + offsetY)],
-    to: [Math.round(last.cx * scale + offsetX), Math.round(last.cy * scale + offsetY)],
+    d: shapes.map((points) => `M${points.map(grid).join("L")}Z`).join(""),
+    from: place(first.cx, first.cy),
+    to: place(last.cx, last.cy),
   };
 }
 

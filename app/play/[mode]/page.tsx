@@ -15,6 +15,13 @@ export function generateStaticParams() {
   return Object.keys(MODES).map((mode) => ({ mode }));
 }
 
+/** 모드를 바꾸면 카드에서도 한 군데는 달라져야 한다. */
+const MODE_TAG: Record<string, string> = {
+  timeattack: "60초",
+  learn: "순서대로",
+  test: "힌트 없이",
+};
+
 export async function generateMetadata({ params }: PageProps<"/play/[mode]">) {
   const { mode } = await params;
   if (!isModeId(mode)) return {};
@@ -40,7 +47,7 @@ export default async function CoursePickerPage({
   })).filter((g) => g.courses.length > 0);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
       <header className="flex flex-col gap-3">
         <Link
           href="/"
@@ -66,8 +73,8 @@ export default async function CoursePickerPage({
             aria-current={m === mode ? "page" : undefined}
             className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               m === mode
-                ? "bg-ink text-paint"
-                : "border border-concrete-deep text-dim hover:bg-concrete-deep hover:text-ink"
+                ? "bg-sign-deep text-paint"
+                : "border border-concrete-deep text-ink/70 hover:bg-concrete-deep hover:text-ink"
             }`}
           >
             {MODE_LABELS[m]}
@@ -75,40 +82,64 @@ export default async function CoursePickerPage({
         ))}
       </nav>
 
+      <p className="flex items-center gap-4 font-mono text-xs text-dim">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-sign" aria-hidden="true" />
+          시작
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2 w-2 rounded-full border-2 border-sign"
+            aria-hidden="true"
+          />
+          끝
+        </span>
+      </p>
+
+      {/* 제목은 자기 아래 카드와 가깝게, 앞 묶음과는 멀게. 그래야 구조가 읽힌다. */}
       {groups.map((group) => (
-        <section key={group.id} className="flex flex-col gap-3">
-          <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+        <section key={group.id} className="flex flex-col gap-2">
+          <h2 className="font-mono text-sm tracking-[0.18em] text-ink/70 uppercase">
             {group.name}
           </h2>
 
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-2">
             {group.courses.map((course) => {
               return (
                 <li key={course.id}>
                   <Link
                     href={`/play/${mode}/${course.id}?from=course_select`}
-                    className="flex items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-5 transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                    className="group flex items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-3 transition-colors hover:border-dim hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:gap-5 sm:p-4"
                   >
-                    {/* 글자 카드가 아니라 지도 조각으로 읽히게 한다. */}
+                    {/*
+                      글자 카드가 아니라 지도 조각으로 읽히게 한다.
+                      이 화면에서는 지도가 먼저 눈에 들어오고 글이 그 지도를
+                      설명하는 순서여야 한다.
+                    */}
                     <CourseThumb
                       courseId={course.id}
-                      className="h-20 w-20 shrink-0 sm:h-24 sm:w-24"
+                      className="h-24 w-24 shrink-0 sm:h-28 sm:w-28"
                     />
-                    <span className="flex min-w-0 flex-1 flex-col gap-2">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                      <span className="text-xl font-semibold">{course.name}</span>
-                      <span className="font-mono text-sm tabular-nums text-dim">
-                        {course.regions.length}곳
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                        <span className="text-xl font-semibold">{course.name}</span>
+                        {/*
+                          곳 수는 이미 코스 이름에 들어 있다(전국 17 시도).
+                          이 자리는 지금 고른 모드가 무엇을 요구하는지에 쓴다 —
+                          모드를 바꿨는데 목록이 그대로면 무엇이 달라졌는지
+                          알 수 없다.
+                        */}
+                        {MODE_TAG[mode] && (
+                          <span className="font-mono text-sm text-dim">
+                            {MODE_TAG[mode]}
+                          </span>
+                        )}
                       </span>
-                    </div>
-                    {/*
-                      지명 미리보기를 뺐다. 가린 모드에서 답의 일부를 미리
-                      보여 주는 셈이었고, 목록이 필요한 사람은 코스 소개
-                      페이지에서 전부 볼 수 있다.
-
-                      총 타수도 뺐다. 코스를 고르는 데 쓰는 값이 아니다.
-                    */}
-                    <span className="text-base text-dim">{course.description}</span>
+                      {/*
+                        이 문장이 카드의 맛이다. 코스를 목록이 아니라 경로로
+                        읽게 만든다. 데이터 나열로 바꾸지 않는다.
+                      */}
+                      <span className="text-base text-dim">{course.description}</span>
                     </span>
                   </Link>
                 </li>

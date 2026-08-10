@@ -5,38 +5,62 @@ interface CourseThumbProps {
   className?: string;
 }
 
+type Thumb = { d: string; from: number[]; to: number[] };
+
 /**
  * 코스 실루엣.
  *
  * 코스는 "31개 시군"이 아니라 "북서 연천에서 남동 안성까지, 인접한 시군을
- * 따라 한 바퀴"다. 그 말이 글로만 있고 화면에는 없었다. 실루엣과 시작·끝
- * 점을 같이 두면 고르기 전에 어떤 여정인지 눈으로 읽힌다.
+ * 따라 한 바퀴"다. 실루엣과 시작·끝 점을 같이 두면 고르기 전에 어떤 여정인지
+ * 눈으로 읽힌다.
+ *
+ * 여기서 주인공은 지형이지 마커가 아니다. 점이 실루엣보다 강하면 지도가
+ * 아이콘처럼 보인다 — 그래서 점은 작게, 지형은 크게 잡는다.
  *
  * 원본 경계 대신 빌드 때 만든 실루엣을 쓴다(`npm run build:thumbs`).
  * 코스 하나가 40~76KB인데 목록에 열일곱 개를 실을 수는 없다.
  */
 export function CourseThumb({ courseId, className }: CourseThumbProps) {
-  const thumb = (thumbs as Record<string, { d: string; from: number[]; to: number[] }>)[
-    courseId
-  ];
+  const thumb = (thumbs as Record<string, Thumb>)[courseId];
   if (!thumb) return null;
 
   return (
     <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
       {/*
         카드 바탕이 거의 흰색이라 옅은 회색으로 칠하면 형태가 안 읽힌다.
-        지도라는 느낌은 유지하되 실루엣은 또렷해야 한다.
+        마우스를 올리면 한 단계 진해진다 — 그림자를 띄우는 것보다 이쪽이
+        이 화면의 언어에 맞는다.
       */}
-      <path d={thumb.d} fill="var(--color-dim)" opacity={0.5} />
-      {/* 시작과 끝. 코스가 경로라는 사실이 여기서 드러난다. */}
-      <circle cx={thumb.from[0]} cy={thumb.from[1]} r={5} fill="var(--color-sign)" />
+      <path
+        d={thumb.d}
+        fill="var(--color-dim)"
+        className="opacity-50 transition-opacity group-hover:opacity-70"
+      />
+
+      {/*
+        시작에서 끝으로. 평소에는 숨어 있다가 마우스를 올리면 나타난다.
+        "철원에서 휴전선을 따라 동해안으로, 다시 내륙을 돌아 춘천까지"라는
+        문장이 이 선 하나로 눈에 들어온다.
+      */}
+      <line
+        x1={thumb.from[0]}
+        y1={thumb.from[1]}
+        x2={thumb.to[0]}
+        y2={thumb.to[1]}
+        stroke="var(--color-sign)"
+        strokeWidth={1.5}
+        strokeDasharray="3 3"
+        className="opacity-0 transition-opacity group-hover:opacity-70"
+      />
+
+      <circle cx={thumb.from[0]} cy={thumb.from[1]} r={3.5} fill="var(--color-sign)" />
       <circle
         cx={thumb.to[0]}
         cy={thumb.to[1]}
-        r={5}
+        r={3.5}
         fill="var(--color-paint)"
         stroke="var(--color-sign)"
-        strokeWidth={2.5}
+        strokeWidth={2}
       />
     </svg>
   );

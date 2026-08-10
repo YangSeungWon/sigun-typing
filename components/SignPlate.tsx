@@ -170,8 +170,7 @@ export function SignPlate({
         화살표는 "이쪽으로 갈 수 있다"는 말이고, 지금 필요한 말이 그것이다.
         자리는 absolute라 켜지고 꺼져도 글자가 밀리지 않는다.
       */}
-      {!revealed && (
-        <span
+      <span
           aria-hidden="true"
           // 흰 내곽선 안쪽에 놓는다. 선 위에 겹치면 표지판이 아니라
           // 인쇄가 밀린 것처럼 보인다.
@@ -180,8 +179,7 @@ export function SignPlate({
           }`}
         >
           ›
-        </span>
-      )}
+      </span>
 
       <div className="relative flex flex-col items-center gap-3">
         {idle ? (
@@ -247,9 +245,15 @@ export function SignPlate({
               )}
               <span
                 className={`${
-                  // 맞힌 것처럼 하얗게 두면 방금 포기한 것과 구분이 안 된다.
+                  /*
+                   * 공개된 정답은 노랑이다 — 맞힌 것처럼 하얗게 두면 방금
+                   * 포기한 것과 구분이 안 된다. 다만 따라 친 글자는 하얗게
+                   * 채워진다. 어디까지 썼는지가 그 자리에서 보여야 한다.
+                   */
                   revealed
-                    ? "text-centerline"
+                    ? statuses[i] === "correct"
+                      ? "text-paint"
+                      : "text-centerline"
                     : blind
                       ? typedChars[i] === undefined
                         ? CHAR_TONE.untyped

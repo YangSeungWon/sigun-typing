@@ -383,7 +383,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   useEffect(() => {
     if (state.status !== "revealing") return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // 아무 키나 받으면 베껴 쓰는 타건까지 삼킨다. 빠져나가는 길은 Esc뿐이다.
+      if (e.key !== "Escape") return;
       e.preventDefault();
       skipReveal();
     };
@@ -785,7 +786,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               >
                 <SignPlate
                   target={revealing ? revealing.answer : current.answer}
-                  typed={revealing ? "" : state.input}
+                  typed={revealing ? state.revealInput : state.input}
                   focused={focused}
                   masked={!config.reveal}
                   revealed={Boolean(revealing)}
@@ -848,7 +849,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                     onClick={() => (revealing ? skipReveal() : giveUpItem())}
                     className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
                   >
-                    {revealing ? "다음" : "모르겠어요"}
+                    {revealing ? "건너뛰기" : "모르겠어요"}
                   </button>
                 )}
               </div>
@@ -860,7 +861,10 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 aria-live="polite"
               >
                 {revealing ? (
-                  "아무 키나 누르면 다음"
+                  <>
+                    <span>정답을 직접 쳐 보세요</span>
+                    <KeyHint keys="Esc">건너뛰기</KeyHint>
+                  </>
                 ) : !focused ? (
                   "표지판을 눌러 계속 입력하세요"
                 ) : (

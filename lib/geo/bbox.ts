@@ -101,12 +101,18 @@ export function focusTransform(
   /*
    * 지역이 화면에서 차지할 비율.
    *
-   * 0.34에서 올렸다. 형태와 인접 관계를 읽는 것이 이 게임의 일인데, 타깃이
-   * 작으면 그걸 읽기 전에 "어디를 봐야 하지"부터 찾게 된다. 주변이 잘리지
-   * 않는 선에서 최대한 크게 잡는다.
+   * 0.34 → 0.42까지 올렸다가 0.36으로 되돌렸다. 타깃이 너무 작으면 "어디를
+   * 봐야 하지"부터 찾게 되지만, 너무 크면 반대쪽 문제가 생긴다 — 화면에
+   * 그 지역만 남아 **어디에 붙어 있는지가 안 보인다.** 이 게임에서 맞히는
+   * 실마리는 모양 자체보다 인접 관계인 경우가 많다. 이웃이 잘리면 확대가
+   * 오히려 문제를 어렵게 만든다.
    */
-  const fill = options.fill ?? 0.42;
-  const maxScale = options.maxScale ?? 4;
+  const fill = options.fill ?? 0.36;
+  /*
+   * 배율 상한도 낮췄다(4 → 3). 서울 중구처럼 작은 지역에서 상한까지 당기면
+   * 지도가 아니라 도형 하나가 화면을 채운다.
+   */
+  const maxScale = options.maxScale ?? 3;
 
   const box = mainPathBox(region.d);
   if (box.width <= 0 || box.height <= 0) return "";

@@ -79,6 +79,7 @@ export function createGame(
     hintShown: false,
     hintShownAt: null,
     revealed: null,
+    revealInput: "",
     hintsUsed: 0,
     hintPenaltyMs: 0,
     keystrokes: [],
@@ -168,6 +169,26 @@ export function tick(state: GameState, now: number): GameState {
  * 정답과 일치하면 항목을 확정하고 다음으로 넘어간다.
  */
 export function setInput(state: GameState, text: string, now: number): GameState {
+  /*
+   * 정답을 보여 주는 동안의 입력은 따로 받는다.
+   *
+   * 모르겠다고 넘긴 자리에서 정답을 눈으로만 보고 지나가면 다음에 또 모른다.
+   * 손으로 한 번 쓰는 것이 눈으로 보는 것보다 훨씬 잘 남는다 — 어차피
+   * 타자 게임이므로 이 게임이 학습에 보태는 것이 정확히 그 지점이다.
+   *
+   * 점수에는 넣지 않는다. 이건 회상이 아니라 베껴 쓰기이고, 여기서 친 타수를
+   * 세면 모르는 곳을 넘길수록 타수가 오르는 이상한 일이 된다.
+   */
+  if (state.status === "revealing" && state.revealed) {
+    if (/\s/.test(text)) {
+      const typed = text.replace(/\s+/g, "");
+      return typed === state.revealed.answer
+        ? settleReveal(state)
+        : { ...state, revealInput: typed };
+    }
+    return { ...state, revealInput: text };
+  }
+
   if (state.status !== "playing") return state;
 
   /*
@@ -249,6 +270,10 @@ export function setInput(state: GameState, text: string, now: number): GameState
  * 쓰이고, 그게 이 게임이 만들어 낼 수 있는 가장 값진 데이터다.
  */
 export function submit(state: GameState, now: number): GameState {
+  // 정답을 베껴 쓰는 중이라면, 다 썼을 때만 넘어간다.
+  if (state.status === "revealing" && state.revealed) {
+    return state.revealInput.trim() === state.revealed.answer ? settleReveal(state) : state;
+  }
   if (state.status !== "playing") return state;
 
   const text = state.input.trim();
@@ -299,10 +324,10 @@ export function giveUp(state: GameState, now: number): GameState {
   return { ...next, status: "revealing", revealed: { answer } };
 }
 
-/** 정답을 다 읽었으니 그만 넘어간다. 이 호출 전까지는 그대로 머문다. */
+/** 정답을 다 썼으니 넘어간다. 이 호출 전까지는 그대로 머문다. */
 export function settleReveal(state: GameState): GameState {
   if (state.status !== "revealing") return state;
-  return { ...state, status: "playing", revealed: null };
+  return { ...state, status: "playing", revealed: null, revealInput: "" };
 }
 
 /** @deprecated giveUp을 쓴다. 이름만 남겨 둔 옛 호출부용. */
@@ -353,6 +378,7 @@ function commitItem(state: GameState, now: number, skipped: boolean): GameState 
     hintShown: false,
     hintShownAt: null,
     revealed: null,
+    revealInput: "",
   };
 
   if (advanced.index >= advanced.items.length) return finish(advanced, now);

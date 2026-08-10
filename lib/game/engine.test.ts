@@ -512,3 +512,55 @@ describe("엔터 제출", () => {
     expect(s.answerRate).toBeCloseTo(2 / 3);
   });
 });
+
+/*
+ * 포기한 자리에서 정답을 **손으로 한 번 쓴다.**
+ *
+ * 눈으로만 보고 지나가면 다음에 또 모른다. 어차피 타자 게임이므로 이 게임이
+ * 학습에 보탤 수 있는 것이 정확히 그 지점이다.
+ */
+describe("정답 베껴 쓰기", () => {
+  const stuck = () => {
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
+    return giveUp(g, 100);
+  };
+
+  it("포기하면 정답을 보여 주는 상태로 들어간다", () => {
+    const g = stuck();
+    expect(g.status).toBe("revealing");
+    expect(g.revealed?.answer).toBe(g.results[0].answer);
+  });
+
+  it("아무거나 쳐서는 넘어가지 않는다", () => {
+    let g = stuck();
+    g = setInput(g, "ㄱ", 200);
+    expect(g.status).toBe("revealing");
+    expect(g.revealInput).toBe("ㄱ");
+  });
+
+  it("정답을 다 쓰고 제출하면 넘어간다", () => {
+    let g = stuck();
+    const answer = g.revealed!.answer;
+    g = setInput(g, `${answer} `, 200);
+    expect(g.status).toBe("playing");
+    expect(g.revealed).toBeNull();
+    expect(g.revealInput).toBe("");
+  });
+
+  it("베껴 쓴 타건은 점수에 들어가지 않는다", () => {
+    let g = stuck();
+    const before = g.keystrokes.length;
+    const answer = g.revealed!.answer;
+    g = setInput(g, answer, 200);
+    g = setInput(g, `${answer} `, 300);
+    expect(g.keystrokes.length).toBe(before);
+    // 포기한 항목은 여전히 0타에 오답이다. 베껴 썼다고 점수가 생기지 않는다.
+    expect(g.results[0].keystrokes).toBe(0);
+    expect(g.results[0].skipped).toBe(true);
+  });
+
+  it("쓰기 싫으면 빠져나갈 수 있다 — 막다른 길을 만들지 않는다", () => {
+    const g = settleReveal(stuck());
+    expect(g.status).toBe("playing");
+  });
+});

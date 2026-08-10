@@ -58,7 +58,7 @@ export function MistakeNotes() {
 아직 헷갈리는 곳이 없습니다. 틀리거나 힌트를 본 지역이 여기 모입니다.
         </p>
         <Link
-          href="/play/map"
+          href="/"
           className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           지도 타이핑 하러 가기

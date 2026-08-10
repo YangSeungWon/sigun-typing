@@ -1,47 +1,39 @@
 import Link from "next/link";
-import { HomeStatus } from "@/components/HomeStatus";
+import { CourseThumb } from "@/components/CourseThumb";
 import { HomeView } from "@/components/HomeView";
-import { HomeHero } from "@/components/HomeHero";
-import { COURSES, getCourse } from "@/data/courses";
+import { COURSES } from "@/data/courses";
+import { COURSE_GROUPS } from "@/data/groups";
 import { DATA_VINTAGE } from "@/data/vintage";
-import { loadCourseGeo } from "@/lib/geo";
 
 /**
- * 첫 화면.
+ * 첫 화면 = 대한민국 코스 지도.
  *
- * 이 게임은 설명보다 플레이가 빠르다 — 지도에 한 곳이 켜지고, 이름을 치면
- * 채워진다. 2초면 이해한다. 그래서 홈에서 읽는 시간이 길어질수록 손해다.
+ * 오래 헤맨 자리다. 한때 여기에 오늘의 문제 미니게임과 `전국 도전 시작`
+ * 버튼과 `헷갈리는 지역` 카드가 함께 있었다. 하나하나는 이유가 있었지만
+ * 셋이 서로 다른 제품처럼 경쟁했고, 정작 이 서비스의 알맹이인 **코스들**은
+ * 한 단계 아래에 숨어 있었다. 화면의 절반이 코스 하나(전국 17 시도)의
+ * 홍보였던 셈이다.
  *
- * 한때 타임어택·이름 보고 익히기·실력 테스트·대결을 코스 목록과 함께 첫 화면에 다 늘어놓았다.
- * 하나하나는 있을 이유가 있는 기능이지만, 처음 온 사람에게는 "그래서 뭘
- * 눌러야 하지"가 먼저 생긴다. 나머지 모드는 한 판 끝낸 뒤에 만나도 늦지 않다.
+ * 이 서비스는 오늘 뭘 할지 추천해 주는 곳이 아니라 지도를 고르고 노는
+ * 곳이다. 그런 제품에 들어와서 처음 보고 싶은 것은 "어떤 지도를 할까"이지
+ * "당신이 지난번에 틀린 곳"이 아니다. 그래서 목록을 그대로 첫 화면으로
+ * 올렸다 — 권역으로 묶인 이 구조 자체가 서비스가 무엇인지 설명한다.
  *
- * 지금 이 화면이 하는 말은 셋뿐이다 — 무슨 게임인가, 지도, 시작.
+ * 미니게임을 뺀 이유: 규칙을 즉시 이해시키려던 장치였는데, 이름과 화면이
+ * 그만큼 분명해진 지금은 값보다 자리값이 크다.
  */
-/**
- * 오늘의 한 문제.
- *
- * 날짜에서 고른다 — 무작위로 뽑으면 서버가 그린 것과 브라우저가 그린 것이
- * 달라 화면이 통째로 다시 그려진다. 한국 시간 기준 날짜라 자정에 바뀐다.
- */
-function questionOfTheDay(count: number): number {
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const days = Math.floor(kst.getTime() / 86_400_000);
-  return days % count;
-}
+export const metadata = {
+  alternates: { canonical: "/" },
+};
 
-export default async function Home() {
-  const entry = getCourse("sido")!;
-  const geo = await loadCourseGeo(entry.id);
-  const pick = entry.regions[questionOfTheDay(entry.regions.length)];
-  const todaysQuestion = {
-    code: pick.code,
-    name: pick.name,
-    aliases: pick.aliases ?? [],
-  };
+export default function Home() {
+  const groups = COURSE_GROUPS.map((group) => ({
+    ...group,
+    courses: COURSES.filter((c) => c.group === group.id),
+  })).filter((g) => g.courses.length > 0);
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-10 px-6 py-14">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
       <HomeView />
 
       <header className="flex flex-col gap-3">
@@ -51,35 +43,47 @@ export default async function Home() {
         </p>
       </header>
 
+      {/* 제목은 자기 아래 카드와 가깝게, 앞 묶음과는 멀게. 그래야 구조가 읽힌다. */}
+      {groups.map((group) => (
+        <section key={group.id} className="flex flex-col gap-2">
+          <h2 className="font-mono text-sm tracking-[0.18em] text-ink/70 uppercase">
+            {group.name}
+          </h2>
+
+          <ul className="flex flex-col gap-2">
+            {group.courses.map((course) => (
+              <li key={course.id}>
+                <Link
+                  href={`/courses/${course.id}`}
+                  className="group flex items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-2 pr-4 transition-colors hover:border-dim hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:gap-5 sm:p-3 sm:pr-5"
+                >
+                  {/*
+                    글자 카드가 아니라 지도 조각으로 읽히게 한다. 이 화면에서는
+                    지도가 먼저 눈에 들어오고 글이 그 지도를 설명하는 순서여야 한다.
+                  */}
+                  <CourseThumb
+                    courseId={course.id}
+                    className="h-28 w-28 shrink-0 sm:h-32 sm:w-32"
+                  />
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="text-xl font-semibold">{course.name}</span>
+                    {/*
+                      이 문장이 카드의 맛이다. 코스를 목록이 아니라 경로로
+                      읽게 만든다. 데이터 나열로 바꾸지 않는다.
+                    */}
+                    <span className="text-base text-dim">{course.description}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+
       {/*
-        설명 대신 한 문제를 낸다. 지도에 한 곳이 켜지고 이름을 치면 채워지는
-        것이 이 게임의 전부인데, 그걸 알려면 지금까지는 코스를 고르고 출발까지
-        눌러야 했다. 5초면 이해할 것을 세 번 눌러야 알 수 있었던 셈이다.
-
-        문제는 날마다 바뀐다. 서버와 브라우저가 같은 값을 그려야 하므로
-        무작위가 아니라 날짜에서 정한다.
-      */}
-      {geo && <HomeHero geo={geo} region={todaysQuestion} courseId={entry.id} />}
-
-      {/* 주 버튼은 히어로 안에 있다. 여기는 그 다음 선택지뿐이다. */}
-      <section className="flex flex-col gap-3">
-        <Link
-          href="/play/map"
-          className="rounded-xl border border-concrete-deep px-6 py-4 text-center font-medium transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          지역 골라서 시작
-          <span className="ml-2 font-mono text-sm text-dim">
-            {COURSES.length}개 코스
-          </span>
-        </Link>
-      </section>
-
-      {/* 기록이 있는 사람에게만 보인다. 첫 방문자에게 빈 상자를 줄 이유가 없다. */}
-      <HomeStatus />
-
-      {/*
-        `헷갈리는 지역`은 여기 두지 않는다. 틀린 곳이 있는 사람에게는 바로
-        위 카드가 그 자리로 데려가고, 없는 사람에게 그 링크는 빈 페이지다.
+        전역 메뉴에는 **플레이 방식이 들어가지 않는다.**
+        타임어택과 실력 테스트는 사이트의 섹션이 아니라 코스 하나를 어떻게
+        할지 정하는 방법이고, 그건 코스를 고른 다음에 나오는 이야기다.
       */}
       <nav
         className="flex flex-wrap gap-x-5 gap-y-2 font-mono text-sm text-dim"

@@ -502,7 +502,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
           geo={geo}
           passedCodes={passedCodes}
           missed={missedItems}
-          coursesHref={`/play/${mode}`}
+          // 코스 고르기는 첫 화면이다.
+          coursesHref="/"
           nextSlot={
             practice ? null : (
               <NextChallenge courseId={course.id} mode={mode} score={score} />
@@ -570,8 +571,10 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
       */}
       <header className="mx-auto flex w-full max-w-3xl items-center gap-3 font-mono text-sm tabular-nums text-dim">
         <Link
-          href={`/play/${mode}`}
-          aria-label="코스 선택으로"
+          // 나가는 곳은 이 코스의 소개다. 다른 방식으로 한 판 더 하려는
+          // 사람이 대부분이고, 다른 코스로 가는 길도 거기 있다.
+          href={`/courses/${course.id}`}
+          aria-label="코스 화면으로"
           className="transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           <span aria-hidden="true">←</span>

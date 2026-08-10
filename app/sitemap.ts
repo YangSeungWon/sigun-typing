@@ -12,12 +12,6 @@ import { siteUrl } from "@/lib/site";
 export default function sitemap(): MetadataRoute.Sitemap {
   const at = (path: string) => `${siteUrl()}${path}`;
 
-  const modes = MODE_LADDER.map((mode) => ({
-    url: at(`/play/${mode}`),
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
-
   const games = MODE_LADDER.flatMap((mode) =>
     COURSES.map((course) => ({
       url: at(`/play/${mode}/${course.id}`),
@@ -37,7 +31,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: at("/"), changeFrequency: "weekly", priority: 1 },
     ...courses,
-    ...modes,
     ...games,
     { url: at("/guide"), changeFrequency: "monthly", priority: 0.6 },
     { url: at("/ranking"), changeFrequency: "daily", priority: 0.5 },

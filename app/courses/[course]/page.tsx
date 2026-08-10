@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { RegionMap } from "@/components/RegionMap";
+import { CourseMistakes } from "@/components/CourseMistakes";
+import { CourseMap } from "@/components/CourseMap";
 import { COURSES, getCourse } from "@/data/courses";
 import { loadCourseGeo } from "@/lib/geo";
 import { MODE_LABELS } from "@/lib/game/modes";
@@ -45,26 +46,43 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
         <p className="text-lg text-dim">{course.description}</p>
       </header>
 
-      <div className="flex flex-wrap gap-3">
+      {geo && (
+        <div className="flex justify-center">
+          <CourseMap geo={geo} courseId={course.id} />
+        </div>
+      )}
+
+      {/*
+        기본 플레이 하나만 크게 둔다.
+        넷을 같은 크기의 카드로 늘어놓으면 처음 온 사람은 무엇이 본 게임인지
+        모른다. `경기도를 한다 → 기본은 지도 보고 맞히기 → 필요하면 다른
+        방식도 있다`라는 위계가 읽혀야 한다.
+
+        버튼에는 모드명(`지도 타이핑`) 대신 하는 일을 적는다. 모드명은
+        제품 안에서 쓰는 이름이고, 버튼에서는 기능명처럼 보인다.
+      */}
+      <div className="flex flex-col gap-3">
         <Link
           href={`/play/map/${course.id}?from=course_select`}
-          className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           지도 보고 맞히기
         </Link>
-        <Link
-          href={`/play/learn/${course.id}?from=course_select`}
-          className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          이름 보고 연습하기
-        </Link>
+        <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 font-mono text-sm text-dim">
+          {(["timeattack", "learn", "test"] as const).map((mode) => (
+            <li key={mode}>
+              <Link
+                href={`/play/${mode}/${course.id}?from=course_select`}
+                title={MODE_SUMMARY[mode]}
+                className="transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                {MODE_LABELS[mode]}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <CourseMistakes courseId={course.id} />
       </div>
-
-      {geo && (
-        <div className="flex justify-center">
-          <RegionMap geo={geo} variant="route" className="h-64 w-auto sm:h-80" />
-        </div>
-      )}
 
       <details className="group flex flex-col gap-4 rounded-xl border border-concrete-deep px-5 py-3">
         <summary className="cursor-pointer list-none text-base text-dim marker:content-none">
@@ -84,25 +102,6 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
           ))}
         </ol>
       </details>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl font-semibold">이 코스로 할 수 있는 것</h2>
-        <ul className="flex flex-col gap-2">
-          {(["map", "timeattack", "learn", "test"] as const).map((mode) => (
-            <li key={mode}>
-              <Link
-                href={`/play/${mode}/${course.id}?from=course_select`}
-                className="flex items-baseline justify-between gap-4 rounded-lg border border-concrete-deep px-5 py-3 transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-              >
-                <span className="font-medium">{MODE_LABELS[mode]}</span>
-                <span className="text-right text-base text-dim">
-                  {MODE_SUMMARY[mode]}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       {siblings.length > 0 && (
         <section className="flex flex-col gap-3">

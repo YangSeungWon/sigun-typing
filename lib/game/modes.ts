@@ -18,6 +18,7 @@ export const MODES: Record<ModeId, ModeConfig> = {
   /** 지도만 보고 지역명을 떠올려 친다. 이게 본편이다. */
   map: {
     id: "map",
+    judge: "enter",
     reveal: false,
     shuffle: true,
     allowSkip: true,
@@ -33,6 +34,7 @@ export const MODES: Record<ModeId, ModeConfig> = {
    */
   learn: {
     id: "learn",
+    judge: "live",
     reveal: true,
     shuffle: false,
     allowSkip: false,
@@ -42,6 +44,7 @@ export const MODES: Record<ModeId, ModeConfig> = {
   /** 본편과 같은 규칙에 시간 압박만 더한다. 오답 1회당 2초 차감. */
   timeattack: {
     id: "timeattack",
+    judge: "enter",
     reveal: false,
     timeLimitMs: 60_000,
     penaltyMs: 2_000,
@@ -61,6 +64,7 @@ export const MODES: Record<ModeId, ModeConfig> = {
    */
   test: {
     id: "test",
+    judge: "enter",
     reveal: false,
     shuffle: false,
     allowSkip: true,
@@ -79,6 +83,7 @@ export const MODES: Record<ModeId, ModeConfig> = {
    */
   multi: {
     id: "multi",
+    judge: "enter",
     reveal: false,
     shuffle: false,
     allowSkip: false,

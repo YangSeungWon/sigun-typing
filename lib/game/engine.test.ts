@@ -8,10 +8,12 @@ import {
   remainingMs,
   score,
   setInput,
+  submit,
   skip,
   start,
   tick,
 } from "./engine";
+import { keystrokeCount } from "../hangul/keystrokes";
 import { MODES } from "./modes";
 import type { GameItem, GameState } from "./types";
 
@@ -118,10 +120,14 @@ describe("타임어택", () => {
     expect(g.status).toBe("finished");
   });
 
-  it("오답은 남은 시간을 깎는다", () => {
+  // 회상 모드이므로 시간을 깎는 것은 오답 **제출**이다. 치는 도중에는
+  // 아무 일도 일어나지 않는다 — 그래야 지웠다 다시 칠 수 있다.
+  it("오답 제출은 남은 시간을 깎는다", () => {
     let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
     const before = remainingMs(g, 1_000);
-    g = setInput(g, "쿄", 1_000); // 어떤 항목이든 정답 경로가 아닌 입력
+    g = setInput(g, "쿄", 1_000);
+    expect(remainingMs(g, 1_000)).toBe(before);
+    g = submit(g, 1_000);
     expect(remainingMs(g, 1_000)).toBe(before - MODES.timeattack.penaltyMs!);
   });
 
@@ -129,7 +135,7 @@ describe("타임어택", () => {
     let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
     for (let i = 0; i < 30; i++) {
       g = setInput(g, "쿄", 1_000 + i * 10);
-      g = setInput(g, "", 1_005 + i * 10);
+      g = submit(g, 1_005 + i * 10);
     }
     expect(remainingMs(g, 1_500)).toBeLessThanOrEqual(0);
     expect(tick(g, 1_500).status).toBe("finished");
@@ -375,5 +381,103 @@ describe("전환 상태", () => {
     g = type(g, "안양", 1000);
     g = type(g, "부천", 2000);
     expect(g.status).toBe("finished");
+  });
+});
+
+/*
+ * 회상 모드의 제출 규칙.
+ *
+ * 접두사 판정만 있던 시절에는 틀린 답을 아예 제출할 수가 없었다. 지우는 것
+ * 말고 길이 없으니 "안산을 연천으로 착각했다"가 기록에 남지 않았고, 치는
+ * 도중에 빨갛게 뜨는 것이 공짜 힌트 노릇을 했다.
+ */
+describe("엔터 제출", () => {
+  const recall = () => start(createGame(ITEMS, MODES.map, 0, 1), 0);
+
+  it("치는 동안에는 오답으로 세지 않는다", () => {
+    let g = recall();
+    g = setInput(g, "쿄", 100);
+    expect(g.itemErrors).toBe(0);
+    expect(g.offTrack).toBe(false);
+    expect(g.rejectedAt).toBeNull();
+  });
+
+  it("틀린 답을 제출하면 그 답이 남고 입력이 비워진다", () => {
+    let g = recall();
+    const answer = g.items[0].answer;
+    const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
+    g = setInput(g, wrong, 100);
+    g = submit(g, 200);
+    expect(g.index).toBe(0);
+    expect(g.input).toBe("");
+    expect(g.itemWrong).toEqual([wrong]);
+    expect(g.itemErrors).toBe(1);
+    expect(g.rejectedAt).toBe(200);
+  });
+
+  it("틀린 뒤 맞히면 시도 횟수와 오답이 결과에 남는다", () => {
+    let g = recall();
+    const answer = g.items[0].answer;
+    const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
+    g = submit(setInput(g, wrong, 100), 200);
+    g = setInput(g, answer, 300);
+    expect(g.results[0].attempts).toBe(2);
+    expect(g.results[0].wrongAnswers).toEqual([wrong]);
+    expect(g.results[0].skipped).toBe(false);
+  });
+
+  it("한 번에 맞히면 시도는 1이고 오답 목록은 없다", () => {
+    let g = recall();
+    g = setInput(g, g.items[0].answer, 100);
+    expect(g.results[0].attempts).toBe(1);
+    expect(g.results[0].wrongAnswers).toBeUndefined();
+  });
+
+  it("정답은 엔터 없이도 넘어간다 — 엔터는 틀린 사람만 쓰게 된다", () => {
+    let g = recall();
+    g = setInput(g, g.items[0].answer, 100);
+    expect(g.index).toBe(1);
+  });
+
+  it("빈 채로 엔터를 쳐도 벌하지 않는다", () => {
+    let g = recall();
+    const before = g;
+    g = submit(g, 100);
+    expect(g).toBe(before);
+  });
+
+  it("따라치기에서는 엔터가 아무 일도 하지 않는다", () => {
+    let g = start(createGame(ITEMS, MODES.learn, 0, 1), 0);
+    g = setInput(g, "쿄", 100);
+    const before = g;
+    expect(submit(g, 200)).toBe(before);
+    // 대신 치는 즉시 오답으로 센다 — 답이 화면에 있으니 그게 맞다.
+    expect(g.itemErrors).toBe(1);
+  });
+
+  it("오답 제출 전의 타수는 정답 타수로 치지 않는다", () => {
+    let g = recall();
+    const answer = g.items[0].answer;
+    const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
+    g = submit(setInput(g, wrong, 100), 200);
+    g = setInput(g, answer, 300);
+    // 정답에 든 타수만 남는다. 헛친 타수는 분모(친 타수)에만 남아 정확도를 낮춘다.
+    expect(g.results[0].keystrokes).toBe(keystrokeCount(answer));
+    expect(score(g, 400).accuracy).toBeLessThan(1);
+  });
+
+  it("첫 제출에 맞힌 수가 정답률이 된다", () => {
+    let g = recall();
+    const wrongFor = (a: string) => ITEMS.map((i) => i.answer).find((n) => n !== a)!;
+    // 첫 곳만 한 번 틀리고, 나머지는 한 번에 맞힌다.
+    g = submit(setInput(g, wrongFor(g.items[0].answer), 100), 200);
+    for (let i = 0; i < ITEMS.length; i++) {
+      g = tick(g, 300 + i * 100);
+      g = setInput(g, g.items[g.index].answer, 300 + i * 100);
+    }
+    const s = score(g, 1_000);
+    expect(s.completed).toBe(3);
+    expect(s.firstTry).toBe(2);
+    expect(s.answerRate).toBeCloseTo(2 / 3);
   });
 });

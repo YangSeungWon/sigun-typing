@@ -58,6 +58,11 @@ export default function GuidePage() {
       <div className="flex flex-col gap-2">
         <Fold title="키보드">
           <dl className="flex flex-col gap-3">
+            <KeyRow keys="Enter" label="제출">
+              떠오른 이름을 확정합니다. 정답이면 엔터를 치기 전에 이미
+              넘어가 있으므로, 이 키를 쓰게 되는 것은 헷갈릴 때뿐입니다.
+              틀려도 그 자리에 그대로 있고 다시 떠올려 볼 수 있습니다.
+            </KeyRow>
             <KeyRow keys="Tab" label="힌트">
               초성을 보여 줍니다(<Kbd>의정부</Kbd> → <Kbd>ㅇㅈㅂ</Kbd>). 기록에{" "}
               {hintSeconds}초가 더해집니다. 한 번 더 누르면 정답을 봅니다.
@@ -67,6 +72,24 @@ export default function GuidePage() {
             </KeyRow>
           </dl>
           <p className="text-dim">모바일에서는 같은 기능이 버튼으로 나옵니다.</p>
+        </Fold>
+
+        <Fold title="틀리면 어떻게 되나요">
+          <p>
+            엔터로 낸 답이 틀리면 오답 한 번으로 적고 그 자리에 그대로
+            머무릅니다. 몇 번이든 다시 떠올려 볼 수 있고, 정 모르겠으면{" "}
+            <Kbd>Esc</Kbd>로 정답을 보고 넘어갑니다.
+          </p>
+          <p>
+            치는 동안에는 맞았는지 틀렸는지 알려 주지 않습니다. 한 글자 칠
+            때마다 색이 바뀌면 그게 곧 답을 알려 주는 셈이라, 떠올리는
+            게임이 글자 맞히기 게임이 되기 때문입니다.
+          </p>
+          <p>
+            결과 화면에는 무엇을 무엇으로 착각했는지가 남습니다. 안산을
+            연천이라고 답했다면 그 두 곳을 나란히 보는 것이 다시 외우는 데
+            가장 빠릅니다.
+          </p>
         </Fold>
 
         <Fold title="이름은 어디까지 인정되나요">

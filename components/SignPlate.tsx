@@ -30,6 +30,15 @@ interface SignPlateProps {
   masked?: boolean;
   /** 초성 힌트를 열었는지. 가려진 글자를 ○ 대신 초성으로 보여준다. */
   hinted?: boolean;
+  /**
+   * 오답을 언제 판정하는가. 모드 설정과 같은 값이다.
+   *
+   * `"enter"`이면 **치는 동안 아무 색도 바뀌지 않는다.** 맞은 글자를 하얗게,
+   * 틀린 글자를 빨갛게 칠하는 순간 그 자체가 답을 알려 주기 때문이다 —
+   * 초성을 하나씩 눌러 보며 색이 바뀌는지만 봐도 정답을 좁힐 수 있다.
+   * 판정은 엔터를 친 뒤에 온다.
+   */
+  judge?: "live" | "enter";
   /** 오타가 날 때마다 증가하는 값. 바뀌면 판면이 흔들린다. */
   erroredAt?: number;
   /** 지역을 통과할 때마다 증가하는 값. 바뀌면 판면이 한 번 튄다. */
@@ -53,13 +62,21 @@ export function SignPlate({
   revealed = false,
   roman,
   hinted = false,
+  judge = "live",
   erroredAt = 0,
   advancedAt = 0,
 }: SignPlateProps) {
   const { statuses } = matchProgress(target, typed);
   const chars = [...target];
   const typedChars = [...typed];
-  const cursor = statuses.findIndex((s) => s === "untyped" || s === "pending");
+  /*
+   * 제출로 판정하는 모드에서는 색이 곧 답이므로, 친 글자와 안 친 글자만
+   * 구분하고 맞고 틀림은 구분하지 않는다.
+   */
+  const blind = judge === "enter" && !revealed;
+  const cursor = blind
+    ? Math.min(typedChars.length, chars.length)
+    : statuses.findIndex((s) => s === "untyped" || s === "pending");
   // 목표 길이를 넘겨 친 글자들. 보여 주지 않으면 몇 자를 지워야 할지 알 수 없다.
   const extra = typedChars.slice(chars.length);
 
@@ -96,6 +113,7 @@ export function SignPlate({
     // 초성은 아래 한 줄로 따로 보여 준다. 글자 자리에도 겹쳐 그리면 같은 것이
     // 두 번 보이고, 한 글자만 쳐도 그 자리의 초성이 사라진다.
     if (masked) return typedChars[i] ?? "○";
+    if (blind) return typedChars[i] ?? chars[i];
     if (statuses[i] === "wrong") return typedChars[i] ?? chars[i];
     return chars[i];
   };
@@ -202,7 +220,13 @@ export function SignPlate({
               <span
                 className={`${
                   // 맞힌 것처럼 하얗게 두면 방금 포기한 것과 구분이 안 된다.
-                  revealed ? "text-centerline" : CHAR_TONE[statuses[i]]
+                  revealed
+                    ? "text-centerline"
+                    : blind
+                      ? typedChars[i] === undefined
+                        ? CHAR_TONE.untyped
+                        : "text-paint"
+                      : CHAR_TONE[statuses[i]]
                 } transition-colors duration-100`}
               >
                 {slotContent(i)}
@@ -218,7 +242,8 @@ export function SignPlate({
           {/* 넘겨 친 글자도 그려야 몇 자를 지워야 하는지 눈으로 보인다. */}
           {extra.map((ch, i) => (
             <span key={`extra-${i}`} className="relative flex flex-col items-center">
-              <span className="text-alert">{ch}</span>
+              {/* 길이를 넘겼다는 것도 정보다. 제출 전에는 알려 주지 않는다. */}
+              <span className={blind ? "text-paint" : "text-alert"}>{ch}</span>
               <span className="mt-1 h-1 w-full rounded-full opacity-0" />
             </span>
           ))}
@@ -253,7 +278,7 @@ export function SignPlate({
         </span>
       )}
 
-      {extra.length > 0 && (
+      {extra.length > 0 && !blind && (
         <span className="font-mono text-sm text-alert" role="status">
           {extra.length}자 더 쳤습니다 — 지우세요
         </span>

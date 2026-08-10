@@ -7,6 +7,7 @@ import {
   revealHint,
   score,
   setInput,
+  submit,
   giveUp,
   settleReveal,
   start,
@@ -58,6 +59,16 @@ export function useGame(items: GameItem[], config: ModeConfig, seed = 1) {
     }
   }, [state.index]);
 
+  /** 오답을 제출한 순간 — 흔들림과 소리의 신호. */
+  const lastRejected = useRef(state.rejectedAt);
+  const [rejectedAt, setRejectedAt] = useState(0);
+  useEffect(() => {
+    if (state.rejectedAt !== null && state.rejectedAt !== lastRejected.current) {
+      setRejectedAt((n) => n + 1);
+    }
+    lastRejected.current = state.rejectedAt;
+  }, [state.rejectedAt]);
+
   /** 정답 경로를 막 벗어난 순간 — 흔들림 연출의 신호. */
   const wasOffTrack = useRef(state.offTrack);
   const [erroredAt, setErroredAt] = useState(0);
@@ -78,6 +89,11 @@ export function useGame(items: GameItem[], config: ModeConfig, seed = 1) {
 
   const type = useCallback((text: string) => {
     setState((s) => setInput(s, text, Date.now()));
+  }, []);
+
+  /** 엔터로 제출한다. 회상 모드에서만 뜻이 있다. */
+  const submitAnswer = useCallback(() => {
+    setState((s) => submit(s, Date.now()));
   }, []);
 
   const begin = useCallback(() => {
@@ -111,10 +127,13 @@ export function useGame(items: GameItem[], config: ModeConfig, seed = 1) {
     advancedAt,
     /** 정답 경로를 벗어날 때마다 증가 */
     erroredAt,
+    /** 오답을 제출할 때마다 증가 */
+    rejectedAt,
     /** 오타 없이 연속 통과한 지역 수 */
     streak,
     begin,
     type,
+    submitAnswer,
     giveUpItem,
     skipReveal,
     hint,

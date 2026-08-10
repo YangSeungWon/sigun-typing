@@ -15,6 +15,7 @@ function result(over: Partial<ItemResult> = {}): ItemResult {
     elapsedMs: 2_000,
     keystrokes: 6,
     errors: 0,
+    attempts: 1,
     skipped: false,
     hinted: false,
     ...over,

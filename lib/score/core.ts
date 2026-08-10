@@ -24,6 +24,8 @@ export interface ScoreInputs {
   completed: number;
   total: number;
   hintsUsed: number;
+  /** 첫 제출에 맞힌 항목 수 */
+  firstTry: number;
 }
 
 export function computeScore(inputs: ScoreInputs): Score {
@@ -40,5 +42,9 @@ export function computeScore(inputs: ScoreInputs): Score {
     completed: inputs.completed,
     total: inputs.total,
     hintsUsed: inputs.hintsUsed,
+    firstTry: Math.max(0, inputs.firstTry),
+    // 아무것도 안 한 판은 정의할 수 없다. 정확도와 같은 규칙으로 1로 둔다.
+    answerRate:
+      inputs.total === 0 ? 1 : Math.min(1, Math.max(0, inputs.firstTry) / inputs.total),
   };
 }

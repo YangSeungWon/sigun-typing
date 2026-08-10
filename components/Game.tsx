@@ -14,6 +14,7 @@ import {
   playHint,
   playStart,
   playTick,
+  playWrong,
   playUrgent,
   primeSound,
 } from "@/lib/sound";
@@ -84,9 +85,11 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     score,
     advancedAt,
     erroredAt,
+    rejectedAt,
     streak,
     begin,
     type,
+    submitAnswer,
     giveUpItem,
     skipReveal,
     hint,
@@ -245,6 +248,10 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     if (state.hintShown) playHint();
   }, [state.hintShown]);
 
+  useEffect(() => {
+    if (rejectedAt > 0) playWrong();
+  }, [rejectedAt]);
+
   const skippedCount = state.results.filter((r) => r.skipped).length;
   useEffect(() => {
     if (skippedCount > 0) playGiveUp();
@@ -383,6 +390,27 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [state.status, skipReveal]);
+
+  /*
+   * 엔터로 제출한다.
+   *
+   * 정답과 정확히 일치하면 엔터를 치기 전에 이미 넘어가 있다. 그래서 이 키를
+   * 실제로 쓰게 되는 것은 **틀렸거나 확신이 없는 사람뿐**이다. 잘 아는 사람의
+   * 손놀림은 예전 그대로다.
+   */
+  useEffect(() => {
+    if (state.status !== "playing" || config.judge !== "enter") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
+      // IME가 조합을 끝내려고 누른 엔터는 제출이 아니다. 이걸 빼면 조합 중인
+      // 마지막 글자가 확정되는 순간 곧바로 오답으로 접수된다.
+      if (e.isComposing || e.keyCode === 229) return;
+      e.preventDefault();
+      submitAnswer();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.status, config.judge, submitAnswer]);
 
   // 모르겠어요는 Esc. 허용된 모드에서만 동작한다.
   useEffect(() => {
@@ -754,6 +782,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               <TypingSurface
                 onType={type}
                 advancedAt={advancedAt}
+                rejectedAt={rejectedAt}
                 onFocusChange={onFocusChange}
               >
                 <SignPlate
@@ -767,7 +796,12 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                     course.placeUnit,
                   )}
                   hinted={state.hintShown}
-                  erroredAt={erroredAt}
+                  judge={config.judge}
+                  /*
+                   * 흔들리는 계기가 모드마다 다르다. 따라치기에서는 경로를
+                   * 벗어난 순간이고, 회상 모드에서는 오답을 제출한 순간이다.
+                   */
+                  erroredAt={config.judge === "enter" ? rejectedAt : erroredAt}
                   advancedAt={advancedAt}
                 />
               </TypingSurface>
@@ -781,6 +815,21 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 입력창이 포커스를 잃고, 그러면 그 뒤로 아무리 쳐도 반응이 없다.
               */}
               <div className="flex min-h-11 items-center justify-center gap-3 sm:hidden">
+                {/*
+                  휴대폰 자판의 확인 키가 엔터로 오지 않는 경우가 있다 —
+                  한글 조합을 끝내는 데 쓰이거나 자판만 닫히기도 한다.
+                  제출이 유일한 통로인 모드에서 그 키가 안 먹으면 판이 막힌다.
+                */}
+                {config.judge === "enter" && !revealing && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={submitAnswer}
+                    className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
+                  >
+                    제출
+                  </button>
+                )}
                 {config.allowHint && !state.hintShown && (
                   <button
                     type="button"
@@ -818,6 +867,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   "표지판을 눌러 계속 입력하세요"
                 ) : (
                   <>
+                    {config.judge === "enter" && (
+                      <KeyHint keys="Enter">제출</KeyHint>
+                    )}
                     {config.allowHint && (
                       <KeyHint keys="Tab">
                         {state.hintShown

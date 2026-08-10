@@ -12,6 +12,7 @@ describe("점수 규칙", () => {
       completed: 0,
       total: 17,
       hintsUsed: 0,
+    firstTry: 0,
     });
     expect(s.accuracy).toBe(1);
     expect(s.cpm).toBe(0);
@@ -26,6 +27,7 @@ describe("점수 규칙", () => {
       completed: 5,
       total: 17,
       hintsUsed: 0,
+    firstTry: 0,
     });
     expect(s.accuracy).toBe(1);
   });
@@ -40,6 +42,7 @@ describe("점수 규칙", () => {
       completed: 0,
       total: 1,
       hintsUsed: 0,
+    firstTry: 0,
     });
     expect(s.correctKeystrokes).toBe(0);
     expect(s.cpm).toBe(0);

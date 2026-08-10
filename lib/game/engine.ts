@@ -74,6 +74,8 @@ export function createGame(
     itemErrors: 0,
     lastKeystrokeCount: 0,
     offTrack: false,
+    itemWrong: [],
+    rejectedAt: null,
     hintShown: false,
     hintShownAt: null,
     revealed: null,
@@ -183,6 +185,18 @@ export function setInput(state: GameState, text: string, now: number): GameState
     itemKeystrokes: ok && delta > 0 ? state.itemKeystrokes + delta : state.itemKeystrokes + Math.min(delta, 0),
   };
 
+  /*
+   * 여기서 오답을 세는 것은 `live` 모드뿐이다.
+   *
+   * 회상 모드에서 치는 도중에 판정하면 두 가지가 무너진다. 답을 다 떠올리기
+   * 전에 "그 초성은 아니다"를 알려 주게 되고(그건 공짜 힌트다), 틀린 답을
+   * 끝까지 쳐 볼 수가 없어 무엇으로 착각했는지가 남지 않는다.
+   * 그쪽 판정은 submit()이 한다.
+   */
+  if (state.config.judge === "enter") {
+    return matchesAnswer(item, text) ? commitItem(next, now, false) : next;
+  }
+
   // 경로를 벗어난 순간에만 오류 1회. 틀린 채로 계속 치는 동안 중복 집계하지 않는다.
   if (!ok && !state.offTrack) {
     next = {
@@ -197,6 +211,44 @@ export function setInput(state: GameState, text: string, now: number): GameState
 
   if (matchesAnswer(item, text)) return commitItem(next, now, false);
   return next;
+}
+
+/**
+ * 답을 제출한다(엔터).
+ *
+ * 맞으면 다음으로, 틀리면 오답 1회로 적고 입력을 비운다. 판은 그 자리에
+ * 그대로 있으므로 다시 떠올려 볼 수 있다 — 회상 게임에서 한 번 틀린 것은
+ * 실패가 아니라 과정이다.
+ *
+ * 틀린 답을 **그대로 남긴다.** 나중에 무엇을 무엇으로 착각했는지 되짚는 데
+ * 쓰이고, 그게 이 게임이 만들어 낼 수 있는 가장 값진 데이터다.
+ */
+export function submit(state: GameState, now: number): GameState {
+  if (state.status !== "playing" || state.config.judge !== "enter") return state;
+
+  const text = state.input.trim();
+  // 빈 채로 엔터를 치는 것은 실수다. 벌을 주지 않는다.
+  if (text === "") return state;
+
+  const item = state.items[state.index];
+  if (matchesAnswer(item, text)) return commitItem(state, now, false);
+
+  return {
+    ...state,
+    input: "",
+    /*
+     * 지금까지 친 타수는 정답 타수로 치지 않는다. 분모(친 타수)에는 이미
+     * 들어가 있으므로 정확도는 저절로 내려간다 — 따로 벌점을 매길 필요가 없다.
+     */
+    itemKeystrokes: 0,
+    lastKeystrokeCount: 0,
+    offTrack: false,
+    itemErrors: state.itemErrors + 1,
+    itemWrong: [...state.itemWrong, text],
+    rejectedAt: now,
+    // 시간 제한이 있는 모드에서는 오답이 시간을 깎는다.
+    penaltyMs: state.penaltyMs + (state.config.penaltyMs ?? 0),
+  };
 }
 
 /**
@@ -235,6 +287,9 @@ function commitItem(state: GameState, now: number, skipped: boolean): GameState 
     keystrokes: skipped ? 0 : Math.max(0, state.itemKeystrokes),
     errors: state.itemErrors,
     skipped,
+    // 오답 제출 뒤에 맞혔으면 그만큼 시도가 늘어난다. 1이면 한 번에 맞혔다.
+    attempts: state.itemWrong.length + 1,
+    ...(state.itemWrong.length > 0 ? { wrongAnswers: state.itemWrong } : {}),
     hinted: state.hintShown,
     /*
      * 힌트를 보고 **맞힌** 경우에만 남는다.
@@ -261,6 +316,8 @@ function commitItem(state: GameState, now: number, skipped: boolean): GameState 
     itemErrors: 0,
     lastKeystrokeCount: 0,
     offTrack: false,
+    itemWrong: [],
+    rejectedAt: null,
     hintShown: false,
     hintShownAt: null,
     revealed: null,
@@ -289,5 +346,6 @@ export function score(state: GameState, now: number): Score {
     completed: state.results.filter((r) => !r.skipped).length,
     total: state.items.length,
     hintsUsed: state.hintsUsed,
+    firstTry: state.results.filter((r) => !r.skipped && r.attempts <= 1).length,
   });
 }

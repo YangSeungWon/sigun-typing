@@ -51,11 +51,8 @@ export function MultiRace({
     [course],
   );
 
-  const { state, current, score, advancedAt, erroredAt, begin, type, hint } = useGame(
-    items,
-    MODES.multi,
-    room.seed,
-  );
+  const { state, current, score, advancedAt, rejectedAt, begin, type, submitAnswer, hint } =
+    useGame(items, MODES.multi, room.seed);
 
   // 서버가 출발을 알린 그 순간에 시작한다.
   useEffect(() => {
@@ -87,6 +84,13 @@ export function MultiRace({
   useEffect(() => {
     if (state.status !== "playing") return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        // IME가 조합을 끝내려고 누른 엔터는 제출이 아니다.
+        if (e.isComposing || e.keyCode === 229) return;
+        e.preventDefault();
+        submitAnswer();
+        return;
+      }
       if (e.key !== "Tab") return;
       // Tab이 포커스를 옮기면 입력창을 벗어나 경주 중에 타건이 먹지 않는다.
       e.preventDefault();
@@ -94,7 +98,7 @@ export function MultiRace({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.status, hint]);
+  }, [state.status, hint, submitAnswer]);
 
   const passedCodes = useMemo(
     () => state.results.filter((r) => !r.skipped).map((r) => r.id),
@@ -147,7 +151,7 @@ export function MultiRace({
               />
             )}
 
-            <TypingSurface onType={type} advancedAt={advancedAt}>
+            <TypingSurface onType={type} advancedAt={advancedAt} rejectedAt={rejectedAt}>
               <div className="mx-auto flex w-full max-w-xl items-baseline justify-between pb-2 font-mono text-base text-dim">
                 <span className="tabular-nums">
                   {state.index + 1} / {state.items.length}
@@ -159,12 +163,14 @@ export function MultiRace({
                 focused
                 masked
                 hinted={state.hintShown}
-                erroredAt={erroredAt}
+                judge={MODES.multi.judge}
+                erroredAt={rejectedAt}
                 advancedAt={advancedAt}
               />
             </TypingSurface>
 
             <p className="flex min-h-6 items-center justify-center text-sm text-dim">
+              <KeyHint keys="Enter">제출</KeyHint>
               {!state.hintShown && (
                 // 추가 시간을 물리지 않는다. 경주에서는 힌트를 여는 동안
                 // 상대가 달리는 것이 이미 값이다.

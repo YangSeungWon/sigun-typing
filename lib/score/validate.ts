@@ -171,6 +171,13 @@ export function validateSubmission(
     completed: results.filter((r) => !r.skipped).length,
     total: course.regions.length,
     hintsUsed,
+    /*
+     * 시도 횟수는 클라이언트가 보낸 값이라 타수처럼 다시 계산할 수 없다.
+     * 순위는 타수로 매겨지고 정답률은 화면에 보여 주는 값이라, 여기서
+     * 부풀린다고 순위가 올라가지는 않는다. 없으면 한 번에 맞힌 것으로 본다 —
+     * 이 필드가 생기기 전에 시작한 판이 그렇게 도착한다.
+     */
+    firstTry: results.filter((r) => !r.skipped && (r.attempts ?? 1) <= 1).length,
   });
 
   if (serverScore.cpm > MAX_PLAUSIBLE_CPM) {

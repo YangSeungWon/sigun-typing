@@ -18,6 +18,8 @@ function score(over: Partial<Score> = {}): Score {
     completed: 31,
     total: 31,
     hintsUsed: 0,
+    firstTry: 0,
+    answerRate: 1,
     ...over,
   };
 }
@@ -128,7 +130,7 @@ describe("코스 판번호별 격리", () => {
     const map = stubStorage();
     savePersonalBest("seoul", "learn", score(), 0, 3);
     const [key] = [...map.keys()];
-    expect(key).toContain("s1");
+    expect(key).toContain(`s${SCORING_VERSION}`);
     expect(key).toContain("c3");
     expect(key).toContain("learn");
     expect(key).toContain("seoul");

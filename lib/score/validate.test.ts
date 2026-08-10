@@ -52,6 +52,7 @@ function makeRun(opts: RunOptions = {}) {
       elapsedMs: t - start,
       keystrokes: strokes,
       errors: 0,
+      attempts: 1,
       skipped: false,
       hinted: false,
     });
@@ -68,6 +69,8 @@ function makeRun(opts: RunOptions = {}) {
     completed: results.length,
     total: sidoCourse.regions.length,
     hintsUsed: 0,
+    firstTry: results.length,
+    answerRate: 1,
   };
 
   const { token } = issueToken(
@@ -299,6 +302,7 @@ describe("초성 힌트 페널티", () => {
         elapsedMs: t - start,
         keystrokes: strokes,
         errors: 0,
+        attempts: 1,
         skipped: false,
         hinted: false,
       });
@@ -324,6 +328,8 @@ describe("초성 힌트 페널티", () => {
         elapsedMs: t,
         correctKeystrokes,
         totalErrors: 0,
+        firstTry: results.length,
+        answerRate: 1,
         completed: results.length,
         total: sidoCourse.regions.length,
         hintsUsed,

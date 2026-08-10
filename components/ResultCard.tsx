@@ -185,7 +185,18 @@ export function ResultCard({
                 }`}
               >
                 {r.answer}
-                {!r.skipped && <span className="ml-1.5 text-sm text-dim">오타</span>}
+                {/*
+                  무엇으로 착각했는지가 "오타 1회"보다 훨씬 쓸모 있다.
+                  안산을 연천이라고 답한 사람에게 필요한 것은 그 두 곳을
+                  나란히 보는 일이지, 자기가 틀렸다는 통보가 아니다.
+                */}
+                {r.wrongAnswers && r.wrongAnswers.length > 0 ? (
+                  <span className="ml-1.5 text-sm text-dim">
+                    → {r.wrongAnswers.join(", ")}라고 답함
+                  </span>
+                ) : (
+                  !r.skipped && <span className="ml-1.5 text-sm text-dim">오타</span>
+                )}
               </li>
             ))}
           </ul>
@@ -234,6 +245,14 @@ export function ResultCard({
         <div className="flex flex-col pt-2">
           <Row label="총 타수" value={`${score.correctKeystrokes}타`} />
           <Row label="오타" value={`${score.totalErrors}회`} />
+          {/*
+            정확도가 손을 재는 숫자라면 정답률은 머리를 잰다. 회상 게임에서
+            "몇 곳을 떠올릴 수 있었나"가 진짜 성적이다.
+          */}
+          <Row
+            label="한 번에 맞힌 곳"
+            value={`${score.firstTry} / ${score.total} · ${(score.answerRate * 100).toFixed(0)}%`}
+          />
           {score.hintsUsed > 0 && (
             <Row label="초성 힌트" value={`${score.hintsUsed}회 · 기록에 가산됨`} />
           )}

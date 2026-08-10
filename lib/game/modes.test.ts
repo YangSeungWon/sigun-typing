@@ -45,3 +45,21 @@ describe("모드 구성", () => {
     }
   });
 });
+
+/*
+ * 답이 화면에 있으면 즉시 판정, 없으면 제출 판정이다.
+ *
+ * 이 둘이 어긋나면 두 가지 중 하나가 벌어진다. 가린 모드에서 즉시 판정하면
+ * 글자 색이 답을 흘리고, 답이 보이는 모드에서 엔터를 요구하면 아무 뜻도
+ * 없는 키를 하나 더 치게 한다.
+ */
+describe("판정 시점", () => {
+  it("정답이 보이는 모드만 즉시 판정한다", () => {
+    for (const config of Object.values(MODES)) {
+      expect([config.id, config.judge]).toEqual([
+        config.id,
+        config.reveal ? "live" : "enter",
+      ]);
+    }
+  });
+});

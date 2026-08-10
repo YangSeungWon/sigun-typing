@@ -29,6 +29,7 @@ export function SubmitScore({
   score,
 }: SubmitScoreProps) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -37,7 +38,10 @@ export function SubmitScore({
    */
   const attach = useCallback((el: HTMLInputElement | null) => {
     inputRef.current = el;
-    if (el && !el.value) el.value = getSavedNickname();
+    if (!el) return;
+    if (!el.value) el.value = getSavedNickname();
+    // 열자마자 칠 수 있어야 한다. 열어 놓고 또 눌러야 하면 한 걸음 더다.
+    el.focus();
   }, []);
 
   if (!token) {
@@ -94,6 +98,29 @@ export function SubmitScore({
         : { kind: "failed", error: outcome.error ?? "제출에 실패했습니다" },
     );
   };
+
+  /*
+   * 이름 칸을 처음부터 펼쳐 두지 않는다.
+   *
+   * 결과를 보고 있는데 화면 끝에 입력 양식이 하나 붙어 있으면, 게임이
+   * 끝난 자리에 갑자기 서류가 나온 것처럼 읽힌다. 등록할 사람만 열면 되고,
+   * 열기 전에는 "여기가 몇 등짜리 기록인가" 한 줄만 있으면 된다 — 그게
+   * 등록할 이유이기도 하다.
+   */
+  if (!open) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Standing courseId={courseId} mode={mode} cpm={score.cpm} />
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          랭킹에 올리기
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2">

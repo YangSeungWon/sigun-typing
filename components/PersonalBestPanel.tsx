@@ -66,7 +66,7 @@ export function PersonalBestPanel({
    */
   if (!previous) {
     return (
-      <p className="text-center font-mono text-base text-dim">첫 기록</p>
+      <p className="font-mono text-base text-paint/70">첫 기록</p>
     );
   }
 
@@ -76,7 +76,7 @@ export function PersonalBestPanel({
   if (!renewed) {
     const gap = (score.elapsedMs - previous.elapsedMs) / 1000;
     return (
-      <p className="text-center font-mono text-base text-dim">
+      <p className="font-mono text-base text-paint/70">
         {comparable && gap > 0
           ? `내 최고 기록보다 ${gap.toFixed(2)}초 느림`
           : `내 최고 기록 ${formatPrecise(previous.elapsedMs)}`}
@@ -87,12 +87,11 @@ export function PersonalBestPanel({
   const gained = (previous.elapsedMs - score.elapsedMs) / 1000;
   return (
     /*
-     * 상자를 두르지 않는다. 이건 누르는 것이 아니라 읽는 한 줄인데, 테두리를
-     * 치면 바로 아래 "한 번 더"와 같은 무게로 보여 무엇이 다음 행동인지가
-     * 흐려진다.
+     * 상자를 두르지 않는다. 이건 누르는 것이 아니라 기록에 붙는 해석이다.
+     * 테두리를 치면 버튼처럼 보여 무엇이 다음 행동인지가 흐려진다.
      */
-    <p className="text-center font-mono text-base text-ink" role="status">
-      <span className="font-semibold text-sign">새 최고 기록</span>
+    <p className="font-mono text-base text-paint/80" role="status">
+      <span className="font-semibold text-centerline">새 최고 기록</span>
       {comparable && gained > 0
         ? ` · ${gained.toFixed(2)}초 단축`
         : ` · 완주 ${previous.completed} → ${score.completed}`}

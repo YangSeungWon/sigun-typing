@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import type { ItemResult, Score } from "@/lib/game/types";
 import { formatClock } from "./Odometer";
@@ -80,23 +80,109 @@ export function ResultCard({
   onRestart,
 }: ResultCardProps) {
   const perfect = score.completed === score.total;
+  const shown = useCountUp(score.elapsedMs);
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-6">
+    /*
+     * 넓은 화면에서는 두 단으로 나눈다.
+     *
+     *   왼쪽  무엇을 했는가 — 지도와 다시 볼 곳
+     *   오른쪽 어떻게 했는가 — 기록, 그리고 이제 뭘 할지
+     *
+     * 한 줄로 쌓아 두었더니 기록은 위, 지도는 아래에서 따로 놀았다. 지도
+     * 보고 맞히는 게임의 결과 화면에서 지도는 장식이 아니라 결과의 본체다.
+     * 좁은 화면에서는 기록 → 지도 → 다음 순서로 흐른다.
+     */
+    <div className="flex w-full max-w-5xl flex-col gap-6 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:items-start">
+      <section className="order-2 flex flex-col gap-3 md:order-none md:col-start-1 md:row-span-2 md:row-start-1">
+        {geo && (
+          <div className="result-map flex flex-col items-center gap-2">
+            <RegionMap
+              geo={geo}
+              passedCodes={passedCodes}
+              missedCodes={missed.filter((r) => r.skipped).map((r) => r.id)}
+              variant="route"
+              className="h-56 w-auto sm:h-72 md:h-[26rem]"
+            />
+            {/*
+              한 종류밖에 없으면 그건 범례가 아니라 설명문이다. 다 맞힌 판에서
+              초록이 무엇인지 알려 줄 이유가 없다 — 지도 자체가 결과다.
+              섞였을 때만, 두 상태를 나란히 놓는다. 색만으로 가르면 색을
+              구분하기 어려운 사람에게는 아무 말도 아니므로 빗금도 함께 쓴다.
+            */}
+            {missed.some((r) => r.skipped) && (
+              <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-sm text-dim">
+                <Legend color="var(--color-sign)" label={`맞힘 ${score.completed}`} />
+                <Legend
+                  hatched
+                  color="var(--color-alert)"
+                  label={`다시 볼 곳 ${missed.filter((r) => r.skipped).length}`}
+                />
+              </span>
+            )}
+          </div>
+        )}
+
+        {/*
+          지도만으로는 회색이 어디인지 이름으로 읽히지 않는다. 모르겠다고
+          넘긴 사람이 정말 알고 싶은 것은 "그래서 거기가 어디였나"이고,
+          그 답이 지도 바로 아래 붙어 있어야 두 개가 한 장면이 된다.
+        */}
+        {missed.length > 0 && (
+          <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+            <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+              다시 볼 곳 {missed.length}
+            </h2>
+            <ul className="flex flex-wrap gap-2">
+              {missed.map((r) => (
+                <li
+                  key={r.id}
+                  className={`rounded-lg px-3 py-1.5 text-base ${
+                    r.skipped
+                      ? "bg-alert/10 text-alert"
+                      : "border border-concrete-deep text-ink"
+                  }`}
+                >
+                  {r.answer}
+                  {/*
+                    무엇으로 착각했는지가 "오타 1회"보다 훨씬 쓸모 있다.
+                    안산을 연천이라고 답한 사람에게 필요한 것은 그 두 곳을
+                    나란히 보는 일이지, 자기가 틀렸다는 통보가 아니다.
+                  */}
+                  {r.wrongAnswers && r.wrongAnswers.length > 0 ? (
+                    <span className="ml-1.5 text-sm text-dim">
+                      → {r.wrongAnswers.join(", ")}라고 답함
+                    </span>
+                  ) : (
+                    !r.skipped && <span className="ml-1.5 text-sm text-dim">오타</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </section>
+
       {/*
-        성적 하나만 크게 둔다. 예전에는 타수·첫 기록·기록이 서로 다른 자리에서
-        같은 크기로 경쟁해, 무엇이 이 판의 성적인지 읽히지 않았다.
+        기록은 한 덩어리다. 성적·해석·코스명이 서로 다른 자리에서 같은 크기로
+        경쟁하면 무엇이 이 판의 성적인지 읽히지 않는다.
+
+        입체감은 덜어 냈다. 이 서비스의 맛은 화려함이 아니라 관공서스럽고
+        건조한데 게임이 되는 데 있다. 표지판이라는 정체성은 남기고 두께만
+        줄인다 — 판면이 주인공인 곳은 플레이 화면이다.
       */}
-      {/*
-        입체감을 덜어 냈다. 이 서비스의 맛은 화려함이 아니라 관공서스럽고
-        건조한데 게임이 되는 데 있는데, 결과 카드만 두꺼운 그림자·이중 테두리·
-        그라데이션을 다 쓰면서 혼자 튀었다. 표지판이라는 정체성은 남기고
-        두께만 줄인다 — 판면이 주인공인 곳은 플레이 화면이다.
-      */}
-      <div className="sign-face relative rounded-2xl px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)]">
+      <div className="result-card sign-face relative order-1 rounded-2xl px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)] md:order-none md:col-start-2 md:row-start-1">
         <div className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-paint/80" />
-        <p className="relative font-mono text-sm tracking-[0.22em] text-paint/60">
+        {/*
+          "완주"를 키웠다. 숫자만 크면 기록은 읽히는데 **끝냈다는 감정**이
+          남지 않는다. 이 화면이 먼저 해야 할 말은 몇 초가 아니라 해냈다는
+          것이다.
+        */}
+        <p className="relative text-2xl font-bold tracking-[0.1em] text-paint">
           {perfect ? "완주" : "도착"}
+        </p>
+        <p className="relative mt-1 font-mono text-sm text-paint/60">
+          {courseName} · {modeLabel}
         </p>
         {/*
           다 맞히지 못한 판에서는 시간이 성적이 아니다.
@@ -105,11 +191,11 @@ export function ResultCard({
           않는다 — 성취를 무효로 만들면 다시 할 이유도 함께 사라진다.
         */}
         {emphasis === "time" && perfect ? (
-          <p className="relative mt-2 font-mono text-5xl font-bold tabular-nums text-paint">
-            {formatPrecise(score.elapsedMs)}
+          <p className="relative mt-4 font-mono text-5xl font-bold tabular-nums text-paint">
+            {formatPrecise(shown)}
           </p>
         ) : (
-          <p className="relative mt-2 text-5xl font-bold text-paint">
+          <p className="relative mt-4 text-5xl font-bold text-paint">
             {score.completed}
             <span className="ml-1 text-2xl font-medium text-paint/70">
               / {score.total}
@@ -121,179 +207,143 @@ export function ResultCard({
             ? `${Math.round(score.cpm)}타/분 · 정확도 ${(score.accuracy * 100).toFixed(1)}%`
             : `${formatPrecise(score.elapsedMs)} · ${Math.round(score.cpm)}타/분`}
         </p>
-        <p className="relative mt-1 text-base text-paint/70">
-          {courseName} · {modeLabel}
-        </p>
+
+        {/*
+          기록 해석은 기록에 붙어 있어야 한다. 카드 밖에 한 줄로 떼어 놓았을
+          때는 정보량에 비해 자리만 먹고 혼자 떠 있었다.
+        */}
+        {bestSlot && <div className="relative mt-4">{bestSlot}</div>}
+
+        {!perfect && score.completed > 0 && (
+          <p className="relative mt-3 text-base text-paint/70">
+            {score.total - score.completed}곳은 다음에 만나요
+          </p>
+        )}
       </div>
 
-      {/*
-        다 맞히지 못했다면 그 사실을 한 줄로만 말한다. 몇 곳을 못 맞혔는지는
-        아래 "다시 볼 곳"에 이름으로 있고, 여기서 또 나무랄 이유가 없다.
-      */}
-      {!perfect && score.completed > 0 && (
-        <p className="text-center text-base text-dim">
-          {score.total - score.completed}곳은 다음에 만나요
-        </p>
-      )}
+      <div className="order-3 flex flex-col gap-3 md:order-none md:col-start-2 md:row-start-2">
+        {/*
+          하나만 세게 민다. 판이 끝난 직후 가장 센 충동은 "한 번 더"이고,
+          다섯 개를 같은 무게로 늘어놓으면 다 끝낸 순간에 메뉴를 다시 읽게
+          된다. 다만 못 맞힌 곳이 있으면 그쪽이 먼저다 — 열일곱 중 셋을
+          몰랐는데 열일곱을 다시 도는 것보다 그 셋을 보는 편이 배우는 데도
+          빠르고 부담도 적다.
+        */}
+        {reviewSlot}
 
-      {/* 전보다 나아졌는가. 성적 바로 아래에 붙어야 견줄 수 있다. */}
-      {bestSlot}
+        <button
+          type="button"
+          onClick={onRestart}
+          className={`rounded-lg px-5 py-4 text-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+            reviewSlot
+              ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
+              : "bg-sign text-paint hover:bg-sign-deep"
+          }`}
+        >
+          {reviewSlot ? "전체 다시 하기" : "한 번 더"}
+        </button>
 
-      {/*
-        판이 끝난 직후 가장 센 충동은 "한 번 더"다. 다만 못 맞힌 곳이 있으면
-        그쪽이 먼저다 — 열일곱 중 셋을 몰랐는데 열일곱을 다시 도는 것보다
-        그 셋을 보는 편이 배우는 데도 빠르고 부담도 적다.
-      */}
-      {reviewSlot}
+        <Link
+          href={coursesHref}
+          className="rounded-lg border border-concrete-deep px-5 py-3 text-center font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          다른 코스
+        </Link>
 
-      <button
-        type="button"
-        onClick={onRestart}
-        className={`rounded-lg px-5 py-4 text-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-          reviewSlot
-            ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
-            : "bg-sign text-paint hover:bg-sign-deep"
-        }`}
-      >
-        {reviewSlot ? "전체 다시 하기" : "한 번 더"}
-      </button>
+        {/*
+          여기부터는 하려는 사람만 본다. 선을 하나 긋고 무게를 낮춘다.
+          경쟁이 축인 모드에서는 순서를 뒤집는다 — 타임어택을 한 사람에게
+          먼저 필요한 것은 공유가 아니라 순위다.
+        */}
+        {(shareSlot || submitSlot || nextSlot) && (
+          <div className="flex flex-col gap-3 border-t border-concrete-deep pt-5">
+            {emphasis === "count" ? (
+              <>
+                {submitSlot}
+                {shareSlot}
+              </>
+            ) : (
+              <>
+                {submitSlot}
+                {shareSlot}
+              </>
+            )}
+            {nextSlot}
+          </div>
+        )}
 
-      {missed.length > 0 && (
-        /*
-          지도만으로는 회색이 어디인지 이름으로 읽히지 않는다. 모르겠다고
-          넘긴 사람이 정말 알고 싶은 것은 "그래서 거기가 어디였나"이고,
-          그 답이 결과 화면에 없으면 판이 끝나도 배운 게 없다.
-        */
-        <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
-          <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
-            다시 볼 곳 {missed.length}
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {missed.map((r) => (
-              <li
-                key={r.id}
-                className={`rounded-lg px-3 py-1.5 text-base ${
-                  r.skipped
-                    ? "bg-alert/10 text-alert"
-                    : "border border-concrete-deep text-ink"
-                }`}
-              >
-                {r.answer}
-                {/*
-                  무엇으로 착각했는지가 "오타 1회"보다 훨씬 쓸모 있다.
-                  안산을 연천이라고 답한 사람에게 필요한 것은 그 두 곳을
-                  나란히 보는 일이지, 자기가 틀렸다는 통보가 아니다.
-                */}
-                {r.wrongAnswers && r.wrongAnswers.length > 0 ? (
-                  <span className="ml-1.5 text-sm text-dim">
-                    → {r.wrongAnswers.join(", ")}라고 답함
-                  </span>
-                ) : (
-                  !r.skipped && <span className="ml-1.5 text-sm text-dim">오타</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/*
-        지도는 플레이 중에는 주인공이지만 결과 화면에서는 기록이 주인공이다.
-        예전 크기(h-80)로는 지도가 화면을 다 차지해 그 아래 숫자가 밀렸다.
-      */}
-      {geo && (
-        <div className="flex flex-col items-center gap-2">
-          <RegionMap
-            geo={geo}
-            passedCodes={passedCodes}
-            missedCodes={missed.filter((r) => r.skipped).map((r) => r.id)}
-            variant="route"
-            className="h-40 w-auto sm:h-52"
-          />
-          {/*
-            한 종류밖에 없으면 그건 범례가 아니라 설명문이다. 다 맞힌 판에서
-            초록이 무엇인지 알려 줄 이유가 없다 — 지도 자체가 결과다.
-            섞였을 때만, 두 상태를 나란히 놓는다. 색만으로 가르면 색을
-            구분하기 어려운 사람에게는 아무 말도 아니므로 빗금도 함께 쓴다.
-          */}
-          {missed.some((r) => r.skipped) && (
-            <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-sm text-dim">
-              <Legend color="var(--color-sign)" label={`맞힘 ${score.completed}`} />
-              <Legend
-                hatched
-                color="var(--color-alert)"
-                label={`다시 볼 곳 ${missed.filter((r) => r.skipped).length}`}
-              />
+        {/*
+          상세는 접어 둔다. 다만 열면 무엇이 나오는지 한 줄로 보여 준다 —
+          "자세히 보기"만 덩그러니 있으면 아무도 열지 않는다.
+        */}
+        <details className="group rounded-xl border border-concrete-deep px-5 py-3">
+          <summary className="cursor-pointer list-none font-mono text-sm text-dim marker:content-none">
+            <span className="flex items-center justify-between gap-4">
+              <span className="flex flex-col gap-0.5 text-left">
+                자세히 보기
+                <span className="text-xs text-dim/80">
+                  총 타수 · 오타 · 한 번에 맞힌 곳
+                  {score.hintsUsed > 0 && " · 힌트"}
+                </span>
+              </span>
+              <span className="transition-transform group-open:rotate-90">›</span>
             </span>
-          )}
-        </div>
-      )}
-
-      {/*
-        상세는 접어 둔다. 결과 화면에서 사람이 알고 싶은 것은 셋이다 —
-        잘했나, 전보다 나아졌나, 다음엔 뭘 하나. 타수와 오타 수는 그 셋에
-        답하지 않으면서 화면의 절반을 차지하고 있었다.
-      */}
-      <details className="group rounded-xl border border-concrete-deep px-5 py-3">
-        <summary className="cursor-pointer list-none font-mono text-sm text-dim marker:content-none">
-          <span className="flex items-center justify-between gap-4">
-            자세히 보기
-            <span className="transition-transform group-open:rotate-90">›</span>
-          </span>
-        </summary>
-        <div className="flex flex-col pt-2">
-          <Row label="총 타수" value={`${score.correctKeystrokes}타`} />
-          <Row label="오타" value={`${score.totalErrors}회`} />
-          {/*
-            정확도가 손을 재는 숫자라면 정답률은 머리를 잰다. 회상 게임에서
-            "몇 곳을 떠올릴 수 있었나"가 진짜 성적이다.
-          */}
-          <Row
-            label="한 번에 맞힌 곳"
-            value={`${score.firstTry} / ${score.total} · ${(score.answerRate * 100).toFixed(0)}%`}
-          />
-          {score.hintsUsed > 0 && (
-            <Row label="초성 힌트" value={`${score.hintsUsed}회 · 기록에 가산됨`} />
-          )}
-        </div>
-      </details>
-
-      <Link
-        href={coursesHref}
-        className="rounded-lg border border-concrete-deep px-5 py-3 text-center font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        다른 코스
-      </Link>
-
-      {/*
-        자랑과 등록은 여기까지 내려온다.
-
-        판을 끝낸 사람의 다음 행동은 대개 "한 번 더"이고, 남에게 보이는 일은
-        그 다음이다. 다섯 개의 버튼을 같은 크기로 늘어놓으면 다 끝낸 순간에
-        메뉴를 다시 읽게 된다. 선을 하나 긋고 아래로 내리면, 하려는 사람은
-        그대로 하고 안 할 사람은 눈을 주지 않아도 된다.
-
-        경쟁이 축인 모드에서는 순서를 뒤집는다 — 타임어택을 한 사람에게
-        먼저 필요한 것은 공유가 아니라 순위다.
-      */}
-      {(shareSlot || submitSlot || nextSlot) && (
-        <div className="flex flex-col gap-3 border-t border-concrete-deep pt-5">
-          {emphasis === "count" ? (
-            <>
-              {submitSlot}
-              {shareSlot}
-            </>
-          ) : (
-            <>
-              {shareSlot}
-              {submitSlot}
-            </>
-          )}
-          {nextSlot}
-        </div>
-      )}
+          </summary>
+          <div className="flex flex-col pt-2">
+            <Row label="총 타수" value={`${score.correctKeystrokes}타`} />
+            <Row label="오타" value={`${score.totalErrors}회`} />
+            {/*
+              정확도가 손을 재는 숫자라면 정답률은 머리를 잰다. 회상 게임에서
+              "몇 곳을 떠올릴 수 있었나"가 진짜 성적이다.
+            */}
+            <Row
+              label="한 번에 맞힌 곳"
+              value={`${score.firstTry} / ${score.total} · ${(score.answerRate * 100).toFixed(0)}%`}
+            />
+            {score.hintsUsed > 0 && (
+              <Row label="초성 힌트" value={`${score.hintsUsed}회 · 기록에 가산됨`} />
+            )}
+          </div>
+        </details>
+      </div>
     </div>
   );
+}
+
+/**
+ * 기록 숫자가 짧게 올라간다.
+ *
+ * 판이 끝나는 순간 화면이 아무 일도 하지 않으면 정적인 관리 페이지처럼
+ * 읽힌다. 다만 축포는 이 톤과 맞지 않는다 — 숫자가 제 값까지 0.5초 동안
+ * 차오르는 정도면 충분하다.
+ *
+ * 움직임을 원치 않는 사람에게는 처음부터 제 값이다.
+ */
+function useCountUp(target: number, ms = 500): number {
+  const [value, setValue] = useState(() =>
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? target
+      : 0,
+  );
+
+  useEffect(() => {
+    if (value === target) return;
+    const started = performance.now();
+    let frame = 0;
+    const step = () => {
+      const t = Math.min(1, (performance.now() - started) / ms);
+      // 끝에서 부드럽게 멈춘다. 일정한 속도로 올라가면 기계처럼 보인다.
+      setValue(Math.round(target * (1 - (1 - t) ** 3)));
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+    // 결과가 확정된 뒤 한 번만.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
+
+  return value;
 }
 
 function Legend({

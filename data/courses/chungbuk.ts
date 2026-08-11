@@ -13,7 +13,7 @@ export const chungbuk: Course = {
   group: "chungcheong",
   parentName: "충청북도",
   placeUnit: "시군",
-  version: 1,
+  version: 2,
   description: "북동 단양에서 청주를 지나 남쪽 영동까지",
   geo: { file: "municipalities", prefix: "33" },
   regions: [

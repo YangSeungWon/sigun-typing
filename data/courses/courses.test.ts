@@ -56,9 +56,10 @@ describe("코스 데이터 무결성", () => {
   });
 
   it("미추홀구는 옛 이름도 정답으로 받는다", () => {
-    const michuhol = incheon.regions.find((r) => r.name === "미추홀");
+    // 정답은 지금 이름이고, 원본 경계가 쓰는 옛 이름은 별칭으로만 남는다.
+    const michuhol = incheon.regions.find((r) => r.name === "미추홀구");
     expect(michuhol).toBeDefined();
-    expect(michuhol!.aliases).toEqual(expect.arrayContaining(["미추홀구", "남구"]));
+    expect(michuhol!.aliases).toEqual(["남구"]);
   });
 
   it("코스마다 원본 접두사가 서로 다르다", () => {
@@ -67,19 +68,15 @@ describe("코스 데이터 무결성", () => {
     expect(new Set(prefixes).size).toBe(prefixes.length);
   });
 
-  it("부산은 접미사를 뗄 수 없는 이름을 그대로 표준 표기로 쓴다", () => {
+  it("정답은 지도에 적히는 정식 명칭이다", () => {
+    // 규칙이 하나여야 한다 — `종로`는 되고 `중구`는 안 되는 식이면 규칙이 둘이다.
     const named = (n: string) => busan.regions.find((r) => r.name === n);
-    for (const n of ["중구", "동구", "서구", "남구", "북구"]) {
+    for (const n of ["중구", "동구", "서구", "남구", "북구", "기장군", "강서구"]) {
       expect(named(n), `${n} 없음`).toBeDefined();
-      // 이런 이름은 별칭이 따로 필요 없다 — 표준 표기가 곧 정식 명칭이다.
-      expect(named(n)!.aliases ?? []).toHaveLength(0);
+      // 접미사를 뗀 표기는 정답이 아니다. 별칭도 두지 않는다.
+      expect(named(n)!.aliases ?? [], `${n}에 군더더기 별칭`).toHaveLength(0);
     }
-  });
-
-  it("부산 기장군은 구와 같은 Place 모델을 쓴다", () => {
-    const gijang = busan.regions.find((r) => r.name === "기장");
-    expect(gijang).toBeDefined();
-    expect(gijang!.aliases).toContain("기장군");
+    expect(busan.regions.find((r) => r.name === "기장")).toBeUndefined();
   });
 
   it("서울과 부산이 같은 이름을 각자 가진다", () => {
@@ -88,7 +85,7 @@ describe("코스 데이터 무결성", () => {
     // 겹치는 이름이 실제로 있어야 이 검증이 의미가 있다.
     const shared = [...seoulNames].filter((n) => busanNames.has(n));
     expect(shared.length, "겹치는 이름이 없으면 회귀 테스트가 무의미하다").toBeGreaterThan(0);
-    expect(shared).toContain("강서");
+    expect(shared).toContain("강서구");
   });
 
   it.each(COURSES)("$name — 지도를 선언했으면 원본과 범위가 함께 적혀 있다", (course) => {

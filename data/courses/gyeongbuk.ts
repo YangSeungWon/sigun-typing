@@ -13,7 +13,7 @@ export const gyeongbuk: Course = {
   group: "yeongnam",
   parentName: "경상북도",
   placeUnit: "시군",
-  version: 1,
+  version: 2,
   description: "동해 울진에서 내륙을 크게 돌아 의성까지",
   geo: { file: "municipalities", prefix: "37" },
   regions: [

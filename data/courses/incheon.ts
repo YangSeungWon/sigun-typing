@@ -14,7 +14,7 @@ export const incheon: Course = {
   group: "capital",
   parentName: "인천광역시",
   placeUnit: "구·군",
-  version: 1,
+  version: 2,
   description: "강화에서 내륙을 돌아 남쪽 바다 옹진까지",
   geo: { file: "municipalities", prefix: "23" },
   regions: [

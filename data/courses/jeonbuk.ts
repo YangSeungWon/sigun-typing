@@ -13,7 +13,7 @@ export const jeonbuk: Course = {
   group: "honam",
   parentName: "전북특별자치도",
   placeUnit: "시군",
-  version: 1,
+  version: 2,
   description: "서해 군산에서 전주를 거쳐 동쪽 산간 장수까지",
   geo: { file: "municipalities", prefix: "35" },
   regions: [

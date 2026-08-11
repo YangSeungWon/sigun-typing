@@ -19,7 +19,7 @@ export const busan: Course = {
   group: "yeongnam",
   parentName: "부산광역시",
   placeUnit: "구·군",
-  version: 1,
+  version: 2,
   description: "강서에서 해안을 따라 동으로, 내륙을 돌아 기장까지",
   geo: { file: "municipalities", prefix: "21" },
   regions: [

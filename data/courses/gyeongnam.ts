@@ -13,7 +13,7 @@ export const gyeongnam: Course = {
   group: "yeongnam",
   parentName: "경상남도",
   placeUnit: "시군",
-  version: 1,
+  version: 2,
   description: "북서 거창에서 남해안을 따라 하동까지",
   geo: { file: "municipalities", prefix: "38" },
   regions: [

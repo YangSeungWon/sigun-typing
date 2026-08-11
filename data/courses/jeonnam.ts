@@ -22,7 +22,7 @@ export const jeonnam: Course = {
   group: "honam",
   parentName: "전라남도",
   placeUnit: "시군",
-  version: 1,
+  version: 2,
   description: "영광에서 서해안을 따라 남해안을 훑고 완도까지",
   geo: { file: "municipalities", prefix: "36" },
   regions: [

@@ -13,7 +13,7 @@ export const daegu: Course = {
   group: "yeongnam",
   parentName: "대구광역시",
   placeUnit: "구·군",
-  version: 1,
+  version: 2,
   description: "북쪽 군위에서 시내를 한 바퀴 돌아 남서쪽 달성까지",
   geo: { file: "municipalities", prefix: "22" },
   regions: [

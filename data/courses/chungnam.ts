@@ -13,7 +13,7 @@ export const chungnam: Course = {
   group: "chungcheong",
   parentName: "충청남도",
   placeUnit: "시군",
-  version: 1,
+  version: 2,
   description: "서해안 당진에서 내륙을 돌아 남쪽 서천까지",
   geo: { file: "municipalities", prefix: "34" },
   regions: [

@@ -8,7 +8,7 @@ export const gwangju: Course = {
   group: "honam",
   parentName: "광주광역시",
   placeUnit: "구",
-  version: 1,
+  version: 2,
   description: "서쪽 광산에서 시계 방향으로 다섯 곳",
   geo: { file: "municipalities", prefix: "24" },
   regions: [

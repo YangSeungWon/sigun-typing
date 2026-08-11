@@ -4,9 +4,9 @@ export type ModeId = "learn" | "timeattack" | "map" | "test" | "multi";
 export interface GameItem {
   /** 행정구역 코드 등 안정적인 식별자 */
   id: string;
-  /** 정답으로 표시할 표준 표기 (예: "수원") */
+  /** 정답으로 표시할 정식 명칭 (예: "수원시") */
   answer: string;
-  /** 함께 정답으로 인정할 표기 (예: "수원시") */
+  /** 함께 정답으로 인정할 표기. 옛 이름 등, 이유가 있을 때만 (예: "남구") */
   aliases?: string[];
   /** 퀴즈 모드에서 보여줄 단서 */
   hint?: string;

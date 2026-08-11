@@ -119,22 +119,22 @@ describe("중복 지명", () => {
   );
 
   it("인천 미추홀구는 원본의 옛 이름(남구)으로 경계를 찾는다", () => {
-    const michuhol = shapeOf("incheon", "미추홀");
+    const michuhol = shapeOf("incheon", "미추홀구");
     expect(michuhol, "미추홀 경계 없음").toBeDefined();
     // 같은 인천의 남동구와 섞이지 않아야 한다.
-    expect(michuhol!.d).not.toBe(shapeOf("incheon", "남동")!.d);
+    expect(michuhol!.d).not.toBe(shapeOf("incheon", "남동구")!.d);
   });
 
   it("서울과 부산에 모두 있는 강서구가 서로 다른 경계를 가진다", () => {
-    const seoulGangseo = shapeOf("seoul", "강서");
-    const busanGangseo = shapeOf("busan", "강서");
+    const seoulGangseo = shapeOf("seoul", "강서구");
+    const busanGangseo = shapeOf("busan", "강서구");
     expect(seoulGangseo).toBeDefined();
     expect(busanGangseo).toBeDefined();
     expect(busanGangseo!.d).not.toBe(seoulGangseo!.d);
   });
 
   it("부산 기장군도 구와 같은 방식으로 처리된다", () => {
-    const gijang = shapeOf("busan", "기장");
+    const gijang = shapeOf("busan", "기장군");
     expect(gijang).toBeDefined();
     expect(gijang!.d.length).toBeGreaterThan(50);
   });

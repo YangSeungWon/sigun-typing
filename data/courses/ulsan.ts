@@ -8,7 +8,7 @@ export const ulsan: Course = {
   group: "yeongnam",
   parentName: "울산광역시",
   placeUnit: "구·군",
-  version: 1,
+  version: 2,
   description: "울주를 크게 돌아 도심 네 곳으로",
   geo: { file: "municipalities", prefix: "26" },
   regions: [

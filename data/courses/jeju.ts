@@ -13,7 +13,7 @@ export const jeju: Course = {
   group: "jeju",
   parentName: "제주특별자치도",
   placeUnit: "행정시",
-  version: 1,
+  version: 2,
   description: "한라산 북쪽 제주시와 남쪽 서귀포시",
   geo: { file: "municipalities", prefix: "39" },
   regions: [

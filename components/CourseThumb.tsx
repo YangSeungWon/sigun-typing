@@ -38,10 +38,14 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
       />
 
       {/*
-        시작에서 끝으로 선이 그어진다.
-        마우스를 올리면 시작점에서 출발해 끝점까지 그어지고, 잠깐 쉬었다가
-        다시 그어진다. 범례로 "● 시작 ○ 끝"이라고 적어 두는 것보다 이쪽이
-        빠르다 — 움직임 자체가 "여기서 저기까지 가는 코스"라고 말한다.
+        여정은 손이 닿을 때만 보인다.
+        점 두 개를 늘 띄워 두었더니 목록에서 실루엣보다 점이 먼저 읽혔고,
+        인천처럼 작은 썸네일에서는 지도가 점 두 개짜리 아이콘이 되었다.
+        기본 상태의 카드에 필요한 것은 지역명·실루엣·한 줄 설명뿐이다.
+
+        순서가 있다 — 시작점이 먼저 서고, 선이 그어지고, 끝점이 나중에 온다.
+        범례로 "● 시작 ○ 끝"이라고 적어 두는 것보다 이쪽이 빠르다.
+        이 선은 문제 순서가 아니라 코스가 어디서 어디로 가는지를 말한다.
       */}
       <line
         x1={thumb.from[0]}
@@ -52,10 +56,16 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
         strokeWidth={2}
         strokeLinecap="round"
         pathLength={1}
-        className="course-line opacity-0 group-hover:opacity-80"
+        className="course-line opacity-0 group-hover:opacity-80 group-focus-visible:opacity-80"
       />
 
-      <circle cx={thumb.from[0]} cy={thumb.from[1]} r={3.5} fill="var(--color-sign)" />
+      <circle
+        cx={thumb.from[0]}
+        cy={thumb.from[1]}
+        r={3.5}
+        fill="var(--color-sign)"
+        className="opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+      />
       <circle
         cx={thumb.to[0]}
         cy={thumb.to[1]}
@@ -63,6 +73,8 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
         fill="var(--color-paint)"
         stroke="var(--color-sign)"
         strokeWidth={2}
+        // 선이 도착한 뒤에 선다. 먼저 떠 있으면 그어질 곳이 이미 정해져 보인다.
+        className="opacity-0 transition-opacity delay-500 duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
       />
     </svg>
   );

@@ -13,7 +13,8 @@ const geo = gangwon as CourseGeo;
 describe("RegionMap", () => {
   it("모든 지역을 path로 그린다", () => {
     const html = renderToStaticMarkup(<RegionMap geo={geo} variant="route" />);
-    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length);
+    // 지역 수 + 맨 아래 실루엣 한 장.
+    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length + 1);
     expect(html).toContain(`viewBox="0 0 ${geo.width} ${geo.height}"`);
   });
 
@@ -34,8 +35,8 @@ describe("RegionMap", () => {
     );
     expect(html).toContain("var(--color-sign)");
     expect(html).toContain("var(--color-centerline)");
-    // 현재 지역 강조 테두리가 한 겹 더 붙는다.
-    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length + 1);
+    // 실루엣 한 장과 현재 지역 강조 테두리가 한 겹씩 더 붙는다.
+    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length + 2);
   });
 
   it("진행을 보여 주는 지도에서는 노랑을 쓰지 않는다", () => {

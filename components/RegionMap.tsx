@@ -71,6 +71,8 @@ export const RegionMap = memo(function RegionMap({
     () => (focus ? focusTransform(camera, geo) : ""),
     [focus, camera, geo],
   );
+  /** 모든 경계를 이어 붙인 한 장. 각 조각이 `M`으로 시작하므로 그대로 이으면 된다. */
+  const silhouette = useMemo(() => geo.regions.map((r) => r.d).join(""), [geo]);
 
   return (
     <svg
@@ -121,6 +123,15 @@ export const RegionMap = memo(function RegionMap({
         style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
         transform={transform}
       >
+        {/*
+          지역들을 한 장으로 합친 실루엣을 맨 아래에 깐다.
+          경계를 각각 그리면 인접한 두 면 사이로 배경이 실처럼 비친다 —
+          단순화된 좌표가 미세하게 어긋나서이기도 하고, 두 면을 따로
+          안티앨리어싱하면서 생기는 틈이기도 하다. 지도에 구멍이 난 것처럼
+          보이는 쪽이 문제이므로, 그 자리에 배경 대신 지도색이 오게 한다.
+        */}
+        <path d={silhouette} fill="var(--color-map-idle)" />
+
         {geo.regions.map((r) => {
           const isCurrent = r.code === currentCode;
           const isPassed = passed.has(r.code);

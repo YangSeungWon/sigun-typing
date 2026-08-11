@@ -41,6 +41,19 @@ describe("지금 문제로 당기는 변환", () => {
     expect(focusTransform(undefined, view)).toBe("");
   });
 
+  it("CSS transform 문법으로 낸다 — 그래야 이동이 이어진다", () => {
+    /*
+     * SVG의 transform 속성으로 걸면 브라우저에 따라 트랜지션이 붙지 않아
+     * 지도가 다음 지역으로 뚝 끊긴 채 튄다. 단위와 쉼표가 있어야 CSS
+     * transform 속성으로 걸 수 있다.
+     */
+    const t = focusTransform(region("M400,400L440,400L440,440L400,440Z"), view);
+    expect(t).toMatch(/^translate\(-?[\d.]+px, -?[\d.]+px\)/);
+    expect(t, "공백으로 끊는 SVG 속성 문법이면 안 된다").not.toMatch(
+      /translate\(-?[\d.]+ -?[\d.]+\)/,
+    );
+  });
+
   it("섬 때문에 확대를 포기하지 않는다", () => {
     const withIsland = region("M400,400L440,400L440,440L400,440ZM10,900L14,904Z");
     expect(focusTransform(withIsland, view)).not.toContain("scale(1)");
@@ -61,7 +74,7 @@ describe("지금 문제로 당기는 변환", () => {
   it("가장자리 지역에서도 지도 밖 여백을 끌어오지 않는다", () => {
     // 좌상단 구석을 가운데로 옮기면 지도 바깥이 화면 절반을 차지한다.
     const corner = focusTransform(region("M0,0L10,10Z"), view, { maxScale: 2 });
-    const [, x, y] = corner.match(/translate\((-?[\d.]+) (-?[\d.]+)\)$/) ?? [];
+    const [, x, y] = corner.match(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)$/) ?? [];
     // 배율 2에서 중심은 (250,250)보다 안쪽으로 밀려 있어야 한다.
     expect(Number(x)).toBeLessThanOrEqual(-250);
     expect(Number(y)).toBeLessThanOrEqual(-250);

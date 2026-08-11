@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, type CSSProperties } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import { focusTransform } from "@/lib/geo/bbox";
 
@@ -120,8 +120,7 @@ export const RegionMap = memo(function RegionMap({
          * 문제가 바뀔 때 화면이 미끄러지듯 옮겨 가야 "달리고 있다"는 감각이
          * 생긴다. viewBox 대신 transform을 쓰는 것이 이 한 줄을 위해서다.
          */
-        style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
-        transform={transform}
+        style={{ ...PAN, transform }}
       >
         {/*
           지역들을 한 장으로 합친 실루엣을 맨 아래에 깐다.
@@ -174,7 +173,14 @@ export const RegionMap = memo(function RegionMap({
               className={
                 r.code === justPassed
                   ? "map-pass"
-                  : "transition-[fill] duration-200"
+                  : /*
+                     * 지금 묻는 곳만은 색이 **즉시** 바뀐다. 카메라가 미끄러지는
+                     * 동안 어디로 가는지가 이미 보여야, 이동이 화면 전환이
+                     * 아니라 시선 이동으로 읽힌다.
+                     */
+                    isCurrent
+                    ? undefined
+                    : "transition-[fill] duration-200"
               }
             />
           );
@@ -187,11 +193,7 @@ export const RegionMap = memo(function RegionMap({
       */}
       {/* 색 위에 얹는 빗금. 채우기와 별개의 층이라 색을 가리지 않는다. */}
       {missedCodes.length > 0 && (
-        <g
-          aria-hidden="true"
-          style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
-          transform={transform}
-        >
+        <g aria-hidden="true" style={{ ...PAN, transform }}>
           {geo.regions
             .filter((r) => missed.has(r.code))
             .map((r) => (
@@ -203,8 +205,7 @@ export const RegionMap = memo(function RegionMap({
       {currentCode && (
         <path
           // 테두리도 함께 움직여야 한다.
-          style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
-          transform={transform}
+          style={{ ...PAN, transform }}
           d={current?.d}
           fill="none"
           stroke="var(--color-ink)"
@@ -219,3 +220,23 @@ export const RegionMap = memo(function RegionMap({
 
 /** 기본값을 인라인 배열로 두면 렌더마다 새 배열이라 memo가 무력해진다. */
 const EMPTY: string[] = [];
+
+/**
+ * 카메라가 다음 지역으로 옮겨 가는 동안.
+ *
+ * 확대된 상태에서 문제가 바뀌면 화면이 통째로 다른 곳을 비추게 된다. 그것이
+ * 한 프레임에 끝나면 지도가 이어진 공간이 아니라 슬라이드 두 장으로 읽힌다 —
+ * 방금 본 지역 옆이 어디인지가 이 게임의 실마리인데, 그 연결이 끊긴다.
+ *
+ * 그래서 미끄러지되 **빠르게**. 600ms는 다음 문제를 읽으려는 손을 기다리게
+ * 했다. 어디로 가는지는 이미 알고 있으므로(노랑은 이동 전에 이미 켜진다)
+ * 이동 자체는 눈이 따라올 최소한이면 된다.
+ *
+ * transform-box·origin을 함께 주는 이유는 lib/geo/bbox.ts의 focusTransform에
+ * 적어 두었다 — SVG 속성과 같은 좌표계를 만들기 위한 것이다.
+ */
+const PAN: CSSProperties = {
+  transition: "transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+  transformBox: "view-box",
+  transformOrigin: "0 0",
+};

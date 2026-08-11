@@ -64,7 +64,7 @@ export function mainPathBox(d: string): Box {
  *
  * viewBox를 직접 바꾸지 않고 안쪽 <g>에 transform을 거는 이유: viewBox는 CSS로
  * 부드럽게 이어지지 않지만 transform은 된다. 같은 결과를 얻으면서 애니메이션이
- * 공짜로 따라온다.
+ * 공짜로 따라온다. 반환값은 CSS transform 문법이다(아래 참고).
  *
  * 배율은 지역이 화면의 일정 비율을 차지하도록 잡되 상한을 둔다. 작은 구 하나를
  * 꽉 채우도록 당기면 주변이 다 잘려 나가 "여기가 어디인가"를 물을 수 없다 —
@@ -136,5 +136,14 @@ export function focusTransform(
   const clampedX = Math.min(Math.max(cx, halfW), view.width - halfW);
   const clampedY = Math.min(Math.max(cy, halfH), view.height - halfH);
 
-  return `translate(${view.width / 2} ${view.height / 2}) scale(${scale}) translate(${-clampedX} ${-clampedY})`;
+  /*
+   * SVG의 transform **속성**이 아니라 CSS transform 문법으로 낸다
+   * (`translate(500px, 400px)`, 공백이 아니라 쉼표와 단위).
+   *
+   * 속성으로 걸면 브라우저에 따라 트랜지션이 붙지 않아 지도가 뚝 끊긴 채로
+   * 다음 지역으로 튄다. CSS 속성으로 걸면 어디서나 이어진다. 쓰는 쪽에서
+   * `transform-box: view-box; transform-origin: 0 0`을 함께 줘야 속성과
+   * 같은 좌표계가 된다 — 그러면 1px이 곧 viewBox 한 칸이다.
+   */
+  return `translate(${view.width / 2}px, ${view.height / 2}px) scale(${scale}) translate(${-clampedX}px, ${-clampedY}px)`;
 }

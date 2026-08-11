@@ -64,8 +64,16 @@ export const MiniMap = memo(function MiniMap({
       */}
       {marker && (
         <g
-          style={{ transition: "transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1)" }}
-          transform={`translate(${marker.x} ${marker.y})`}
+          /*
+             표시점도 같은 규칙으로 움직인다 — 큰 지도와 따로 놀면 두 지도가
+             다른 순간을 가리킨다. CSS 속성으로 거는 이유는 RegionMap과 같다.
+          */
+          style={{
+            transition: "transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+            transformBox: "view-box",
+            transformOrigin: "0 0",
+            transform: `translate(${marker.x}px, ${marker.y}px)`,
+          }}
         >
           <circle r={Math.max(geo.width, geo.height) * 0.06} fill="var(--color-centerline)" />
           <circle

@@ -7,13 +7,6 @@ interface TypingSurfaceProps {
   onType: (value: string) => void;
   /** 항목이 확정될 때마다 증가하는 값. 바뀌면 입력창을 비운다. */
   advancedAt: number;
-  /**
-   * 오답을 제출할 때마다 증가하는 값. 이때도 입력창을 비워야 한다.
-   *
-   * 엔진 상태만 비우면 화면의 판은 깨끗한데 진짜 입력창에는 방금 낸 오답이
-   * 그대로 남아 있고, 다음에 치는 글자가 그 뒤에 붙는다.
-   */
-  rejectedAt?: number;
   disabled?: boolean;
   /**
    * 뜨자마자 입력창을 잡을지.
@@ -37,7 +30,6 @@ interface TypingSurfaceProps {
 export function TypingSurface({
   onType,
   advancedAt,
-  rejectedAt = 0,
   disabled,
   autoFocus = true,
   onFocusChange,
@@ -54,7 +46,12 @@ export function TypingSurface({
     if (!disabled && autoFocus) inputRef.current?.focus();
   }, [disabled, autoFocus]);
 
-  // 항목이 넘어가거나 오답을 낼 때마다 입력창을 비운다.
+  /*
+   * 항목이 넘어갈 때마다 입력창을 비운다.
+   *
+   * 오답을 냈을 때는 비우지 않는다 — 틀린 글자만 고칠 수 있도록 엔진이
+   * 입력을 그대로 들고 있고, 여기서 지우면 화면과 실제 입력창이 어긋난다.
+   */
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
@@ -64,7 +61,7 @@ export function TypingSurface({
       el.blur();
       el.focus();
     }
-  }, [advancedAt, rejectedAt]);
+  }, [advancedAt]);
 
   return (
     <div

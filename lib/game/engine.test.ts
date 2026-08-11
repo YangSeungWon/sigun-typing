@@ -137,8 +137,9 @@ describe("타임어택", () => {
 
   it("차감이 누적되면 시간이 먼저 끝난다", () => {
     let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
+    // 매번 다른 답을 낸다. 같은 답을 또 내는 것은 새 오답으로 세지 않는다.
     for (let i = 0; i < 30; i++) {
-      g = setInput(g, "쿄", 1_000 + i * 10);
+      g = setInput(g, i % 2 === 0 ? "쿄" : "탸", 1_000 + i * 10);
       g = submit(g, 1_005 + i * 10);
     }
     expect(remainingMs(g, 1_500)).toBeLessThanOrEqual(0);
@@ -407,17 +408,29 @@ describe("엔터 제출", () => {
     expect(g.rejectedAt).toBeNull();
   });
 
-  it("틀린 답을 제출하면 그 답이 남고 입력이 비워진다", () => {
+  it("틀린 답을 제출해도 입력은 그대로 남는다 — 틀린 자리만 고친다", () => {
     let g = recall();
     const answer = g.items[0].answer;
     const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
     g = setInput(g, wrong, 100);
     g = submit(g, 200);
     expect(g.index).toBe(0);
-    expect(g.input).toBe("");
+    expect(g.input).toBe(wrong);
     expect(g.itemWrong).toEqual([wrong]);
     expect(g.itemErrors).toBe(1);
     expect(g.rejectedAt).toBe(200);
+  });
+
+  it("같은 답을 또 내도 오답이 두 번 세지지 않는다", () => {
+    // 입력이 남으므로 엔터만 한 번 더 눌러도 같은 답이 다시 접수된다.
+    let g = recall();
+    const answer = g.items[0].answer;
+    const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
+    g = submit(setInput(g, wrong, 100), 200);
+    g = submit(g, 300);
+    expect(g.itemWrong).toEqual([wrong]);
+    expect(g.itemErrors).toBe(1);
+    expect(g.rejectedAt, "판은 다시 한 번 빨개진다").toBe(300);
   });
 
   it("틀린 뒤 맞히면 시도 횟수와 오답이 결과에 남는다", () => {
@@ -495,6 +508,20 @@ describe("엔터 제출", () => {
     // 정답에 든 타수만 남는다. 헛친 타수는 분모(친 타수)에만 남아 정확도를 낮춘다.
     expect(g.results[0].keystrokes).toBe(keystrokeCount(answer));
     expect(score(g, 500).accuracy).toBeLessThan(1);
+  });
+
+  it("틀린 자리만 고쳐 맞혀도 타수는 온전히 남는다", () => {
+    // 오답이 화면에 남으므로 대부분은 지웠다 다시 치는 대신 뒷글자만 고친다.
+    // 그때 앞글자의 타수까지 깎이면 고쳐 쓰는 사람만 손해를 본다.
+    let g = recall();
+    const answer = g.items[0].answer;
+    const chars = [...answer];
+    const wrong = `${chars.slice(0, -1).join("")}쿄`;
+    g = submit(setInput(g, wrong, 100), 200);
+    // 마지막 글자만 지우고 다시 친다.
+    g = setInput(g, chars.slice(0, -1).join(""), 300);
+    g = submit(setInput(g, answer, 400), 500);
+    expect(g.results[0].keystrokes).toBe(keystrokeCount(answer));
   });
 
   it("첫 제출에 맞힌 수가 정답률이 된다", () => {

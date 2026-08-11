@@ -151,7 +151,7 @@ export function MultiRace({
               />
             )}
 
-            <TypingSurface onType={type} advancedAt={advancedAt} rejectedAt={rejectedAt}>
+            <TypingSurface onType={type} advancedAt={advancedAt}>
               <div className="mx-auto flex w-full max-w-xl items-baseline justify-between pb-2 font-mono text-base text-dim">
                 <span className="tabular-nums">
                   {state.index + 1} / {state.items.length}
@@ -165,7 +165,12 @@ export function MultiRace({
                 hinted={state.hintShown}
                 judge={MODES.multi.judge}
                 erroredAt={rejectedAt}
+                rejected={
+                  state.input !== "" &&
+                  state.itemWrong[state.itemWrong.length - 1] === state.input
+                }
                 advancedAt={advancedAt}
+                onSubmit={submitAnswer}
               />
             </TypingSurface>
 

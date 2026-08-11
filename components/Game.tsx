@@ -784,7 +784,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               <TypingSurface
                 onType={type}
                 advancedAt={advancedAt}
-                rejectedAt={rejectedAt}
                 onFocusChange={onFocusChange}
               >
                 <SignPlate
@@ -804,7 +803,18 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                    * 벗어난 순간이고, 회상 모드에서는 오답을 제출한 순간이다.
                    */
                   erroredAt={config.judge === "enter" ? rejectedAt : erroredAt}
+                  /*
+                   * 지금 판에 있는 답이 이미 거부된 그 답인지. 엔진이 오답을
+                   * 지우지 않으므로 이 비교만으로 알 수 있고, 한 글자만 고쳐도
+                   * 저절로 풀린다 — 타이머를 둘 이유가 없다.
+                   */
+                  rejected={
+                    state.input !== "" &&
+                    state.itemWrong[state.itemWrong.length - 1] === state.input
+                  }
                   advancedAt={advancedAt}
+                  // 판면의 제출 표시를 눌러도 같은 길로 간다.
+                  onSubmit={submitAnswer}
                 />
               </TypingSurface>
 
@@ -873,8 +883,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 ) : (
                   <>
                     {/*
-                      제출은 여기서 말하지 않는다. 판 오른쪽 화살표가 이미
-                      그 자리에서 말하고 있고, 같은 말을 두 곳에서 하면
+                      제출은 여기서 말하지 않는다. 판 오른쪽의 `제출 ↵`이
+                      이미 그 자리에서 말하고 있고, 같은 말을 두 곳에서 하면
                       읽어야 할 것만 늘어난다.
 
                       "초성 힌트"도 "힌트"로 줄인다 — 눌러 보면 초성이

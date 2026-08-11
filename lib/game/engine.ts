@@ -1,4 +1,4 @@
-import { isOnTrack } from "../hangul/match";
+import { isOnTrack, matchProgress } from "../hangul/match";
 import { keystrokeCount } from "../hangul/keystrokes";
 import { computeScore } from "../score/core";
 import type {
@@ -224,8 +224,21 @@ export function setInput(state: GameState, text: string, now: number): GameState
     lastKeystrokeCount: count,
     keystrokes:
       delta === 0 ? state.keystrokes : [...state.keystrokes, { t: now - state.startedAt, n: delta, ok }],
-    // 정답 타수만 센다. 지운 만큼은 되돌린다.
-    itemKeystrokes: ok && delta > 0 ? state.itemKeystrokes + delta : state.itemKeystrokes + Math.min(delta, 0),
+    /*
+     * 정답 타수는 **지금 입력에서 다시 읽는다.** 더하고 빼며 세지 않는다.
+     *
+     * 누적식은 더할 때와 뺄 때의 기준이 달랐다 — 경로를 벗어난 타건은 더하지
+     * 않으면서 지울 때는 그만큼 빼서, 오답을 지우고 고치면 멀쩡히 맞혀 둔
+     * 앞글자의 타수까지 깎였다. 오답을 제출해도 입력이 남게 되면서 그 길이
+     * 흔한 길이 되었다.
+     *
+     * 지금 값은 "이 입력이 정답과 맞물린 앞부분의 길이"다. 지웠다 다시 쳐도,
+     * 틀린 뒤 고쳐도 같은 값이 나온다. 헛친 타수는 여기 들어오지 않고
+     * 분모(친 타수)에만 남아 정확도를 낮춘다.
+     */
+    itemKeystrokes: Math.max(
+      ...acceptedAnswers(item).map((a) => matchProgress(a, text).matched),
+    ),
   };
 
   /*
@@ -262,9 +275,9 @@ export function setInput(state: GameState, text: string, now: number): GameState
 /**
  * 답을 제출한다. 스페이스와 엔터가 같은 일을 한다.
  *
- * 맞으면 다음으로, 틀리면 오답 1회로 적고 입력을 비운다. 판은 그 자리에
- * 그대로 있으므로 다시 떠올려 볼 수 있다 — 회상 게임에서 한 번 틀린 것은
- * 실패가 아니라 과정이다.
+ * 맞으면 다음으로, 틀리면 오답 1회로 적는다. 판도 입력도 그 자리에 그대로
+ * 있으므로 틀린 자리만 고치면 된다 — 회상 게임에서 한 번 틀린 것은 실패가
+ * 아니라 과정이다.
  *
  * 틀린 답을 **그대로 남긴다.** 나중에 무엇을 무엇으로 착각했는지 되짚는 데
  * 쓰이고, 그게 이 게임이 만들어 낼 수 있는 가장 값진 데이터다.
@@ -283,16 +296,32 @@ export function submit(state: GameState, now: number): GameState {
   const item = state.items[state.index];
   if (matchesAnswer(item, text)) return commitItem(state, now, false);
 
+  /*
+   * 같은 답을 연달아 또 내는 것은 새로운 오답이 아니다.
+   *
+   * 오답을 지우지 않게 되면서 엔터를 한 번 더 누르는 것만으로 같은 글자가
+   * 다시 접수된다 — 실수로, 또는 정말 그 답이 맞다고 믿어서. 그때마다
+   * 오답과 시간 벌점을 또 매기면 아무것도 새로 하지 않은 사람이 벌을 받는다.
+   * 판은 다시 한 번 빨개지되(rejectedAt) 셈은 그대로 둔다.
+   */
+  if (state.itemWrong[state.itemWrong.length - 1] === text) {
+    return { ...state, rejectedAt: now };
+  }
+
   return {
     ...state,
-    input: "",
     /*
-     * 지금까지 친 타수는 정답 타수로 치지 않는다. 분모(친 타수)에는 이미
-     * 들어가 있으므로 정확도는 저절로 내려간다 — 따로 벌점을 매길 필요가 없다.
+     * 틀린 답을 **지우지 않고 그대로 둔다.**
+     *
+     * `남대`라고 냈다면 고쳐야 할 것은 `대` 한 글자다. 판을 비워 버리면
+     * 아무 잘못도 없는 `남`까지 다시 쳐야 하고, 무엇을 냈는지도 화면에서
+     * 사라져 무엇과 헷갈렸는지 되짚을 수 없다. 오답은 실패가 아니라 고치는
+     * 중이므로, 고칠 것을 손에 쥐여 준 채로 둔다.
+     *
+     * 타수 상태(lastKeystrokeCount·itemKeystrokes)도 건드리지 않는다. 화면의
+     * 글자가 그대로 남는데 세던 값만 0으로 되돌리면, 다음에 한 글자를 지우는
+     * 순간 계산이 어긋난다. 제출이 거부된 것뿐 친 것이 사라진 것은 아니다.
      */
-    itemKeystrokes: 0,
-    lastKeystrokeCount: 0,
-    offTrack: false,
     /*
      * 답이 화면에 있는 모드에서는 여기서 또 세지 않는다. 틀린 답은 반드시
      * 정답 경로를 벗어나며 지나왔고 그 순간에 이미 한 번 세었다. 두 번 세면

@@ -41,8 +41,22 @@ interface SignPlateProps {
   judge?: "live" | "enter";
   /** 오타가 날 때마다 증가하는 값. 바뀌면 판면이 흔들린다. */
   erroredAt?: number;
+  /**
+   * 지금 판면에 있는 이 답이 이미 거부되었는지. 판면이 빨개진다.
+   *
+   * 흔들림(erroredAt)과 따로 받는다. 따라치기에서는 경로를 벗어난 순간에
+   * 흔들리지만, 빨갛게 물드는 것은 **제출이 거부된 답**에만이다 —
+   * 치는 도중에 빨개지면 그게 곧 정답 판정이다.
+   *
+   * 시간이 아니라 입력에 매인 상태다. 타이머로 껐다면 손을 놓고 있는 동안
+   * 방금 무슨 일이 있었는지가 화면에서 사라진다. 한 글자만 고쳐도 곧바로
+   * 원래 색으로 돌아오고, 같은 답을 다시 만들면 다시 빨개진다.
+   */
+  rejected?: boolean;
   /** 지역을 통과할 때마다 증가하는 값. 바뀌면 판면이 한 번 튄다. */
   advancedAt?: number;
+  /** 판면의 제출 표시를 눌렀을 때. 없으면 표시만 하고 누를 수는 없다. */
+  onSubmit?: () => void;
 }
 
 /**
@@ -64,7 +78,9 @@ export function SignPlate({
   hinted = false,
   judge = "live",
   erroredAt = 0,
+  rejected = false,
   advancedAt = 0,
+  onSubmit,
 }: SignPlateProps) {
   const { statuses } = matchProgress(target, typed);
   const chars = [...target];
@@ -74,28 +90,37 @@ export function SignPlate({
    * 구분하고 맞고 틀림은 구분하지 않는다.
    */
   const blind = judge === "enter" && !revealed;
-  const cursor = blind
-    ? Math.min(typedChars.length, chars.length)
-    : statuses.findIndex((s) => s === "untyped" || s === "pending");
-  // 목표 길이를 넘겨 친 글자들. 보여 주지 않으면 몇 자를 지워야 할지 알 수 없다.
-  const extra = typedChars.slice(chars.length);
 
   /**
-   * 가린 모드에서 아직 한 글자도 안 쳤을 때.
+   * 정답의 **글자 수를 숨긴다.**
    *
-   * 예전에는 `○○`을 띄웠는데 두 가지가 걸렸다. 첫째, 글자 수는 회상 퀴즈에서
-   * 꽤 큰 단서인데 이건 공짜인 반면 초성 힌트는 5초를 물린다 — 더 약한 힌트가
-   * 유료인 셈이라 앞뒤가 안 맞았다. 둘째, 완전한 원 두 개가 크게 떠 있으면
-   * 글자 자리가 아니라 로고처럼 읽힌다.
+   * 예전에는 한 글자만 쳐도 `○`으로 남은 자리가 드러났다. 그러면 첫 타건
+   * 자체가 힌트 요청이 되고, 아무것도 안 쳤을 때와 한 글자 쳤을 때 문제의
+   * 난이도가 달라진다. 게다가 초성 힌트는 5초를 물고 파는 정보인데 그보다
+   * 약한 길이 정보가 공짜인 셈이라 앞뒤가 안 맞았다.
    *
-   * 이제 한 글자라도 치면 그때부터 남은 자리가 보인다. 답을 떠올리는 순간에는
-   * 길이를 알 수 없고, 손을 대기 시작하면 도와준다.
+   * 규칙은 하나다 — **힌트를 열기 전에는 길이를 알려 주지 않는다.** 그래서
+   * 힌트를 열지 않은 동안 판면에 있는 것은 내가 친 글자뿐이다.
    */
+  const lengthHidden = masked && !hinted && !revealed;
+  /** 판면에 그릴 칸. 길이를 숨기는 동안에는 친 만큼만 있다. */
+  const slots = lengthHidden ? typedChars : chars;
+  const cursor = blind
+    ? Math.min(typedChars.length, slots.length)
+    : statuses.findIndex((s) => s === "untyped" || s === "pending");
+  // 목표 길이를 넘겨 친 글자들. 보여 주지 않으면 몇 자를 지워야 할지 알 수 없다.
+  // 길이를 숨기는 동안에는 "넘겼다"는 것 자체가 길이를 알려 주므로 없다.
+  const extra = lengthHidden ? [] : typedChars.slice(chars.length);
+
+  /** 가린 모드에서 아직 한 글자도 안 쳤을 때. 판면은 빈 채로 기다린다. */
   const idle = masked && typedChars.length === 0 && !hinted && !revealed;
 
   /** 초성 트랙. 자리를 잡아 두므로 입력이 바뀌어도 움직이지 않는다. */
   const showHint = hinted && masked && !revealed;
   const hintInitials = showHint ? [...initials(target)] : [];
+
+  /** 거부된 답이 아직 판면에 남아 있는 동안. */
+  const rejecting = rejected && !revealed;
 
   /**
    * 한 칸에 무엇을 그릴 것인가.
@@ -106,6 +131,10 @@ export function SignPlate({
    *
    * 오타 칸에도 목표 대신 실제로 친 글자를 그린다. 화면에 목표만 보이면
    * 내가 무엇을 쳤는지, 몇 자를 지워야 하는지 알 방법이 없다.
+   *
+   * 조합 중인 칸도 마찬가지다. `곡`을 칠 때 판면이 내내 `곡`이면 지금 손이
+   * ㄱ에 있는지 고에 있는지 곡에 있는지 알 수 없다. 노랑은 "이 목표 글자를
+   * 치는 중"이 아니라 **"지금 조합 중인 실제 문자열"**을 가리켜야 한다.
    */
   const slotContent = (i: number): string => {
     // 포기했으면 가리는 이유가 없다. 이제 알려 주려고 띄운 것이다.
@@ -114,7 +143,8 @@ export function SignPlate({
     // 두 번 보이고, 한 글자만 쳐도 그 자리의 초성이 사라진다.
     if (masked) return typedChars[i] ?? "○";
     if (blind) return typedChars[i] ?? chars[i];
-    if (statuses[i] === "wrong") return typedChars[i] ?? chars[i];
+    if (statuses[i] === "wrong" || statuses[i] === "pending")
+      return typedChars[i] ?? chars[i];
     return chars[i];
   };
 
@@ -149,11 +179,26 @@ export function SignPlate({
          * 가린 모드에서 그러면 판 너비가 곧 글자 수를 알려 준다 — 초성 힌트가
          * 5초를 받고 파는 정보를 공짜로 주는 셈이다.
          */
-        masked ? "w-full max-w-2xl" : "w-fit min-w-64 max-w-2xl sm:min-w-80"
+        /*
+         * 이름 길이에 맞추는 판에서는 오른쪽에 제출 표시가 앉을 자리를
+         * 따로 비운다. 비우지 않으면 `서귀포시`처럼 긴 이름이 그 위로 올라탄다.
+         * 가린 판은 늘 최대 폭이라 그럴 일이 없다.
+         */
+        masked
+          ? "w-full max-w-2xl"
+          : "w-fit min-w-64 max-w-2xl pr-16 sm:min-w-80 sm:pr-28"
       } ${focused ? "" : "opacity-70"}`}
     >
-      {/* 한국 도로표지판 특유의 흰 내곽선. 흐린 회색이 아니라 흰 선이다. */}
-      <div className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
+      {/*
+        한국 도로표지판 특유의 흰 내곽선. 흐린 회색이 아니라 흰 선이다.
+        제출이 거부되면 이 선만 빨개진다 — 판면 전체나 지도를 물들일 일이
+        아니다. 틀린 것은 이 한 번의 제출이지 지금까지 온 길이 아니다.
+      */}
+      <div
+        className={`pointer-events-none absolute inset-2 rounded-xl border-2 transition-colors duration-150 sm:inset-2.5 ${
+          rejecting ? "border-alert" : "border-paint"
+        }`}
+      />
 
       {/*
         제출할 수 있다는 표시.
@@ -162,24 +207,40 @@ export function SignPlate({
         않아 멈추는 사람이 생긴다. 다음 동작이 있다는 것을 손이 있는 자리에서
         알려 줘야 한다.
 
-        **맞았는지는 알려 주지 않는다.** 글자가 하나라도 있으면 켜지고 비면
-        꺼진다. 정답일 때만 켜면 후보를 하나씩 쳐 보는 것만으로 답을 찾을 수
+        **맞았는지는 알려 주지 않는다.** 글자가 하나라도 있으면 진해지고 비면
+        옅어진다. 정답일 때만 켜면 후보를 하나씩 쳐 보는 것만으로 답을 찾을 수
         있게 되어, 색을 걷어낸 이유가 통째로 무너진다.
 
-        화살표인 것은 여기가 도로표지판이기 때문이다 — 실제 표지판에서
-        화살표는 "이쪽으로 갈 수 있다"는 말이고, 지금 필요한 말이 그것이다.
-        자리는 absolute라 켜지고 꺼져도 글자가 밀리지 않는다.
+        화살표 하나(`›`)로는 부족했다. 다 쳐 놓고 "자동으로 넘어가나?" 하며
+        기다리는 사람에게 필요한 말은 **무엇을 눌러야 하는가**이고, 그건
+        글자로 적어야 전해진다. 누를 수도 있어야 한다 — 웹에서 눌러 보는 것은
+        키를 외우는 것보다 먼저다. 빈 상태에서도 옅게 남겨 두는 이유는,
+        칠 것이 있다는 사실 자체가 첫 화면에서 읽혀야 하기 때문이다.
+
+        자리는 absolute라 켜지고 꺼져도 글자가 밀리지 않는다. z-10은 판면을
+        덮은 투명 입력창 위로 올리기 위한 것이다 — 없으면 눌러도 입력창이 먹는다.
       */}
-      <span
-          aria-hidden="true"
+      <button
+          type="button"
+          // 입력창이 포커스를 잃으면 그 뒤로 아무리 쳐도 반응이 없다.
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onSubmit}
+          // 키보드 이동에서는 건너뛴다. Tab은 이 게임에서 힌트 키다.
+          tabIndex={-1}
+          disabled={!onSubmit}
+          aria-label="제출"
           // 흰 내곽선 안쪽에 놓는다. 선 위에 겹치면 표지판이 아니라
           // 인쇄가 밀린 것처럼 보인다.
-          className={`pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 font-bold text-3xl leading-none transition-opacity duration-150 sm:right-7 sm:text-4xl ${
-            typedChars.length > 0 ? "text-paint/85 submit-nudge" : "opacity-0"
-          }`}
+          className={`absolute top-1/2 right-5 z-10 flex -translate-y-1/2 items-center gap-1.5 rounded-md px-1.5 py-1 font-mono leading-none transition-colors duration-150 sm:right-7 ${
+            onSubmit ? "cursor-pointer" : "pointer-events-none"
+          } ${typedChars.length > 0 ? "text-paint/90" : "text-paint/40"}`}
         >
-          ›
-      </span>
+          {/* 좁은 화면에는 판 아래 제출 버튼이 따로 있다. 여기서는 기호만. */}
+          <span className="hidden text-sm tracking-[0.1em] sm:inline">제출</span>
+          <span className="text-xl leading-none sm:text-2xl" aria-hidden="true">
+            ↵
+          </span>
+      </button>
 
       <div className="relative flex flex-col items-center gap-3">
         {idle ? (
@@ -217,7 +278,7 @@ export function SignPlate({
           </div>
         ) : (
         <div className={CHAR_ROW} aria-label={masked && !revealed ? "지역명" : target}>
-          {chars.map((_, i) => (
+          {slots.map((_, i) => (
             <span key={i} className="relative flex flex-col items-center">
               {/*
                 초성은 글자 자리 **바로 위에 고정**한다.
@@ -250,15 +311,22 @@ export function SignPlate({
                    * 포기한 것과 구분이 안 된다. 다만 따라 친 글자는 하얗게
                    * 채워진다. 어디까지 썼는지가 그 자리에서 보여야 한다.
                    */
-                  revealed
-                    ? statuses[i] === "correct"
-                      ? "text-paint"
-                      : "text-centerline"
-                    : blind
-                      ? typedChars[i] === undefined
-                        ? CHAR_TONE.untyped
-                        : "text-paint"
-                      : CHAR_TONE[statuses[i]]
+                  /*
+                   * 거부된 제출은 통째로 빨갛다. 어느 글자가 틀렸는지는
+                   * 여전히 말하지 않는다 — 그걸 짚어 주면 한 글자씩 바꿔
+                   * 보는 것만으로 답이 나온다.
+                   */
+                  rejecting && typedChars[i] !== undefined
+                    ? "text-alert"
+                    : revealed
+                      ? statuses[i] === "correct"
+                        ? "text-paint"
+                        : "text-centerline"
+                      : blind
+                        ? typedChars[i] === undefined
+                          ? CHAR_TONE.untyped
+                          : "text-paint"
+                        : CHAR_TONE[statuses[i]]
                 } transition-colors duration-100`}
               >
                 {slotContent(i)}
@@ -271,6 +339,22 @@ export function SignPlate({
               />
             </span>
           ))}
+          {/*
+            길이를 숨기는 동안에는 다음 칸이 없다. 커서를 놓을 자리도 없으므로
+            친 글자 뒤에 한 칸을 따로 둔다 — 여기가 다음에 찍힐 자리라는 것이
+            보여야 입력이 살아 있다는 감각이 생긴다.
+          */}
+          {lengthHidden && (
+            <span aria-hidden="true" className="relative flex flex-col items-center">
+              {/* 높이만 빌린다. 폭은 커서 하나만큼이면 된다. */}
+              <span className="invisible w-0">가</span>
+              <span
+                className={`mt-1 h-1 w-3 rounded-full transition-opacity sm:w-4 ${
+                  focused ? "bg-centerline opacity-100" : "opacity-0"
+                }`}
+              />
+            </span>
+          )}
           {/* 넘겨 친 글자도 그려야 몇 자를 지워야 하는지 눈으로 보인다. */}
           {extra.map((ch, i) => (
             <span key={`extra-${i}`} className="relative flex flex-col items-center">

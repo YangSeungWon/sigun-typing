@@ -23,10 +23,16 @@ describe("가린 모드에서 답이 새지 않는다", () => {
     expect(html).not.toContain("원");
   });
 
-  it("한 글자라도 치면 남은 자리가 보인다", () => {
+  it("치기 시작해도 글자 수는 여전히 숨긴다", () => {
+    // 첫 타건이 힌트 요청처럼 작동하면 안 된다. 길이는 힌트를 연 사람만 본다.
     const html = plate({ masked: true, typed: "ㅅ" });
-    expect(html).toContain("○");
+    expect(html).not.toContain("○");
     expect(html).not.toContain("지역명을 입력하세요");
+  });
+
+  it("힌트를 열어야 글자 수가 드러난다", () => {
+    const html = plate({ masked: true, typed: "ㅅ", hinted: true });
+    expect(html).toContain("○");
   });
 
   it("초성만 쳐도 목표 글자가 드러나지 않는다", () => {
@@ -62,6 +68,15 @@ describe("가린 모드에서 답이 새지 않는다", () => {
 });
 
 describe("무엇을 쳤는지 보인다", () => {
+  it("조합 중인 칸에는 목표가 아니라 지금 조합 중인 글자가 보인다", () => {
+    // 판면이 내내 `곡`이면 손이 ㄱ에 있는지 고에 있는지 알 수 없다.
+    const html = plate({ target: "곡성", typed: "고" });
+    expect(html).toContain(">고<");
+    expect(html, "아직 받침을 안 찍었는데 목표가 먼저 뜨면 안 된다").not.toContain(
+      ">곡<",
+    );
+  });
+
   it("오타 칸에는 목표가 아니라 실제로 친 글자가 보인다", () => {
     // 이게 없으면 화면엔 목표만 빨갛게 보여서 뭘 지워야 할지 알 수 없다.
     const html = plate({ typed: "소" });

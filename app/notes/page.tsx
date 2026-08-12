@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 import { MistakeNotes } from "@/components/MistakeNotes";
 
 export const metadata = {
@@ -10,12 +11,7 @@ export default function NotesPage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
       <header className="flex flex-col gap-3">
-        <Link
-          href="/"
-          className="font-mono text-sm tracking-[0.12em] text-dim uppercase transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          ← 시군 타이핑
-        </Link>
+        <BackLink href="/">시군 타이핑</BackLink>
         {/*
           "오답노트"는 학교 시험의 말이고, 규칙(2번 연속 정답)은 시스템의 말이다.
           사용자에게 필요한 것은 자기 상태뿐이다 — 어디가 아직 헷갈리는가.

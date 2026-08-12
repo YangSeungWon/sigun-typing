@@ -46,7 +46,7 @@ export default function Home() {
       {/* 제목은 자기 아래 카드와 가깝게, 앞 묶음과는 멀게. 그래야 구조가 읽힌다. */}
       {groups.map((group) => (
         <section key={group.id} className="flex flex-col gap-2">
-          <h2 className="font-mono text-sm tracking-[0.18em] text-ink/70 uppercase">
+          <h2 className="text-sm font-medium text-dim">
             {group.name}
           </h2>
 

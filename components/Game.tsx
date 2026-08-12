@@ -27,6 +27,7 @@ import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
 import { formatClock, Odometer } from "./Odometer";
 import { KeyHint } from "./Keycap";
+import { BackLink } from "./BackLink";
 import { CountdownPlate } from "./CountdownPlate";
 import { CourseComplete } from "./CourseComplete";
 import { MiniMap } from "./MiniMap";
@@ -610,18 +611,13 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
         시선이 갈린다. 한 줄로 묶으면 그 아래 지도가 무대 전체를 쓴다.
       */}
       <header className="mx-auto flex w-full max-w-3xl items-center gap-3 font-mono text-sm tabular-nums text-dim">
-        <Link
-          // 나가는 곳은 이 코스의 소개다. 다른 방식으로 한 판 더 하려는
-          // 사람이 대부분이고, 다른 코스로 가는 길도 거기 있다.
-          href={`/courses/${course.id}`}
-          aria-label="코스 화면으로"
-          className="transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          <span aria-hidden="true">←</span>
-          <span className="ml-2 hidden tracking-[0.12em] uppercase sm:inline">
-            코스 선택
-          </span>
-        </Link>
+        {/*
+          나가는 곳은 이 코스의 소개다. 다른 방식으로 한 판 더 하려는
+          사람이 대부분이고, 다른 코스로 가는 길도 거기 있다.
+        */}
+        <BackLink href={`/courses/${course.id}`} ariaLabel="코스 화면으로">
+          <span className="hidden sm:inline">코스 선택</span>
+        </BackLink>
 
         {/* 시작 화면에는 같은 이름이 큰 글씨로 있다. 두 번 쓸 이유가 없다. */}
         <span className="hidden truncate text-ink sm:inline">

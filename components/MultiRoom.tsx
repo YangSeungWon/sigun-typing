@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
 import { useRoom } from "@/lib/multiplayer/useRoom";
 import { useCourseGeo } from "@/lib/useCourseGeo";
@@ -88,7 +89,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     return (
       <div className="flex w-full max-w-sm flex-col gap-6">
         <header className="flex flex-col gap-2 text-center">
-          <span className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+          <span className="text-sm font-medium text-dim">
             초대받았습니다
           </span>
           <span className="font-mono text-4xl font-semibold tracking-[0.2em]">
@@ -128,7 +129,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     return (
       <div className="flex w-full max-w-md flex-col gap-8">
         <section className="flex flex-col gap-3">
-          <label htmlFor="nickname" className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+          <label htmlFor="nickname" className="text-sm font-medium text-dim">
             이름
           </label>
           <input
@@ -141,7 +142,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         </section>
 
         <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-6">
-          <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+          <h2 className="text-sm font-medium text-dim">
             방 만들기
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -172,7 +173,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         </section>
 
         <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep p-6">
-          <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+          <h2 className="text-sm font-medium text-dim">
             방 코드로 들어가기
           </h2>
           <div className="flex gap-2">
@@ -286,12 +287,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
 function RoomHeader({ code, courseName }: { code: string; courseName: string }) {
   return (
     <header className="flex flex-col gap-2">
-      <Link
-        href="/"
-        className="font-mono text-sm tracking-[0.12em] text-dim uppercase transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        ← 시군 타이핑
-      </Link>
+      <BackLink href="/">시군 타이핑</BackLink>
       <div className="flex items-baseline justify-between gap-4">
         <span className="font-mono text-3xl font-semibold tracking-[0.2em]">
           {code}

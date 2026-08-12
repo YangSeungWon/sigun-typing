@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
 import { getScoreRepository } from "@/lib/db/client";
 import { SCORING_VERSION } from "@/lib/score/version";
@@ -64,12 +65,7 @@ export default async function RankingPage({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-14">
       <header className="flex flex-col gap-3">
-        <Link
-          href="/"
-          className="font-mono text-sm tracking-[0.12em] text-dim uppercase transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          ← 시군 타이핑
-        </Link>
+        <BackLink href="/">시군 타이핑</BackLink>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">랭킹</h1>
         <p className="text-dim">
           서버에서 다시 계산해 검증한 기록만 올라갑니다. 채점 규칙이 같은 기록끼리만

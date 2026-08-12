@@ -130,7 +130,7 @@ export function ResultCard({
         */}
         {missed.length > 0 && (
           <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
-            <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
+            <h2 className="text-sm font-medium text-dim">
               다시 볼 곳 {missed.length}
             </h2>
             <ul className="flex flex-wrap gap-2">

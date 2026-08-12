@@ -222,7 +222,38 @@ function thumbOf(geo: CourseGeo, outline: string): Thumb {
   const markerFit = 46 / reach;
   const zoomed = Math.min(Math.max(wanted, fitScale * MIN_ZOOM), fitScale * MAX_ZOOM);
   // 30%를 목표로 잡았으니 그 절반까지는 마커를 위해 양보한다.
-  const scale = markerFit >= zoomed * 0.7 ? Math.min(zoomed, markerFit) : zoomed;
+  const withMarkers = markerFit >= zoomed * 0.7 ? Math.min(zoomed, markerFit) : zoomed;
+
+  /*
+   * 당기다가 **몸통을 자르지는 않는다.**
+   *
+   * 넓이만 맞추면 대구처럼 길쭉한 코스가 위아래로 잘려 나간다 — 군위와 달성이
+   * 카드 밖으로 밀려났다. 인천에서 먼 섬 몇 개가 잘리는 것은 괜찮지만, 그건
+   * 넓이로 치면 부스러기이기 때문이다.
+   *
+   * 그래서 기준을 "무엇이 잘리는가"가 아니라 **"얼마나 잘리는가"**로 둔다.
+   * 넓은 쪽부터 담아 전체 땅의 CORE_SHARE를 채우는 덩어리들은 반드시 카드
+   * 안에 들어와야 하고, 나머지 부스러기는 잘려도 된다.
+   */
+  /*
+ * 0.94에서 0.85로 내렸다. 0.9 위에서는 인천이 무너진다 — 옹진의 흩어진 섬들이
+ * 넓이의 10%를 넘게 차지해서, 그것까지 담으려면 서해 전체를 담아야 한다.
+ * 0.85면 대구는 군위·달성까지 온전히 들어오고 인천은 본토와 강화를 지킨다.
+ */
+const CORE_SHARE = 0.85;
+  const ranked = shapes
+    .map((points, i) => ({ points, area: weight[i] }))
+    .sort((a, b) => b.area - a.area);
+  let held = 0;
+  let coreReach = 1;
+  for (const { points, area: a } of ranked) {
+    if (held >= total * CORE_SHARE) break;
+    held += a;
+    for (const [x, y] of points) {
+      coreReach = Math.max(coreReach, Math.abs(x - cx), Math.abs(y - cy));
+    }
+  }
+  const scale = Math.min(withMarkers, 46 / coreReach);
 
   const offsetX = 50 - cx * scale;
   const offsetY = 50 - cy * scale;

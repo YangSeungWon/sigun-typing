@@ -304,9 +304,17 @@ export function SignPlate({
               정해지고, 그 안에 absolute로 얹은 안내 문구가 25px 폭에 갇혀
               한 글자씩 세로로 쌓인다. 높이만 빌리고 폭은 판면을 따라야 한다.
             */}
+            {/*
+              뼈대는 실제 칸과 **똑같은 모양**이어야 한다. 글자 하나만 깔아
+              두었더니 원고지 칸(1.2em 정사각형)이 그보다 높아, 첫 타건에 판이
+              12px 자라고 그 위의 지도까지 밀렸다 — 하필 문제를 보고 손을
+              움직이는 그 순간에.
+            */}
             <div aria-hidden="true" className={`invisible ${CHAR_ROW}`}>
               <span className="relative flex flex-col items-center">
-                <span>가</span>
+                <span className="flex size-[1.2em] items-center justify-center">
+                  가
+                </span>
                 <span className="mt-1 h-1 w-full rounded-full" />
               </span>
             </div>

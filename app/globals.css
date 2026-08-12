@@ -116,6 +116,19 @@ body {
   .play-stage .play-map svg {
     height: min(74vh, 22rem);
   }
+
+  /*
+   * 판이 화면의 42%로 좁아지는데 글자 크기는 화면 **너비** 기준이라 그대로다.
+   * 그러면 칸이 판을 넘쳐 오른쪽 제출 표시 위로 올라탄다. 좁아진 만큼 글자와
+   * 여백을 함께 줄인다.
+   */
+  .play-stage .char-row {
+    font-size: 2.25rem;
+  }
+
+  .play-stage .plate-content {
+    padding-inline: 3rem;
+  }
 }
 
 /*

@@ -397,8 +397,16 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
    * 공백을 보고 처리한다 — 한글 IME에서 스페이스는 조합을 끝내는 키이기도
    * 해서, 키를 가로채면 마지막 글자가 확정되기 전에 제출이 나간다.
    */
+  /*
+   * 정답을 베껴 쓰는 동안에도 같은 키가 같은 일을 해야 한다.
+   *
+   * playing에서만 듣고 있었더니, 포기하고 정답을 다 옮겨 적은 다음 엔터를
+   * 눌러도 아무 일도 일어나지 않았다. 스페이스는 값에 들어온 공백으로 처리돼
+   * 넘어가는데 엔터만 안 되니, 같은 화면에서 제출 키가 하나만 살아 있는
+   * 셈이었다. 엔진은 두 상태 모두 submit으로 받는다.
+   */
   useEffect(() => {
-    if (state.status !== "playing") return;
+    if (state.status !== "playing" && state.status !== "revealing") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
       // IME가 조합을 끝내려고 누른 엔터는 제출이 아니다. 이걸 빼면 조합 중인

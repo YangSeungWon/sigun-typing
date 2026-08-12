@@ -66,7 +66,7 @@ interface SignPlateProps {
  */
 /** 글자 줄의 모양. 빈 판이 높이를 맞출 때도 같은 값을 써야 한다. */
 const CHAR_ROW =
-  "flex items-end justify-center gap-1 text-3xl font-bold tracking-tight sm:gap-2 sm:text-6xl";
+  "char-row flex items-end justify-center gap-1 text-3xl font-bold tracking-tight sm:gap-2 sm:text-6xl";
 
 export function SignPlate({
   target,
@@ -135,8 +135,12 @@ export function SignPlate({
    *
    * 이름이 이미 판에 적혀 있는 모드에는 칸을 그리지 않는다. 거기는 표지판이지
    * 원고지가 아니다.
+   *
+   * **포기하고 정답을 베껴 쓰는 동안에도 칸을 둔다.** 오히려 여기가 원고지가
+   * 가장 필요한 자리다 — 정답이 떠 있는 채로 따라 치면 내가 어디까지 왔는지
+   * 표시가 하나도 없다.
    */
-  const boxed = masked && !revealed;
+  const boxed = masked;
 
   /**
    * 한 칸에 무엇을 그릴 것인가.
@@ -153,8 +157,14 @@ export function SignPlate({
    * 치는 중"이 아니라 **"지금 조합 중인 실제 문자열"**을 가리켜야 한다.
    */
   const slotContent = (i: number): string => {
-    // 포기했으면 가리는 이유가 없다. 이제 알려 주려고 띄운 것이다.
-    if (revealed) return chars[i];
+    /*
+     * 포기했으면 가리는 이유가 없다. 이제 알려 주려고 띄운 것이다.
+     *
+     * 다만 이미 친 자리에는 **내가 친 글자**를 그린다. 정답만 떠 있으면
+     * `곡`을 치는 동안 손이 ㄱ에 있는지 고에 있는지 곡에 있는지 알 수 없다 —
+     * 베껴 쓰는 자리에서 그건 지금 필요한 유일한 정보다.
+     */
+    if (revealed) return typedChars[i] ?? chars[i];
     // 초성은 칸 위에 따로 보여 준다. 글자 자리에도 겹쳐 그리면 같은 것이
     // 두 번 보이고, 한 글자만 쳐도 그 자리의 초성이 사라진다.
     if (masked) return typedChars[i] ?? "";
@@ -264,7 +274,7 @@ export function SignPlate({
         한쪽만 비우면 글자가 왼쪽으로 밀리므로 양쪽을 같이 비운다 — 표지판의
         여백은 대칭이어야 하고, 그래야 이름도 판 한가운데에 남는다.
       */}
-      <div className="relative flex flex-col items-center gap-3 px-12 sm:px-24">
+      <div className="plate-content relative flex flex-col items-center gap-3 px-12 sm:px-24">
         {idle ? (
           /*
            * 안내 문구가 글자 줄보다 낮아서, 첫 타건에 판이 세로로 커지고
@@ -355,9 +365,20 @@ export function SignPlate({
                   rejecting && typedChars[i] !== undefined
                     ? "text-alert"
                     : revealed
-                      ? statuses[i] === "correct"
+                      ? /*
+                         * 베껴 쓰는 동안의 색은 진행 표시다.
+                         *   흰색   이미 옮겨 적은 글자
+                         *   노랑   지금 조합 중인 글자
+                         *   빨강   잘못 친 글자 — 답이 눈앞에 있으니 알려 준다
+                         *   흐린 노랑  아직 안 쓴 글자
+                         */
+                        statuses[i] === "correct"
                         ? "text-paint"
-                        : "text-centerline"
+                        : statuses[i] === "wrong"
+                          ? "text-alert"
+                          : statuses[i] === "pending"
+                            ? "text-centerline"
+                            : "text-centerline/70"
                       : blind
                         ? typedChars[i] === undefined
                           ? CHAR_TONE.untyped
@@ -365,8 +386,14 @@ export function SignPlate({
                         : CHAR_TONE[statuses[i]]
                 } transition-colors duration-100`}
               >
-                {/* 빈 칸에는 아무것도 그리지 않는다. 칸이 이미 자리를 말한다. */}
-                {boxed && typedChars[i] === undefined ? "" : slotContent(i)}
+                {/*
+                  빈 칸에는 아무것도 그리지 않는다. 칸이 이미 자리를 말한다.
+                  정답을 베껴 쓰는 중이라면 예외다 — 거기 있는 글자가 곧
+                  베껴 쓸 대상이므로 옅게 남겨 둔다.
+                */}
+                {boxed && !revealed && typedChars[i] === undefined
+                  ? ""
+                  : slotContent(i)}
               </span>
               {/* 지금 칠 차례인 글자 아래에만 커서를 둔다 */}
               <span
@@ -418,7 +445,7 @@ export function SignPlate({
         */}
         {roman && (!masked || revealed) && (
           <span
-            className={`font-mono text-sm tracking-[0.12em] sm:text-base ${
+            className={`font-mono text-sm tracking-[0.12em] whitespace-nowrap sm:text-base ${
               revealed ? "text-centerline/80" : "text-paint/75"
             }`}
           >

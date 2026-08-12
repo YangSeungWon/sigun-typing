@@ -8,6 +8,41 @@ interface CourseThumbProps {
 type Thumb = { d: string; borders: string; route: number[][] };
 
 /**
+ * 지역들을 잇는 선. 꺾지 않고 흐르게 그린다.
+ *
+ * 직선으로 이으면 스물다섯 번 꺾이는 톱니가 되어 여정이 아니라 꺾은선
+ * 그래프처럼 읽힌다. 그렇다고 비행기 노선도처럼 구간마다 한쪽으로 부풀리면,
+ * 그건 **점이 적고 도약이 긴 지도**의 문법이라 서울처럼 짧은 구간이 스물다섯
+ * 개 이어지는 코스에서는 이웃한 호끼리 부딪혀 물결처럼 흔들린다.
+ *
+ * 그래서 구간을 하나씩 휘게 하는 대신 전체를 한 줄로 흘린다(Catmull-Rom을
+ * 3차 베지에로 옮긴 것). 곡선은 **지역 중심점을 그대로 지나므로** 어디를
+ * 거치는지는 직선일 때와 똑같이 정확하고, 꺾이는 자리만 부드러워진다.
+ */
+function routePath(points: number[][]): string {
+  if (points.length < 2) return "";
+  const at = (i: number) => points[Math.min(Math.max(i, 0), points.length - 1)];
+  const round = (v: number) => Math.round(v * 10) / 10;
+
+  let d = `M${at(0)[0]},${at(0)[1]}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const [x0, y0] = at(i - 1);
+    const [x1, y1] = at(i);
+    const [x2, y2] = at(i + 1);
+    const [x3, y3] = at(i + 2);
+    // 1/6은 Catmull-Rom을 베지에로 옮길 때의 계수다. 여기에 장력을 곱한다.
+    const k = TENSION / 6;
+    const c1 = [x1 + (x2 - x0) * k, y1 + (y2 - y0) * k];
+    const c2 = [x2 - (x3 - x1) * k, y2 - (y3 - y1) * k];
+    d += `C${round(c1[0])},${round(c1[1])} ${round(c2[0])},${round(c2[1])} ${x2},${y2}`;
+  }
+  return d;
+}
+
+/** 곡선의 장력. 높이면 더 둥글어지고, 급한 방향 전환에서 바깥으로 부푼다. */
+const TENSION = 0.5;
+
+/**
  * 코스 실루엣.
  *
  * 코스는 "31개 시군"이 아니라 "북서 연천에서 남동 안성까지, 인접한 시군을
@@ -86,9 +121,12 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
 
         문제 순서가 아니라 코스의 지리적 흐름이다 — 실제 플레이에서는 순서가
         섞인다. 그래서 번호를 붙이거나 한 곳씩 점멸시키지 않는다.
+
+        선은 곡선으로 흐른다(routePath). 꺾인 직선은 여정이 아니라 그래프처럼
+        읽힌다.
       */}
       <path
-        d={`M${thumb.route.map(([x, y]) => `${x},${y}`).join("L")}`}
+        d={routePath(thumb.route)}
         fill="none"
         stroke="var(--color-sign)"
         strokeWidth={2}

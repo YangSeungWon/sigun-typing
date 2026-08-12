@@ -415,23 +415,6 @@ export function SignPlate({
               />
             </span>
           ))}
-          {/*
-            길이를 숨기는 동안에는 다음 칸이 없다. 커서를 놓을 자리도 없으므로
-            친 글자 뒤에 한 칸을 따로 둔다 — 여기가 다음에 찍힐 자리라는 것이
-            보여야 입력이 살아 있다는 감각이 생긴다.
-          */}
-          {lengthHidden && (
-            <span aria-hidden="true" className="relative flex flex-col items-center">
-              {/* 높이만 빌린다. 폭은 커서 하나만큼이면 된다. */}
-              {/* 칸 하나 폭. 다음 글자가 앉을 자리와 정확히 겹쳐야 한다. */}
-              <span className="invisible w-[1.2em]">가</span>
-              <span
-                className={`mt-1 h-1 w-[1.2em] rounded-full transition-opacity ${
-                  focused ? "bg-centerline opacity-100" : "opacity-0"
-                }`}
-              />
-            </span>
-          )}
           {/* 넘겨 친 글자도 그려야 몇 자를 지워야 하는지 눈으로 보인다. */}
           {extra.map((ch, i) => (
             <span key={`extra-${i}`} className="relative flex flex-col items-center">

@@ -33,7 +33,7 @@ export function useMastery(
     const played =
       stuck.size > 0 ||
       (course
-        ? ["map", "timeattack", "learn", "test"].some((mode) =>
+        ? ["map", "learn"].some((mode) =>
             loadPersonalBest(courseId, mode as never, course.version),
           )
         : false);

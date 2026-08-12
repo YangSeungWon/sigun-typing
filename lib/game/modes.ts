@@ -11,8 +11,8 @@ import type { ModeConfig, ModeId } from "./types";
  * 지도가 그 지역을 문제처럼 가리키니 무엇을 맞히는 게임인지 알 수 없었다.
  * 진입장벽은 **본편 안에서** 힌트와 쉬운 첫 코스로 낮춘다.
  *
- *   막히면 ← 지도 타이핑 → 잘하면
- *     연습              타임어택 → 암기
+ *   막히면 ← 지도 타이핑
+ *     연습(이름 보고 익히기)
  */
 export const MODES: Record<ModeId, ModeConfig> = {
   /** 지도만 보고 지역명을 떠올려 친다. 이게 본편이다. */
@@ -23,9 +23,16 @@ export const MODES: Record<ModeId, ModeConfig> = {
     shuffle: true,
     allowSkip: true,
     allowHint: true,
-    // 초성은 사실상 절반의 정답이다. 지역 하나 치는 데 2~3초이므로
-    // 5초면 "3초 더 생각해 볼까"를 진지하게 저울질하게 된다.
-    hintPenaltyMs: 5_000,
+    /*
+     * 초성은 사실상 절반의 정답이다. 5초로는 싸다 — 지역 하나를 2~3초에 치니
+     * 한 판에 몇 번을 봐도 기록이 크게 흔들리지 않았고, 힌트가 "얼마를 물면
+     * 되나"를 계산하는 상품이 됐다.
+     *
+     * 30초면 그 판은 사실상 순위에서 내려온다. 그래도 힌트를 없애지는 않는다 —
+     * 막힌 사람이 판을 끝낼 수 있어야 하고, 초성을 보고 떠올린 지역은 오답노트에
+     * 남아 다음에 다시 나온다. 겨루는 판과 배우는 판을 가르는 것은 이 값이다.
+     */
+    hintPenaltyMs: 30_000,
   },
 
   /**
@@ -38,36 +45,6 @@ export const MODES: Record<ModeId, ModeConfig> = {
     reveal: true,
     shuffle: false,
     allowSkip: false,
-    allowHint: false,
-  },
-
-  /** 본편과 같은 규칙에 시간 압박만 더한다. 오답 1회당 2초 차감. */
-  timeattack: {
-    id: "timeattack",
-    judge: "enter",
-    reveal: false,
-    timeLimitMs: 60_000,
-    penaltyMs: 2_000,
-    shuffle: true,
-    allowSkip: true,
-    allowHint: true,
-    // 시간 제한이 있는 모드에서는 힌트도 남은 시간에서 깎는다.
-    hintPenaltyMs: 5_000,
-  },
-
-  /**
-   * 하드코어. 힌트 없이 코스 순서대로 끝까지.
-   *
-   * 포기는 열어 둔다. 힌트도 포기도 없으면 한 곳을 모르는 순간 그 판을
-   * 끝낼 방법이 아예 없어져, 창을 닫는 것 말고는 길이 없었다.
-   * 어려운 것과 막다른 길은 다르다.
-   */
-  test: {
-    id: "test",
-    judge: "enter",
-    reveal: false,
-    shuffle: false,
-    allowSkip: true,
     allowHint: false,
   },
 
@@ -103,9 +80,7 @@ export const MODES: Record<ModeId, ModeConfig> = {
  */
 export const MODE_LABELS: Record<ModeId, string> = {
   map: "지도 타이핑",
-  timeattack: "타임어택",
   learn: "이름 보고 익히기",
-  test: "실력 테스트",
   multi: "친구와 대결",
 };
 
@@ -117,14 +92,12 @@ export const MODE_LABELS: Record<ModeId, string> = {
  */
 export const MODE_HINTS: Record<ModeId, string> = {
   map: "지도를 보고 이름 맞히기",
-  timeattack: "60초 안에 최대한 많이",
   learn: "이름을 보며 위치 익히기",
-  test: "무작위 문제로 실력 확인",
   multi: "최대 8명이 같은 지도를 놓고 동시에",
 };
 
-/** 화면에 나열하는 순서. 본편이 맨 앞이다. */
-export const MODE_LADDER: ModeId[] = ["map", "timeattack", "learn", "test"];
+/** 화면에 나열하는 순서. 진짜 하는 것이 먼저, 연습이 뒤. */
+export const MODE_LADDER: ModeId[] = ["map", "learn"];
 
 /**
  * 순위표에 올리는 모드.
@@ -141,7 +114,7 @@ export const MODE_LADDER: ModeId[] = ["map", "timeattack", "learn", "test"];
  * 소개하는 순서이지 겨룰 수 있는 판의 목록이 아니었다 — 하필 순위표의 기본
  * 모드까지 learn이라, 랭킹을 처음 여는 사람이 보는 것이 따라치기 순위표였다.
  */
-export const RANKED_MODES: ModeId[] = ["map", "timeattack", "test"];
+export const RANKED_MODES: ModeId[] = ["map"];
 
 export function isRankedMode(mode: ModeId): boolean {
   return RANKED_MODES.includes(mode);

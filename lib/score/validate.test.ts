@@ -162,7 +162,7 @@ describe("토큰", () => {
 
   it("토큰과 다른 모드로 제출하면 거부한다", () => {
     const { submission, arrivedAt } = makeRun();
-    const swapped = { ...submission, mode: "timeattack" as const };
+    const swapped = { ...submission, mode: "map" as const };
     expect(codesOf(validateSubmission(swapped, arrivedAt))).toContain("mode_mismatch");
   });
 });
@@ -277,6 +277,9 @@ describe("비인간 입력", () => {
 
 describe("초성 힌트 페널티", () => {
   /** 퀴즈는 시드로 섞이므로 엔진과 똑같은 순서로 만들어야 한다. */
+  /** 값을 여기 박아 두면 페널티를 조정할 때마다 테스트가 거짓으로 깨진다. */
+  const HINT_MS = MODES.map.hintPenaltyMs!;
+
   function makeQuizRun(hintsUsed: number) {
     const items = createGame(
       sidoCourse.regions.map((r) => ({ id: r.code, answer: r.name, aliases: r.aliases })),
@@ -336,14 +339,14 @@ describe("초성 힌트 페널티", () => {
       },
     };
     // 힌트 시간까지 실제로 흐른 것으로 본다.
-    return { submission, arrivedAt: ISSUED_AT + t + hintsUsed * 5_000 + 500 };
+    return { submission, arrivedAt: ISSUED_AT + t + hintsUsed * HINT_MS + 500 };
   }
 
   it("힌트를 쓰면 서버가 기록에 시간을 더한다", () => {
     const none = validateSubmission(makeQuizRun(0).submission, makeQuizRun(0).arrivedAt);
     const three = validateSubmission(makeQuizRun(3).submission, makeQuizRun(3).arrivedAt);
     if (!none.ok || !three.ok) throw new Error("둘 다 통과했어야 합니다");
-    expect(three.score.elapsedMs - none.score.elapsedMs).toBe(3 * 5_000);
+    expect(three.score.elapsedMs - none.score.elapsedMs).toBe(3 * HINT_MS);
     expect(three.score.cpm).toBeLessThan(none.score.cpm);
     expect(three.score.hintsUsed).toBe(3);
   });
@@ -351,7 +354,7 @@ describe("초성 힌트 페널티", () => {
   it("항목 수보다 많은 힌트는 잘라 낸다", () => {
     const { submission, arrivedAt } = makeQuizRun(0);
     const lying = { ...submission, hintsUsed: 9_999 };
-    const result = validateSubmission(lying, arrivedAt + 17 * 5_000);
+    const result = validateSubmission(lying, arrivedAt + 17 * HINT_MS);
     if (!result.ok) throw new Error(JSON.stringify(result.rejections));
     expect(result.score.hintsUsed).toBe(sidoCourse.regions.length);
   });

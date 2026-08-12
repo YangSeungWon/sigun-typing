@@ -22,11 +22,8 @@ export const metadata = {
   description: "코스별 타수 순위. 서버에서 검증한 기록만 오릅니다.",
 };
 
-/**
- * 겨룰 수 있는 판만. `이름 보고 익히기`는 답이 화면에 있어 타자 속도를 재는
- * 자리라 순위표에 올리지 않는다(lib/game/modes.ts 참고).
- */
-const BOARD_MODES = RANKED_MODES;
+/** 겨루는 판은 본편 하나다. lib/game/modes.ts의 RANKED_MODES가 그 목록이다. */
+const BOARD_MODE = RANKED_MODES[0];
 
 function formatClock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -42,9 +39,12 @@ export default async function RankingPage({
   const rawPeriod = typeof params.period === "string" ? params.period : "";
 
   const course = getCourse(rawCourse) ?? COURSES[0];
-  // 본편이 기본이다. 순위표에 없는 모드를 주소로 넣으면 본편으로 돌아온다.
+  /*
+   * 겨루는 판이 하나뿐이라 고를 것이 없다. 주소에 다른 모드가 실려 와도
+   * (없어진 타임어택 링크 같은 것) 본편 순위표를 보여 준다.
+   */
   const mode: ModeId =
-    isModeId(rawMode) && isRankedMode(rawMode) ? rawMode : "map";
+    isModeId(rawMode) && isRankedMode(rawMode) ? rawMode : BOARD_MODE;
   const period = isRankingPeriod(rawPeriod) ? rawPeriod : "all";
   const href = (over: Record<string, string>) =>
     `/ranking?${new URLSearchParams({ course: course.id, mode, period, ...over })}`;
@@ -90,22 +90,10 @@ export default async function RankingPage({
             </Link>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {BOARD_MODES.map((m) => (
-            <Link
-              key={m}
-              href={href({ mode: m })}
-              aria-current={m === mode ? "page" : undefined}
-              className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                m === mode
-                  ? "bg-expressway text-paint"
-                  : "border border-concrete-deep text-ink hover:bg-concrete-deep"
-              }`}
-            >
-              {MODE_LABELS[m]}
-            </Link>
-          ))}
-        </div>
+        {/*
+          모드 탭이 있었다. 겨루는 판이 하나뿐이 되면서 뺐다 — 고를 것이 하나면
+          그건 선택지가 아니라 라벨이고, 라벨은 아래 표 제목이 이미 달고 있다.
+        */}
         <div className="flex flex-wrap gap-2">
           {RANKING_PERIODS.map((p) => (
             <Link

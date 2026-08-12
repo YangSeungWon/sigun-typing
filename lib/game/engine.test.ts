@@ -15,6 +15,7 @@ import {
 } from "./engine";
 import { keystrokeCount } from "../hangul/keystrokes";
 import { MODES } from "./modes";
+import type { ModeConfig } from "./types";
 import type { GameItem, GameState } from "./types";
 
 const ITEMS: GameItem[] = [
@@ -38,6 +39,20 @@ function type(state: GameState, text: string, startAt = 0, stepMs = 100): GameSt
   return setInput(s, `${text} `, startAt + (chars.length + 1) * stepMs);
 }
 
+/**
+ * 시간 제한이 붙은 판.
+ *
+ * 화면에 그런 모드를 두지는 않지만(판은 본편과 연습 둘뿐이다) 엔진은 제한
+ * 시간을 다룰 줄 알아야 한다 — 멀티나 이벤트 판이 언제든 이 설정으로 돌 수
+ * 있고, 시간이 다 되면 판이 끝나는 규칙 자체는 엔진의 일이다.
+ */
+const TIMED: ModeConfig = {
+  ...MODES.map,
+  id: "map",
+  timeLimitMs: 60_000,
+  penaltyMs: 2_000,
+};
+
 describe("createGame", () => {
   it("싱글은 코스 순서를 유지한다", () => {
     const g = createGame(ITEMS, MODES.learn, 0);
@@ -46,9 +61,9 @@ describe("createGame", () => {
   });
 
   it("같은 시드는 같은 순서를 만든다 — 멀티와 서버 재생에 필요", () => {
-    const a = createGame(ITEMS, MODES.timeattack, 0, 42);
-    const b = createGame(ITEMS, MODES.timeattack, 0, 42);
-    const c = createGame(ITEMS, MODES.timeattack, 0, 7);
+    const a = createGame(ITEMS, TIMED, 0, 42);
+    const b = createGame(ITEMS, TIMED, 0, 42);
+    const c = createGame(ITEMS, TIMED, 0, 7);
     expect(a.items.map((i) => i.id)).toEqual(b.items.map((i) => i.id));
     expect(a.items).toHaveLength(ITEMS.length);
     // 시드가 다르면 순서도 달라야 한다 (3개짜리라 우연히 같을 수 있어 집합만 확인)
@@ -118,7 +133,7 @@ describe("오타", () => {
 
 describe("타임어택", () => {
   it("제한 시간이 지나면 종료된다", () => {
-    let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
+    let g = start(createGame(ITEMS, TIMED, 0, 1), 0);
     expect(tick(g, 59_000).status).toBe("playing");
     g = tick(g, 61_000);
     expect(g.status).toBe("finished");
@@ -127,16 +142,16 @@ describe("타임어택", () => {
   // 회상 모드이므로 시간을 깎는 것은 오답 **제출**이다. 치는 도중에는
   // 아무 일도 일어나지 않는다 — 그래야 지웠다 다시 칠 수 있다.
   it("오답 제출은 남은 시간을 깎는다", () => {
-    let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
+    let g = start(createGame(ITEMS, TIMED, 0, 1), 0);
     const before = remainingMs(g, 1_000);
     g = setInput(g, "쿄", 1_000);
     expect(remainingMs(g, 1_000)).toBe(before);
     g = submit(g, 1_000);
-    expect(remainingMs(g, 1_000)).toBe(before - MODES.timeattack.penaltyMs!);
+    expect(remainingMs(g, 1_000)).toBe(before - TIMED.penaltyMs!);
   });
 
   it("차감이 누적되면 시간이 먼저 끝난다", () => {
-    let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
+    let g = start(createGame(ITEMS, TIMED, 0, 1), 0);
     // 매번 다른 답을 낸다. 같은 답을 또 내는 것은 새 오답으로 세지 않는다.
     for (let i = 0; i < 30; i++) {
       g = setInput(g, i % 2 === 0 ? "쿄" : "탸", 1_000 + i * 10);
@@ -258,10 +273,10 @@ describe("모르겠어요", () => {
   });
 
   it("정답을 보여 주는 동안에도 제한 시간은 흐른다", () => {
-    let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
+    let g = start(createGame(ITEMS, TIMED, 0, 1), 0);
     g = giveUp(g, 1_000);
     expect(g.status).toBe("revealing");
-    g = tick(g, MODES.timeattack.timeLimitMs! + 1);
+    g = tick(g, TIMED.timeLimitMs! + 1);
     expect(g.status).toBe("finished");
   });
 
@@ -352,7 +367,7 @@ describe("초성 힌트", () => {
   });
 
   it("타임어택 오답은 기록을 늘리지 않는다 — 이중 처벌 방지", () => {
-    let g = start(createGame(ITEMS, MODES.timeattack, 0, 1), 0);
+    let g = start(createGame(ITEMS, TIMED, 0, 1), 0);
     g = setInput(g, "쿄", 500);
     expect(g.hintPenaltyMs).toBe(0);
     expect(score(g, 10_000).elapsedMs).toBe(10_000);

@@ -73,28 +73,18 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
           지도 보고 맞히기
         </Link>
         {/*
-          다른 방식 셋.
-          글자만 놓아 두었더니 링크인 줄 모르고 지나갈 수 있었다. 그렇다고
-          채워진 버튼으로 만들면 다시 네 모드가 경쟁하는 화면이 된다 — 이
-          화면의 위계는 `기본 하나 / 보조 셋`이다.
-
-          그래서 아래 권역 코스와 같은 문법을 쓴다. 얇은 테두리, 채우지 않음,
-          작은 글자. 누를 수 있다는 것은 테두리가 말하고, 무엇이 본 게임인지는
-          초록 판이 말한다. 구분 기호는 두지 않는다 — 이제 칸이 갈라 준다.
+          판은 둘뿐이다 — 진짜 하는 것과 연습.
+          초록 판이 본편이고, 그 아래 얇은 테두리 하나가 연습이다. 한때 여기에
+          타임어택·실력 테스트까지 넷이 늘어서 있었는데, 셋 다 같은 게임에
+          스위치 하나씩만 다른 것이라 고르는 사람만 고단했다.
         */}
-        <ul className="flex flex-wrap justify-center gap-2 font-mono text-sm">
-          {(["timeattack", "learn", "test"] as const).map((mode) => (
-            <li key={mode}>
-              <Link
-                href={`/play/${mode}/${course.id}?from=course_select`}
-                title={MODE_SUMMARY[mode]}
-                className="inline-block rounded-lg border border-concrete-deep px-4 py-2 text-ink/85 transition-colors hover:bg-concrete-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-              >
-                {MODE_LABELS[mode]}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <Link
+          href={`/play/learn/${course.id}?from=course_select`}
+          title={MODE_SUMMARY.learn}
+          className="mx-auto inline-block rounded-lg border border-concrete-deep px-4 py-2 font-mono text-sm text-ink/85 transition-colors hover:bg-concrete-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          {MODE_LABELS.learn}
+        </Link>
         <CourseMistakes courseId={course.id} />
       </div>
 
@@ -162,9 +152,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
 
 const MODE_SUMMARY = {
   map: "지도만 보고 이름 맞히기",
-  timeattack: "60초 안에 최대한 많이",
   learn: "이름을 보며 따라 치기",
-  test: "힌트 없이 끝까지",
 } as const;
 
 export async function generateMetadata({ params }: PageProps<"/courses/[course]">) {

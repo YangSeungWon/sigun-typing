@@ -45,7 +45,7 @@ describe("개인 최고 기록 비교", () => {
   });
 
   it("더 많이 끝냈으면 더 오래 걸려도 갱신된다 — 타임어택의 기준", () => {
-    const partial = toRecord("sido", "timeattack", score({ completed: 12 }), 0);
+    const partial = toRecord("sido", "learn", score({ completed: 12 }), 0);
     const more = score({ completed: 15, elapsedMs: 70_000 });
     expect(isBetter(more, partial)).toBe(true);
   });

@@ -3,7 +3,7 @@ import { BackLink } from "@/components/BackLink";
 import { Keycap } from "@/components/Keycap";
 import { COURSES } from "@/data/courses";
 import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
-import { MODES, MODE_LABELS, MODE_LADDER, RANKED_MODES } from "@/lib/game/modes";
+import { MODES, MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
 
 export const metadata = {
   title: "이용안내 — 시군 타이핑",
@@ -25,8 +25,6 @@ export const metadata = {
 export default function GuidePage() {
   const placeCount = COURSES.reduce((sum, c) => sum + c.regions.length, 0);
   const hintSeconds = (MODES.map.hintPenaltyMs ?? 0) / 1000;
-  const timeLimit = (MODES.timeattack.timeLimitMs ?? 0) / 1000;
-  const wrongPenalty = (MODES.timeattack.penaltyMs ?? 0) / 1000;
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
@@ -61,7 +59,8 @@ export default function GuidePage() {
             </KeyRow>
             <KeyRow keys="Tab" label="힌트">
               초성을 보여 줍니다(<Kbd>의정부시</Kbd> → <Kbd>ㅇㅈㅂㅅ</Kbd>). 기록에{" "}
-              {hintSeconds}초가 더해집니다. 한 번 더 누르면 정답을 봅니다.
+              {hintSeconds}초가 더해집니다 — 그 판은 사실상 순위에서 내려온다는
+              뜻입니다. 한 번 더 누르면 정답을 봅니다.
             </KeyRow>
             <KeyRow keys="Esc" label="모르겠어요">
               정답을 보고 넘어갑니다. 그 지역은 다음에 다시 나옵니다.
@@ -119,10 +118,6 @@ export default function GuidePage() {
               <dd className="text-dim">{MODE_DESCRIPTIONS.multi}</dd>
             </div>
           </dl>
-          <p>
-            타임어택은 {timeLimit}초 안에 최대한 많이 맞히는 모드이고, 틀리면{" "}
-            {wrongPenalty}초가 깎입니다.
-          </p>
         </Fold>
 
         <Fold title="기록과 랭킹">
@@ -140,8 +135,7 @@ export default function GuidePage() {
             집계됩니다.
           </p>
           <p>
-            순위표에 올라가는 것은 지도만 보고 맞히는 판입니다 —{" "}
-            {RANKED_MODES.map((m) => MODE_LABELS[m]).join(" · ")}.{" "}
+            순위표는 <Kbd>{MODE_LABELS.map}</Kbd> 하나입니다.{" "}
             <Kbd>{MODE_LABELS.learn}</Kbd>는 답이 화면에 있어 재는 것이 회상이
             아니라 타자 속도라서 순위에 넣지 않습니다. 개인 기록에는 남습니다.
           </p>
@@ -194,9 +188,7 @@ export default function GuidePage() {
  */
 const MODE_DESCRIPTIONS: Record<keyof typeof MODES, string> = {
   map: "지도만 보고 이름을 떠올려 입력합니다. 순서는 매번 섞이고, 막히면 초성 힌트를 쓰거나 정답을 보고 넘어갈 수 있습니다.",
-  timeattack: "같은 규칙에 시간 제한이 붙습니다. 순서가 섞이고 오답은 시간을 깎습니다.",
   learn: "이름이 화면에 적혀 있고 그대로 따라 칩니다. 지명과 위치를 익히는 자리이지, 기억을 시험하는 모드가 아닙니다.",
-  test: "힌트 없이 코스 순서 그대로 끝까지 갑니다. 모르겠으면 정답을 보고 넘어갈 수는 있습니다.",
   multi: "최대 여덟 명이 같은 지도를 놓고 동시에 답합니다. 진행도가 실시간으로 보입니다.",
 };
 

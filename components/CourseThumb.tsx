@@ -43,6 +43,33 @@ function routePath(points: number[][]): string {
 const TENSION = 0.5;
 
 /**
+ * 선이 그어지는 데 걸리는 시간.
+ *
+ * 모든 카드에 같은 시간을 주면 **속도가 제각각**이 된다. 경북은 카드를 가로질러
+ * 339칸을 가고 제주는 27칸을 가는데 둘 다 1초에 끝나니, 한쪽은 튀고 한쪽은
+ * 기어간다. 여기서 보여 주려는 것은 "지나간다"는 감각이므로 같아야 하는 것은
+ * 시간이 아니라 **속도**다.
+ *
+ * 그래서 길이에 비례시키되 양 끝을 자른다. 짧은 코스가 눈 깜짝할 새 끝나
+ * 무슨 일이 있었는지 모르는 것도, 긴 코스가 손을 올려 둔 내내 안 끝나는 것도
+ * 곤란하다.
+ */
+const SPEED = 190; // 초당 몇 칸(카드는 100칸)
+const MIN_DRAW = 0.9;
+const MAX_DRAW = 2.2;
+/** 다 그은 뒤 머무는 비율. keyframes의 55%와 짝이다. */
+const HOLD = 1 / 0.55;
+
+function drawSeconds(points: number[][]): number {
+  let length = 0;
+  for (let i = 1; i < points.length; i++) {
+    length += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+  }
+  const draw = Math.min(MAX_DRAW, Math.max(MIN_DRAW, length / SPEED));
+  return draw * HOLD;
+}
+
+/**
  * 코스 실루엣.
  *
  * 코스는 "31개 시군"이 아니라 "북서 연천에서 남동 안성까지, 인접한 시군을
@@ -127,6 +154,8 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
       */}
       <path
         d={routePath(thumb.route)}
+        // 길이에 맞춘 시간. 카드마다 달라야 속도가 같아진다.
+        style={{ animationDuration: `${drawSeconds(thumb.route).toFixed(2)}s` }}
         fill="none"
         stroke="var(--color-sign)"
         strokeWidth={2}

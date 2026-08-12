@@ -42,8 +42,12 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
       {/*
         지역 경계.
         실루엣을 하나로 합치면서 "여러 곳으로 나뉜다"는 감각을 잃었다. 그건
-        지도가 글자보다 빠르게 할 수 있는 말이라 되찾아 둔다 — 다만 늘 켜 두면
-        목록이 다시 얼기설기해지므로 손이 닿을 때만.
+        지도가 글자보다 빠르게 할 수 있는 말이라 되찾아 둔다.
+
+        기본 상태에도 남긴다. 얼기설기해 보이던 예전과는 다른 것이다 — 그때는
+        서로 다른 면을 겹쳐 칠해 흰 틈이 벌어진 것이었고, 이건 실루엣 안에
+        새겨진 선이다. 대신 아주 옅게 둬서 멀리서는 결처럼만 읽히고,
+        손이 닿으면 한 단계 또렷해진다.
 
         채우지 않고 선으로만 긋는다. 면을 겹쳐 칠할 때 생기던 실틈이 여기서는
         생길 수 없다.
@@ -66,7 +70,7 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
         stroke="var(--color-ink)"
         strokeWidth={0.5}
         strokeLinejoin="round"
-        className="opacity-0 transition-opacity duration-300 group-hover:opacity-25 group-focus-visible:opacity-25"
+        className="opacity-[0.14] transition-opacity duration-300 group-hover:opacity-30 group-focus-visible:opacity-30"
       />
 
       {/*

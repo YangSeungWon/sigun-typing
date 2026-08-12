@@ -126,6 +126,27 @@ export const MODE_HINTS: Record<ModeId, string> = {
 /** 화면에 나열하는 순서. 본편이 맨 앞이다. */
 export const MODE_LADDER: ModeId[] = ["map", "timeattack", "learn", "test"];
 
+/**
+ * 순위표에 올리는 모드.
+ *
+ * `learn`이 빠진다. 답이 화면에 적혀 있으므로 거기서 재는 것은 회상이 아니라
+ * **타자 속도**다. 그걸 회상 모드들과 같은 표에 놓으면 기억을 쓰지 않아도 되는
+ * 모드가 가장 높은 타수를 내고, 그 표는 이 게임이 무엇을 겨루는 곳인지
+ * 스스로 부정한다.
+ *
+ * 개인 기록은 그대로 남는다. 남과 겨루지 않을 뿐, 어제의 나보다 빨라졌는지는
+ * 연습에서도 알 만한 값이다.
+ *
+ * 한때 MODE_LADDER를 그대로 순위표 탭으로 썼다. 그건 이용안내에서 모드를
+ * 소개하는 순서이지 겨룰 수 있는 판의 목록이 아니었다 — 하필 순위표의 기본
+ * 모드까지 learn이라, 랭킹을 처음 여는 사람이 보는 것이 따라치기 순위표였다.
+ */
+export const RANKED_MODES: ModeId[] = ["map", "timeattack", "test"];
+
+export function isRankedMode(mode: ModeId): boolean {
+  return RANKED_MODES.includes(mode);
+}
+
 export function isModeId(value: string): value is ModeId {
   return value in MODES;
 }

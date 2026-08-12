@@ -9,7 +9,7 @@ import {
   RANKING_PERIODS,
 } from "@/lib/score/period";
 import { MyStanding } from "@/components/MyStanding";
-import { MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
+import { MODE_LABELS, RANKED_MODES, isRankedMode } from "@/lib/game/modes";
 import { isModeId } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 
@@ -21,8 +21,11 @@ export const metadata = {
   description: "코스별 타수 순위. 서버에서 검증한 기록만 오릅니다.",
 };
 
-/** 난이도 사다리 순서를 그대로 쓴다. */
-const BOARD_MODES = MODE_LADDER;
+/**
+ * 겨룰 수 있는 판만. `이름 보고 익히기`는 답이 화면에 있어 타자 속도를 재는
+ * 자리라 순위표에 올리지 않는다(lib/game/modes.ts 참고).
+ */
+const BOARD_MODES = RANKED_MODES;
 
 function formatClock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -38,7 +41,9 @@ export default async function RankingPage({
   const rawPeriod = typeof params.period === "string" ? params.period : "";
 
   const course = getCourse(rawCourse) ?? COURSES[0];
-  const mode: ModeId = isModeId(rawMode) ? rawMode : "learn";
+  // 본편이 기본이다. 순위표에 없는 모드를 주소로 넣으면 본편으로 돌아온다.
+  const mode: ModeId =
+    isModeId(rawMode) && isRankedMode(rawMode) ? rawMode : "map";
   const period = isRankingPeriod(rawPeriod) ? rawPeriod : "all";
   const href = (over: Record<string, string>) =>
     `/ranking?${new URLSearchParams({ course: course.id, mode, period, ...over })}`;

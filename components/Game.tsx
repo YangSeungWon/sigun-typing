@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { CourseGeo } from "@/data/geo/types";
 import type { Course } from "@/data/types";
-import { MODES, MODE_LABELS } from "@/lib/game/modes";
+import { MODES, MODE_LABELS, isRankedMode } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { useGame } from "@/lib/game/useGame";
 import {
@@ -67,6 +67,15 @@ function formatChallengeTime(ms: number): string {
 
 export function Game({ course, mode, geo, seed = 1, practice = false }: GameProps) {
   const config = MODES[mode];
+  /**
+   * 이 판의 기록이 남는가.
+   *
+   * 오답 연습은 개인화된 문제 집합이라 남과 비교할 수 없고, `이름 보고 익히기`는
+   * 답이 화면에 있어 회상이 아니라 타자 속도를 잰다. 둘 다 순위표에 올리지
+   * 않으므로 출발 카운트다운도, 서명 토큰도 필요 없다 — 셋을 세는 이유가
+   * 애초에 "남과 같은 조건에서 재기 위해서"였다.
+   */
+  const ranked = !practice && isRankedMode(mode);
   const items = useMemo(
     () =>
       course.regions.map((r) => ({
@@ -129,7 +138,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
      * 나란히 놓인다. 오답 연습은 순위에도 개인 기록에도 남지 않으므로 셀 이유가
      * 없고, 틀린 곳을 한 번 더 보러 온 사람에게 3초는 그냥 기다림이다.
      */
-    setCountdown(practice ? null : 3);
+    setCountdown(ranked ? 3 : null);
     // 이 판의 모든 이벤트가 하나의 gameId로 묶인다.
     // 오답 연습(practice)은 개인화된 문제 집합이라 퍼널에서 제외한다.
     primeSound();
@@ -141,10 +150,10 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
       total: course.regions.length,
       source: entrySource(),
     });
-    // 연습 판은 랭킹에 올리지 않으므로 토큰을 받을 이유가 없다.
-    if (practice) begin();
-    else requestToken(course.id, mode, seed).then(setToken);
-  }, [course.id, course.regions.length, mode, seed, practice, begin]);
+    // 순위에 올리지 않는 판은 토큰을 받을 이유가 없다.
+    if (ranked) requestToken(course.id, mode, seed).then(setToken);
+    else begin();
+  }, [course.id, course.regions.length, mode, seed, practice, ranked, begin]);
 
   /*
    * 화면에 들어오면 알아서 센다.
@@ -565,6 +574,16 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
             practice ? (
               <p className="font-mono text-sm text-dim">
                 오답 연습은 랭킹과 개인 기록에 남지 않습니다
+              </p>
+            ) : !ranked ? (
+              /*
+                답이 화면에 있는 판은 순위표에 올리지 않는다. 거기서 재는 것은
+                회상이 아니라 타자 속도라, 회상 모드들과 같은 표에 놓으면
+                기억을 쓰지 않아도 되는 모드가 가장 유리해진다.
+                개인 기록은 그대로 남는다 — 어제의 나와는 겨룰 만하다.
+              */
+              <p className="font-mono text-sm text-dim">
+                연습 판이라 랭킹에 올리지 않습니다 · 개인 기록에는 남습니다
               </p>
             ) : (
               <SubmitScore

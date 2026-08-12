@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Keycap } from "@/components/Keycap";
 import { COURSES } from "@/data/courses";
 import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
-import { MODES, MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
+import { MODES, MODE_LABELS, MODE_LADDER, RANKED_MODES } from "@/lib/game/modes";
 
 export const metadata = {
   title: "이용안내 — 시군 타이핑",
@@ -142,6 +142,12 @@ export default function GuidePage() {
             기록은 서버가 다시 계산해 확인하며, 같은 규칙으로 끝낸 기록끼리만
             순위를 비교합니다. 게임 규칙이나 코스 내용이 바뀌면 이전 기록과 따로
             집계됩니다.
+          </p>
+          <p>
+            순위표에 올라가는 것은 지도만 보고 맞히는 판입니다 —{" "}
+            {RANKED_MODES.map((m) => MODE_LABELS[m]).join(" · ")}.{" "}
+            <Kbd>{MODE_LABELS.learn}</Kbd>는 답이 화면에 있어 재는 것이 회상이
+            아니라 타자 속도라서 순위에 넣지 않습니다. 개인 기록에는 남습니다.
           </p>
         </Fold>
 

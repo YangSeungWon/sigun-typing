@@ -67,6 +67,15 @@ function subpaths(d: string): [number, number][][] {
     });
 }
 
+/** 다각형의 실제 넓이(신발끈). 사각형 넓이와 달리 바다를 세지 않는다. */
+function shoelace(points: [number, number][]): number {
+  let sum = 0;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    sum += (points[j][0] + points[i][0]) * (points[j][1] - points[i][1]);
+  }
+  return sum / 2;
+}
+
 function area(points: [number, number][]): number {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const [x, y] of points) {
@@ -125,21 +134,82 @@ function thumbOf(geo: CourseGeo): Thumb {
 
   // 가장자리가 잘리지 않도록 여백을 조금 남긴다.
   const span = Math.max(maxX - minX, maxY - minY) || 1;
-  const scale = 92 / span;
-  const offsetX = (100 - (maxX - minX) * scale) / 2 - minX * scale;
-  const offsetY = (100 - (maxY - minY) * scale) / 2 - minY * scale;
+  const fitScale = 92 / span;
+
+  /*
+   * 카드에서는 **보이는 크기**를 맞춘다.
+   *
+   * 사각형에 맞추기만 하면 코스마다 카드 속 땅 크기가 제각각이 된다. 인천이
+   * 특히 심했다 — 옹진의 먼 섬까지 감싸느라 사각형이 바다로 넓어져서, 정작
+   * 본토는 카드의 2%를 덮었다. 옆 카드의 서울은 37%다. 같은 목록에서 하나만
+   * 점처럼 보이면 그건 축척이 아니라 고장으로 읽힌다.
+   *
+   * 여기는 지도 화면이 아니라 고르는 화면이므로 코스 간 축척이 정확할 이유가
+   * 없다. 그래서 실루엣이 카드를 덮는 넓이를 기준으로 당기고 민다.
+   */
+  const TARGET_COVER = 0.3;
+  /** 당기고 미는 한계. 사각형에 맞춘 크기에서 이 배수를 넘지 않는다. */
+  const MIN_ZOOM = 0.8;
+  const MAX_ZOOM = 2.8;
+
+  const land = shapes.reduce((sum, points) => sum + Math.abs(shoelace(points)), 0);
+  const cover = (land * fitScale * fitScale) / 10_000;
+  const wanted = cover > 0 ? fitScale * Math.sqrt(TARGET_COVER / cover) : fitScale;
+
+  /*
+   * 당기는 중심은 사각형 한가운데가 아니라 **땅의 무게중심**이다. 사각형
+   * 가운데는 인천처럼 땅이 한쪽에 몰린 코스에서 바다를 가리킨다.
+   */
+  const weight = shapes.map((points) => Math.abs(shoelace(points)));
+  const total = weight.reduce((a, b) => a + b, 0) || 1;
+  const centroid = (axis: 0 | 1) =>
+    shapes.reduce((sum, points, i) => {
+      const values = points.map((p) => p[axis]);
+      const mid = (Math.min(...values) + Math.max(...values)) / 2;
+      return sum + (mid * weight[i]) / total;
+    }, 0);
+  const cx = Number.isFinite(minX) ? centroid(0) : geo.width / 2;
+  const cy = Number.isFinite(minX) ? centroid(1) : geo.height / 2;
+
+  const first = geo.regions[0];
+  const last = geo.regions[geo.regions.length - 1];
+  /*
+   * 시작·끝 표시는 되도록 카드 안에 둔다. 조금만 덜 당기면 담기는 경우에는
+   * 그렇게 한다 — 마커가 잘리면 마우스를 올렸을 때 선이 허공에서 시작한다.
+   *
+   * 다만 마커에 무조건 맞추지는 않는다. 인천은 강화군에서 시작해 백령도가
+   * 있는 옹진군에서 끝나므로, 둘을 다 담으려면 서해 전체를 담아야 하고 그러면
+   * 본토가 다시 점이 된다. 그때는 마커를 가장자리에 붙인다 — 카드에서 마커가
+   * 하는 말은 좌표가 아니라 "이쪽에서 저쪽으로"이기 때문이다.
+   */
+  const reach = Math.max(
+    Math.abs(first.cx - cx), Math.abs(first.cy - cy),
+    Math.abs(last.cx - cx), Math.abs(last.cy - cy),
+    1,
+  );
+  const markerFit = 46 / reach;
+  const zoomed = Math.min(Math.max(wanted, fitScale * MIN_ZOOM), fitScale * MAX_ZOOM);
+  // 30%를 목표로 잡았으니 그 절반까지는 마커를 위해 양보한다.
+  const scale = markerFit >= zoomed * 0.7 ? Math.min(zoomed, markerFit) : zoomed;
+
+  const offsetX = 50 - cx * scale;
+  const offsetY = 50 - cy * scale;
   const place = (x: number, y: number): [number, number] => [
     Math.round(x * scale + offsetX),
     Math.round(y * scale + offsetY),
   ];
   const grid = ([x, y]: [number, number]) => place(x, y).join(",");
+  /** 마커는 카드 안에 붙잡아 둔다. 실루엣은 잘려도 되지만 이건 안 된다. */
+  const mark = (x: number, y: number): [number, number] => {
+    const [px, py] = place(x, y);
+    const clamp = (v: number) => Math.min(Math.max(v, 5), 95);
+    return [clamp(px), clamp(py)];
+  };
 
-  const first = geo.regions[0];
-  const last = geo.regions[geo.regions.length - 1];
   return {
     d: shapes.map((points) => `M${points.map(grid).join("L")}Z`).join(""),
-    from: place(first.cx, first.cy),
-    to: place(last.cx, last.cy),
+    from: mark(first.cx, first.cy),
+    to: mark(last.cx, last.cy),
   };
 }
 

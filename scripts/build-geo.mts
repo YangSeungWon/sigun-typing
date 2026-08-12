@@ -136,8 +136,20 @@ async function simplify(
   const filter = prefix
     ? `-filter "(SIG_CD || CTPRVN_CD || '').indexOf('${prefix}') === 0" `
     : "";
+  /*
+   * 축약 전에 한 번 씻는다(`-clean`).
+   *
+   * 원본은 지역마다 좌표를 따로 들고 있어서, 맞닿아야 할 두 경계가 소수점
+   * 아래에서 어긋나 있는 자리가 있다. 그대로 위상을 만들면 그 자리는 공유
+   * 경계가 아니라 **서로 다른 두 선**이 되고, 축약도 따로 걸려 벌어진다.
+   * 붙여야 할 것을 먼저 붙여 놓아야 그 뒤가 전부 한 벌로 움직인다.
+   *
+   * 축약은 그 위상 위에서 돈다 — 공유 경계는 한 번만 줄어들고 양쪽이 같은
+   * 결과를 쓴다. 이게 지역마다 따로 simplify하면 안 되는 이유다.
+   */
   const result = await mapshaper.applyCommands(
-    `-i input.json ${filter}-simplify visvalingam ${percent}% keep-shapes ` +
+    `-i input.json ${filter}-clean ` +
+      `-simplify visvalingam ${percent}% keep-shapes ` +
       `-o output.json format=topojson`,
     { "input.json": await readFile(file) },
   );
@@ -167,7 +179,7 @@ async function loadTopology(
 
   const simplified = file.replace(
     /\.json$/,
-    `.${prefix ?? "all"}-${percent}.simplified.json`,
+    `.${prefix ?? "all"}-${percent}.clean.json`,
   );
   if (!existsSync(simplified)) await simplify(file, simplified, prefix, percent);
 

@@ -275,20 +275,20 @@ export const RegionMap = memo(function RegionMap({
         짚은 곳을 한 번 감싼다. 이름만 띄우면 판이 어느 도형의 것인지 눈으로
         잇지 못한다 — 지금 묻는 곳을 감싸는 것과 같은 테두리를 쓴다.
 
-        눌러서 고른 곳은 한 겹 더 눌러 앉힌다. 색을 바꾸지 않고 어둡게만
-        덮는 이유: 초록(아는 곳)과 빨강(헷갈리는 곳)이 이 화면에서 뜻을
-        가지므로, 고른다고 그 뜻이 달라지면 안 된다.
+        짚기만 해도 한 겹 어두워지고, 눌러서 고르면 두 배로 어두워진다.
+        손이 닿은 것과 얹어 둔 것은 다른 상태이므로 다르게 보여야 한다.
+
+        색을 바꾸지 않고 어둡게만 덮는 이유: 초록(아는 곳)과 빨강(헷갈리는 곳)이
+        이 화면에서 뜻을 가지므로, 짚거나 고른다고 그 뜻이 달라지면 안 된다.
       */}
       {explorable && label && (
         <>
-          {picked === label.code && (
-            <path
-              d={label.d}
-              fill="var(--color-ink)"
-              opacity={0.14}
-              pointerEvents="none"
-            />
-          )}
+          <path
+            d={label.d}
+            fill="var(--color-ink)"
+            opacity={picked === label.code ? 0.14 : 0.06}
+            pointerEvents="none"
+          />
           <path
             d={label.d}
             fill="none"

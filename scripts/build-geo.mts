@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { geoMercator, geoPath } from "d3-geo";
 import type { MultiPolygon as GeoJsonMultiPolygon } from "geojson";
 import polylabel from "polylabel";
-import { merge } from "topojson-client";
+import { feature, merge } from "topojson-client";
 import type {
   GeometryCollection,
   MultiPolygon,
@@ -125,6 +125,15 @@ const SIMPLIFY_PERCENT = 20;
 /** 이보다 단순해지면 지역의 모양을 알아볼 수 없다. */
 const MIN_VERTICES = 8;
 
+/**
+ * 썸네일 경계선용 축약 비율.
+ *
+ * 카드에서 이 선이 하는 말은 "여기가 여러 곳으로 나뉜다"뿐이다. 128px에
+ * 그리는 선이므로 코스 지도만큼 정확할 이유가 없고, 얇은 선은 점이 많을수록
+ * 오히려 지저분해진다.
+ */
+const THUMB_PERCENT = 5;
+
 async function simplify(
   file: string,
   out: string,
@@ -156,14 +165,45 @@ async function simplify(
   await writeFile(out, Buffer.from(result["output.json"]));
 }
 
+/**
+ * 경계선만 뽑아낸다(`-innerlines`).
+ *
+ * 지역 도형을 그대로 그리면 맞닿은 경계가 **양쪽에서 한 번씩, 두 겹으로**
+ * 그려진다. 데이터가 두 배가 되는 것은 물론이고, 옅은 선으로 깔면 안쪽만
+ * 진해져 바깥 윤곽과 세기가 달라진다.
+ *
+ * innerlines는 공유 경계를 한 줄로 준다. 바깥 윤곽은 이미 실루엣이 그리므로
+ * 여기 없어도 된다 — 카드에 필요한 것은 "안이 나뉘어 있다"는 사실뿐이다.
+ */
+async function extractInnerLines(
+  file: string,
+  out: string,
+  prefix: string | undefined,
+  percent: number,
+) {
+  const mapshaper = (await import("mapshaper")).default;
+  const filter = prefix
+    ? `-filter "(SIG_CD || CTPRVN_CD || '').indexOf('${prefix}') === 0" `
+    : "";
+  const result = await mapshaper.applyCommands(
+    `-i input.json ${filter}-clean ` +
+      `-simplify visvalingam ${percent}% keep-shapes ` +
+      `-innerlines -o output.json format=topojson`,
+    { "input.json": await readFile(file) },
+  );
+  await writeFile(out, Buffer.from(result["output.json"]));
+}
+
 const topologyCache = new Map<string, Topology>();
 
 async function loadTopology(
   key: keyof typeof SOURCES,
   prefix: string | undefined,
   percent: number,
+  /** 면 대신 경계선만. 썸네일에 얹을 선을 뽑을 때 쓴다. */
+  lines = false,
 ): Promise<Topology> {
-  const cacheKey = `${key}:${prefix ?? "all"}:${percent}`;
+  const cacheKey = `${key}:${prefix ?? "all"}:${percent}:${lines ? "lines" : "areas"}`;
   const cached = topologyCache.get(cacheKey);
   if (cached) return cached;
 
@@ -179,9 +219,11 @@ async function loadTopology(
 
   const simplified = file.replace(
     /\.json$/,
-    `.${prefix ?? "all"}-${percent}.clean.json`,
+    `.${prefix ?? "all"}-${percent}${lines ? ".lines" : ""}.clean.json`,
   );
-  if (!existsSync(simplified)) await simplify(file, simplified, prefix, percent);
+  if (!existsSync(simplified)) {
+    await (lines ? extractInnerLines : simplify)(file, simplified, prefix, percent);
+  }
 
   const topology = JSON.parse(await readFile(simplified, "utf8")) as Topology;
   topologyCache.set(cacheKey, topology);
@@ -231,7 +273,7 @@ async function loadCourses(): Promise<Course[]> {
  * 코스 지도(`<id>.json`)에 같이 넣지 않는 이유: 그 파일은 플레이 화면이
  * 통째로 읽는데, 외곽선은 거기서 한 번도 쓰이지 않는다.
  */
-const outlines: Record<string, string> = {};
+const outlines: Record<string, { outline: string; borders: string }> = {};
 
 interface Report {
   course: string;
@@ -368,10 +410,25 @@ async function buildCourse(course: Course): Promise<Report> {
     geometry: merge(topology, pool),
   })!;
 
+  /*
+   * 썸네일에 얹을 지역 경계.
+   *
+   * 코스 지도의 경계를 그대로 쓰면 카드 한 장에 수천 점이 실린다. 그렇다고
+   * 지역마다 몇 번째 점만 남기는 식으로 솎으면, 맞닿은 두 지역이 서로 다른
+   * 점을 남겨 같은 경계가 두 줄로 갈라진다 — 카드에서 선이 얼기설기해 보이던
+   * 것이 이것이다. 격자에 붙이면 갈라지지는 않지만 계단처럼 각진다.
+   *
+   * 답은 처음부터 여기 있었다. **위상을 지킨 채 더 세게 축약한 판**을 한 벌
+   * 더 만든다. 공유 경계는 한 번만 줄어들고 양쪽이 같은 결과를 쓴다.
+   */
+  const lines = await loadTopology(source.file, source.prefix, THUMB_PERCENT, true);
+  const lineKey = Object.keys(lines.objects)[0];
+  const borders = path(feature(lines, lines.objects[lineKey])) ?? "";
+
   const out = { id: course.id, width, height, regions };
   await mkdir(OUT_DIR, { recursive: true });
   await writeFile(join(OUT_DIR, `${course.id}.json`), JSON.stringify(out));
-  outlines[course.id] = outline;
+  outlines[course.id] = { outline, borders };
 
   const kb = (JSON.stringify(out).length / 1024).toFixed(0);
   process.stdout.write(

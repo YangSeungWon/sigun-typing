@@ -34,14 +34,7 @@ const OUT = join(here, "..", "data", "thumbs.json");
  */
 const POINTS_PER_SHAPE = 72;
 
-/**
- * 경계선 하나에 남길 점의 수.
- *
- * 실루엣보다 적어도 되지만 너무 적으면 바깥 경계가 실루엣에서 벗어나
- * 가장자리에 후광처럼 남는다. 어차피 실루엣으로 잘라내기는 하지만,
- * 안쪽 경계도 이웃과 맞물려 보여야 구획으로 읽힌다.
- */
-const POINTS_PER_BORDER = 16;
+
 /** 지도 넓이의 이 비율보다 작은 덩어리는 버린다. */
 const MIN_AREA_RATIO = 0.004;
 
@@ -128,7 +121,7 @@ function area(points: [number, number][]): number {
   return (maxX - minX) * (maxY - minY);
 }
 
-function thumbOf(geo: CourseGeo, outline: string): Thumb {
+function thumbOf(geo: CourseGeo, outline: string, rawBorders: string): Thumb {
   const mapArea = geo.width * geo.height;
 
   /*
@@ -273,14 +266,26 @@ const CORE_SHARE = 0.85;
    * 경계선. 지역마다 본체 하나씩만 그린다 — 이 크기에서 부속 섬의 경계는
    * 점 몇 개로 뭉개져 얼룩으로 보인다.
    */
-  const borders = geo.regions
-    .map((region) => {
-      const rings = subpaths(region.d).filter((points) => points.length >= 3);
-      if (rings.length === 0) return "";
-      const body = rings.reduce((a, b) => (area(a) >= area(b) ? a : b));
-      const step = Math.max(1, Math.floor(body.length / POINTS_PER_BORDER));
-      const kept = body.filter((_, i) => i % step === 0);
-      return kept.length >= 3 ? `M${kept.map(grid).join("L")}Z` : "";
+  /*
+   * 경계선은 **닫힌 도형이 아니라 열린 선**이다(build-geo의 innerlines).
+   * 도형처럼 Z로 닫으면 선의 끝과 시작을 잇는 줄이 지도를 가로지른다.
+   */
+  const borders = subpaths(rawBorders)
+    .filter((points) => points.length >= 2)
+    .map((points) => {
+      /*
+       * 좌표만 옮기고 **점을 솎지는 않는다.**
+       *
+       * 축약은 build-geo가 위상을 지킨 채 이미 해 두었다(THUMB_PERCENT).
+       * 여기서 몇 번째 점만 남기는 식으로 한 번 더 줄이면 맞닿은 두 지역이
+       * 서로 다른 점을 남겨 같은 경계가 두 줄로 갈라진다.
+       */
+      const kept: string[] = [];
+      for (const [x, y] of points) {
+        const point = grid([x, y]);
+        if (point !== kept[kept.length - 1]) kept.push(point);
+      }
+      return kept.length >= 2 ? `M${kept.join("L")}` : "";
     })
     .join("");
 
@@ -295,14 +300,14 @@ const files = (await readdir(GEO_DIR)).filter((f) => f.endsWith(".json"));
 
 const outlines = JSON.parse(
   await readFile(join(here, "..", "data", "outlines.json"), "utf8"),
-) as Record<string, string>;
+) as Record<string, { outline: string; borders: string }>;
 
 const thumbs: Record<string, Thumb> = {};
 for (const file of files.sort()) {
   const geo = JSON.parse(await readFile(join(GEO_DIR, file), "utf8")) as CourseGeo;
-  const outline = outlines[geo.id];
-  if (!outline) throw new Error(`${geo.id}의 외곽선이 없습니다 — npm run build:geo 먼저`);
-  thumbs[geo.id] = thumbOf(geo, outline);
+  const shape = outlines[geo.id];
+  if (!shape) throw new Error(`${geo.id}의 외곽선이 없습니다 — npm run build:geo 먼저`);
+  thumbs[geo.id] = thumbOf(geo, shape.outline, shape.borders);
 }
 
 await writeFile(OUT, `${JSON.stringify(thumbs)}\n`, "utf8");

@@ -31,7 +31,16 @@ export function BackLink({
     <Link
       href={href}
       aria-label={ariaLabel}
-      className="group inline-flex w-fit items-center gap-2 text-sm text-dim transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      /*
+       * 눈에 띄어야 한다. 자간과 모노스페이스를 걷어내자 이번엔 너무 조용해져서,
+       * 나가는 길을 찾으려면 화면을 훑어야 했다. 표지판의 글자는 작아도 흐리지
+       * 않다 — 색과 굵기로 세운다.
+       *
+       * font-sans를 명시하는 이유: 플레이 화면의 윗줄은 계기판이라 통째로
+       * 모노스페이스인데, 거기 들어가면 지명까지 모노로 끌려간다. 모노는
+       * 숫자의 몫이다.
+       */
+      className="group inline-flex w-fit items-center gap-2 font-sans text-base font-medium text-ink/70 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
       <span
         aria-hidden="true"

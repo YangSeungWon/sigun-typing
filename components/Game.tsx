@@ -620,7 +620,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
         </BackLink>
 
         {/* 시작 화면에는 같은 이름이 큰 글씨로 있다. 두 번 쓸 이유가 없다. */}
-        <span className="hidden truncate text-ink sm:inline">
+        {/* 지명은 계기판 글꼴이 아니다. 이 줄에서 모노는 숫자의 몫이다. */}
+        <span className="hidden truncate font-sans text-ink sm:inline">
           {state.status === "ready" ? "" : course.name}
         </span>
 

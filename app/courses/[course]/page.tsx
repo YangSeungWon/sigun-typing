@@ -80,15 +80,14 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
           것이 모양만으로 읽히고, 연습이 부가 옵션이 아니라 다른 하나의 길이 된다.
           무게는 색과 굵기로만 가른다 — 채운 초록이 본편, 테두리만 있는 것이 연습.
 
-          옆에 옅게 붙는 한 줄은 이름이 말하지 않는 것을 말한다. `이름 보고
-          익히기`가 무엇인지는 이름에 있지만, **답을 보고 친다**는 사실은 없다.
+          설명은 붙이지 않는다. `이름을 보며 따라 치기`라고 적어 두었는데,
+          이름에 이미 "이름 보고"가 들어 있어 같은 말을 두 번 하는 것이었다.
         */}
         <Link
           href={`/play/learn/${course.id}?from=course_select`}
-          className="mx-auto flex w-full max-w-md items-baseline justify-center gap-2 rounded-xl border border-concrete-deep px-6 py-3 text-center text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="mx-auto block w-full max-w-md rounded-xl border border-concrete-deep px-6 py-3 text-center text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           {MODE_LABELS.learn}
-          <span className="text-sm text-dim">{MODE_SUMMARY.learn}</span>
         </Link>
         <CourseMistakes courseId={course.id} />
       </div>
@@ -154,11 +153,6 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
     </main>
   );
 }
-
-const MODE_SUMMARY = {
-  map: "지도만 보고 이름 맞히기",
-  learn: "이름을 보며 따라 치기",
-} as const;
 
 export async function generateMetadata({ params }: PageProps<"/courses/[course]">) {
   const { course: courseId } = await params;

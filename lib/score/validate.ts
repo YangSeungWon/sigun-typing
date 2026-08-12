@@ -117,11 +117,23 @@ export function validateSubmission(
 
   // 각 항목의 정답 타수는 지역명에서 결정된다. 부풀릴 여지를 주지 않는다.
   let serverKeystrokes = 0;
+  /** 틀리게 제출한 타수. 정확도의 분모는 **제출한 타수**다. */
+  let wrongKeystrokes = 0;
   for (const result of results) {
+    wrongKeystrokes += (result.wrongAnswers ?? []).reduce(
+      (a, text) => a + keystrokeCount(String(text)),
+      0,
+    );
     if (result.skipped) continue;
     const item = expected.find((it) => it.id === result.id);
     if (!item) continue;
-    const exact = keystrokeCount(item.answer);
+    /*
+     * 별칭으로 맞힐 수 있으므로 상한은 인정되는 표기 중 가장 긴 것이다.
+     * 대표 표기만 보면 `제주특별자치도`로 맞힌 사람이 거부된다.
+     */
+    const exact = Math.max(
+      ...[item.answer, ...(item.aliases ?? [])].map((a) => keystrokeCount(a)),
+    );
     if (result.keystrokes > exact) {
       reject(
         "keystroke_mismatch",
@@ -160,12 +172,18 @@ export function validateSubmission(
     );
   }
 
-  const typed = keystrokes.reduce((a, k) => a + Math.max(0, k.n), 0);
+  /*
+   * 정확도의 분모는 제출한 타수다(맞힌 타수 + 틀리게 낸 타수).
+   *
+   * 예전에는 타건 기록의 총합을 썼는데, 그러면 치다가 지우고 고친 타건까지
+   * 분모에 남아 손이 미끄러진 것과 몰라서 틀린 것이 같은 값으로 찍혔다.
+   * 타건 기록은 사람의 리듬인지 보는 데만 쓴다(analyzeTimeline).
+   */
   // 브라우저와 똑같은 규칙으로 계산한다. 규칙이 갈라지면 정직한 기록이
   // score_mismatch로 거부된다.
   const serverScore: Score = computeScore({
     correctKeystrokes: serverKeystrokes,
-    typedKeystrokes: typed,
+    typedKeystrokes: serverKeystrokes + wrongKeystrokes,
     elapsedMs,
     totalErrors: results.reduce((a, r) => a + Math.max(0, r.errors), 0),
     completed: results.filter((r) => !r.skipped).length,

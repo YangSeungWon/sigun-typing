@@ -70,7 +70,6 @@ export function createGame(
     endedAt: null,
     penaltyMs: 0,
     itemStartedAt: now,
-    itemKeystrokes: 0,
     itemErrors: 0,
     lastKeystrokeCount: 0,
     offTrack: false,
@@ -224,21 +223,6 @@ export function setInput(state: GameState, text: string, now: number): GameState
     lastKeystrokeCount: count,
     keystrokes:
       delta === 0 ? state.keystrokes : [...state.keystrokes, { t: now - state.startedAt, n: delta, ok }],
-    /*
-     * 정답 타수는 **지금 입력에서 다시 읽는다.** 더하고 빼며 세지 않는다.
-     *
-     * 누적식은 더할 때와 뺄 때의 기준이 달랐다 — 경로를 벗어난 타건은 더하지
-     * 않으면서 지울 때는 그만큼 빼서, 오답을 지우고 고치면 멀쩡히 맞혀 둔
-     * 앞글자의 타수까지 깎였다. 오답을 제출해도 입력이 남게 되면서 그 길이
-     * 흔한 길이 되었다.
-     *
-     * 지금 값은 "이 입력이 정답과 맞물린 앞부분의 길이"다. 지웠다 다시 쳐도,
-     * 틀린 뒤 고쳐도 같은 값이 나온다. 헛친 타수는 여기 들어오지 않고
-     * 분모(친 타수)에만 남아 정확도를 낮춘다.
-     */
-    itemKeystrokes: Math.max(
-      ...acceptedAnswers(item).map((a) => matchProgress(a, text).matched),
-    ),
   };
 
   /*
@@ -257,19 +241,17 @@ export function setInput(state: GameState, text: string, now: number): GameState
   // 색이 바뀌면 그게 곧 답을 알려 주는 셈이라 회상 게임이 성립하지 않는다.
   if (state.config.judge === "enter") return next;
 
-  // 경로를 벗어난 순간에만 오류 1회. 틀린 채로 계속 치는 동안 중복 집계하지 않는다.
-  if (!ok && !state.offTrack) {
-    next = {
-      ...next,
-      offTrack: true,
-      itemErrors: state.itemErrors + 1,
-      penaltyMs: state.penaltyMs + (state.config.penaltyMs ?? 0),
-    };
-  } else if (ok && state.offTrack) {
-    next = { ...next, offTrack: false };
-  }
-
-  return next;
+  /*
+   * 경로를 벗어났다는 **표시만** 남긴다. 세지는 않는다.
+   *
+   * 한때 여기서 오타 1회를 세었다. 그러면 치다가 한 글자 잘못 눌러 지우고 다시
+   * 친 것이 틀린 것으로 남는다 — 손이 미끄러진 것과 몰라서 틀린 것을 같은
+   * 통에 넣는 셈이다. 무오타 연속도 그때 끊겼다.
+   *
+   * 판정은 제출로만 한다. 지우고 고칠 자유는 그 전까지 온전히 열어 둔다.
+   * 이 값은 판면을 흔들어 "지금 경로를 벗어났다"고 알리는 데만 쓴다.
+   */
+  return { ...next, offTrack: !ok };
 }
 
 /**
@@ -294,7 +276,7 @@ export function submit(state: GameState, now: number): GameState {
   if (text === "") return state;
 
   const item = state.items[state.index];
-  if (matchesAnswer(item, text)) return commitItem(state, now, false);
+  if (matchesAnswer(item, text)) return commitItem(state, now, false, text);
 
   /*
    * 같은 답을 연달아 또 내는 것은 새로운 오답이 아니다.
@@ -318,16 +300,12 @@ export function submit(state: GameState, now: number): GameState {
      * 사라져 무엇과 헷갈렸는지 되짚을 수 없다. 오답은 실패가 아니라 고치는
      * 중이므로, 고칠 것을 손에 쥐여 준 채로 둔다.
      *
-     * 타수 상태(lastKeystrokeCount·itemKeystrokes)도 건드리지 않는다. 화면의
-     * 글자가 그대로 남는데 세던 값만 0으로 되돌리면, 다음에 한 글자를 지우는
-     * 순간 계산이 어긋난다. 제출이 거부된 것뿐 친 것이 사라진 것은 아니다.
+     * 타수 상태(lastKeystrokeCount)도 건드리지 않는다. 화면의 글자가 그대로
+     * 남는데 세던 값만 0으로 되돌리면 다음에 한 글자를 지우는 순간 계산이
+     * 어긋난다. 제출이 거부된 것뿐 친 것이 사라진 것은 아니다.
      */
-    /*
-     * 답이 화면에 있는 모드에서는 여기서 또 세지 않는다. 틀린 답은 반드시
-     * 정답 경로를 벗어나며 지나왔고 그 순간에 이미 한 번 세었다. 두 번 세면
-     * 같은 실수가 두 개가 된다.
-     */
-    itemErrors: state.itemErrors + (state.config.judge === "enter" ? 1 : 0),
+    // 틀림은 제출로만 판정한다. 치는 도중에는 어느 모드에서도 세지 않는다.
+    itemErrors: state.itemErrors + 1,
     itemWrong: [...state.itemWrong, text],
     rejectedAt: now,
     // 시간 제한이 있는 모드에서는 오답이 시간을 깎는다. 이유는 위와 같다.
@@ -364,13 +342,25 @@ export function skip(state: GameState, now: number): GameState {
   return giveUp(state, now);
 }
 
-function commitItem(state: GameState, now: number, skipped: boolean): GameState {
+function commitItem(
+  state: GameState,
+  now: number,
+  skipped: boolean,
+  /** 정답으로 인정된 제출. 별칭으로 맞혔으면 그 별칭이다. */
+  accepted?: string,
+): GameState {
   const item = state.items[state.index];
   const result: ItemResult = {
     id: item.id,
     answer: item.answer,
     elapsedMs: now - state.itemStartedAt,
-    keystrokes: skipped ? 0 : Math.max(0, state.itemKeystrokes),
+    /*
+     * 맞힌 곳의 타수는 **제출한 답의 타수**다.
+     *
+     * 치는 동안 눌린 타건을 세지 않는다. 지웠다 다시 쳐도, 틀린 뒤 고쳐도 같은
+     * 값이 나와야 한다 — 손이 미끄러진 것이 기록을 깎으면 안 된다.
+     */
+    keystrokes: skipped ? 0 : keystrokeCount(accepted ?? item.answer),
     errors: state.itemErrors,
     skipped,
     // 오답 제출 뒤에 맞혔으면 그만큼 시도가 늘어난다. 1이면 한 번에 맞혔다.
@@ -398,7 +388,6 @@ function commitItem(state: GameState, now: number, skipped: boolean): GameState 
     index: state.index + 1,
     input: "",
     itemStartedAt: now,
-    itemKeystrokes: 0,
     itemErrors: 0,
     lastKeystrokeCount: 0,
     offTrack: false,
@@ -421,7 +410,22 @@ export function score(state: GameState, now: number): Score {
   const elapsedMs = Math.max(0, end - state.startedAt) + state.hintPenaltyMs;
   const correctKeystrokes = state.results.reduce((a, r) => a + r.keystrokes, 0);
   const totalErrors = state.results.reduce((a, r) => a + r.errors, 0);
-  const typed = state.keystrokes.reduce((a, k) => a + Math.max(0, k.n), 0);
+  /*
+   * 정확도의 분모는 **제출한 타수**다.
+   *
+   * 예전에는 실제로 누른 타건을 전부 셌다(state.keystrokes). 그러면 치다가
+   * 한 글자를 잘못 눌러 지우고 다시 친 것이 그대로 기록에 남아, 손이 미끄러진
+   * 것과 몰라서 틀린 것이 같은 값으로 찍혔다. 지우고 고칠 자유는 제출 전까지
+   * 온전히 열려 있어야 한다.
+   *
+   * 타건 기록(state.keystrokes)은 그대로 남긴다 — 서버가 사람의 리듬인지
+   * 보는 데 쓰고, 점수에는 쓰지 않는다.
+   */
+  const wrongKeystrokes = [
+    ...state.results.flatMap((r) => r.wrongAnswers ?? []),
+    ...state.itemWrong,
+  ].reduce((a, text) => a + keystrokeCount(text), 0);
+  const typed = correctKeystrokes + wrongKeystrokes;
 
   // 규칙은 lib/score/core.ts 한 벌뿐이다. 여기서는 재료만 모은다 —
   // 서버가 같은 규칙으로 다시 계산해 대조하기 때문이다.

@@ -140,7 +140,6 @@ export interface GameState {
    */
   hintPenaltyMs: number;
   itemStartedAt: number;
-  itemKeystrokes: number;
   itemErrors: number;
   /** 마지막으로 기록한 입력의 타수 — 증분 계산용 */
   lastKeystrokeCount: number;
@@ -181,7 +180,14 @@ export interface GameState {
 export interface Score {
   /** 분당 타수 */
   cpm: number;
-  /** 정확도 0~1 */
+  /**
+   * 정확도 0~1. **제출한 타수 중 맞은 비율**이다.
+   *
+   * 치는 도중의 타건은 세지 않는다. 한때 실제로 누른 타건을 전부 분모에
+   * 넣었는데, 그러면 한 글자 잘못 눌러 지우고 다시 친 것이 기록에 남는다 —
+   * 손이 미끄러진 것과 몰라서 틀린 것을 같은 통에 넣는 셈이다. 지우고 고칠
+   * 자유는 제출 전까지 온전히 열려 있어야 한다.
+   */
   accuracy: number;
   elapsedMs: number;
   correctKeystrokes: number;

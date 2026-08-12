@@ -105,19 +105,20 @@ describe("진행", () => {
 });
 
 describe("오타", () => {
-  it("정답 경로를 벗어나면 오류 1회", () => {
+  it("경로를 벗어나도 세지 않는다 — 표시만 남는다", () => {
+    // 손이 미끄러진 것과 몰라서 틀린 것은 다르다. 판정은 제출로만 한다.
     let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "소", 100);
-    expect(g.itemErrors).toBe(1);
-    expect(g.offTrack).toBe(true);
+    expect(g.itemErrors).toBe(0);
+    expect(g.offTrack, "판면을 흔들 신호는 남아야 한다").toBe(true);
   });
 
-  it("틀린 채로 계속 쳐도 오류는 늘지 않는다", () => {
+  it("틀린 채로 계속 쳐도 세지 않는다", () => {
     let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "소", 100);
     g = setInput(g, "소어", 200);
     g = setInput(g, "소어라", 300);
-    expect(g.itemErrors).toBe(1);
+    expect(g.itemErrors).toBe(0);
   });
 
   it("지우고 다시 맞게 치면 경로에 복귀한다", () => {
@@ -127,7 +128,11 @@ describe("오타", () => {
     expect(g.offTrack).toBe(false);
     g = type(g, "수원", 200);
     expect(g.index).toBe(1);
-    expect(g.results[0].errors).toBe(1);
+    // 지우고 고쳐서 맞혔으면 틀린 적이 없는 것이다.
+    expect(g.results[0].errors).toBe(0);
+    expect(g.results[0].keystrokes, "타수는 제출한 답에서 나온다").toBe(
+      keystrokeCount("수원"),
+    );
   });
 });
 
@@ -199,7 +204,11 @@ describe("score", () => {
     expect(score(g, g.endedAt!).accuracy).toBe(1);
   });
 
-  it("오타가 섞이면 정확도가 떨어진다", () => {
+  it("치다가 지운 것은 정확도를 깎지 않는다", () => {
+    /*
+     * 제출 때만 평가한다. 한 글자 잘못 눌러 지우고 다시 친 것까지 분모에
+     * 넣으면, 손이 미끄러진 것과 몰라서 틀린 것이 같은 값으로 찍힌다.
+     */
     let g = start(createGame(ITEMS, MODES.learn, 0), 0);
     g = setInput(g, "소", 100);
     g = setInput(g, "", 200);
@@ -207,6 +216,17 @@ describe("score", () => {
     g = type(g, "안양", 1000);
     g = type(g, "부천", 2000);
     const s = score(g, g.endedAt!);
+    expect(s.accuracy).toBe(1);
+    expect(s.totalErrors).toBe(0);
+  });
+
+  it("틀리게 제출하면 정확도가 떨어진다", () => {
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
+    const answer = g.items[0].answer;
+    const wrong = ITEMS.map((i) => i.answer).find((n) => n !== answer)!;
+    g = submit(setInput(g, wrong, 100), 200);
+    g = submit(setInput(g, answer, 300), 400);
+    const s = score(g, 500);
     expect(s.accuracy).toBeLessThan(1);
     expect(s.totalErrors).toBe(1);
   });
@@ -503,13 +523,12 @@ describe("엔터 제출", () => {
     expect(g).toBe(before);
   });
 
-  it("따라치기도 제출로 넘어가되 오답을 두 번 세지 않는다", () => {
+  it("따라치기에서도 판정은 제출에서만 한다", () => {
     let g = start(createGame(ITEMS, MODES.learn, 0, 1), 0);
     g = setInput(g, "쿄", 100);
-    // 답이 화면에 있는 모드에서는 치는 즉시 오답으로 센다.
-    expect(g.itemErrors).toBe(1);
+    // 치는 동안에는 어느 모드에서도 세지 않는다 — 지우고 고칠 자유가 있다.
+    expect(g.itemErrors).toBe(0);
     g = submit(g, 200);
-    // 제출에서 또 세면 같은 실수가 두 개가 된다.
     expect(g.itemErrors).toBe(1);
     expect(g.itemWrong).toEqual(["쿄"]);
   });

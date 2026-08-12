@@ -255,9 +255,14 @@ export const RegionMap = memo(function RegionMap({
         현재 지역을 한 번 더 감싼다. 전국 지도에서 서울처럼 작은 지역은
         채우기만으로는 눈에 띄지 않는다. 이름은 쓰지 않는다 — 그게 문제니까.
       */}
-      {/* 색 위에 얹는 빗금. 채우기와 별개의 층이라 색을 가리지 않는다. */}
+      {/*
+        색 위에 얹는 빗금. 채우기와 별개의 층이라 색을 가리지 않는다.
+
+        포인터는 통과시킨다. 장식인데 클릭을 먹고 있어서, 못 맞힌 곳(빨강)만
+        짚어도 이름이 뜨지 않고 눌리지도 않았다.
+      */}
       {missedCodes.length > 0 && (
-        <g aria-hidden="true" style={{ ...PAN, transform }}>
+        <g aria-hidden="true" pointerEvents="none" style={{ ...PAN, transform }}>
           {geo.regions
             .filter((r) => missed.has(r.code))
             .map((r) => (

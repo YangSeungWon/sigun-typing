@@ -102,6 +102,11 @@ export function ResultCard({
               passedCodes={passedCodes}
               missedCodes={missed.filter((r) => r.skipped).map((r) => r.id)}
               variant="route"
+              /*
+               * 판이 끝난 뒤에는 이름을 가릴 이유가 없다. 오히려 여기가 짚어
+               * 보기 가장 좋은 자리다 — 빨간 곳이 어디였는지 손으로 확인한다.
+               */
+              explore
               className="h-56 w-auto sm:h-72 md:h-[26rem]"
             />
             {/*

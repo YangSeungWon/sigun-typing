@@ -24,6 +24,12 @@ export function CourseMap({ geo, courseId }: { geo: CourseGeo; courseId: string 
       passedCodes={known}
       missedCodes={confusing}
       variant="route"
+      /*
+       * 여기서는 짚어 보면 이름이 뜬다. 고르는 화면이므로 답을 가릴 이유가
+       * 없고, "이 모양이 어디지"를 손으로 확인하는 것이 이 게임이 가르치려는
+       * 것과 같은 방향이다.
+       */
+      explore
       className="h-64 w-auto sm:h-80"
     />
   );

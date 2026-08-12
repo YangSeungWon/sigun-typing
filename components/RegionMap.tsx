@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, type CSSProperties } from "react";
+import { memo, useMemo, useState, type CSSProperties } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import { focusTransform } from "@/lib/geo/bbox";
 
@@ -32,6 +32,16 @@ interface RegionMapProps {
    * 전체 맥락은 옆에 붙는 미니맵이 맡는다.
    */
   focus?: boolean;
+  /**
+   * 짚으면 이름이 뜨는 지도.
+   *
+   * 코스를 고르는 화면에서 "이 모양이 어디지"를 손으로 확인하는 자리다.
+   * 지도책을 짚어 보는 동작이고, 이 게임이 가르치려는 것과 같은 방향이다.
+   *
+   * **문제를 내는 지도에서는 절대 켜지 않는다** — 거기서 이름은 곧 답이다.
+   * 그래서 아래에서 variant까지 함께 본다. 실수로 넘겨도 켜지지 않는다.
+   */
+  explore?: boolean;
   className?: string;
 }
 
@@ -54,6 +64,7 @@ export const RegionMap = memo(function RegionMap({
   missedCodes = EMPTY,
   variant,
   focus = false,
+  explore = false,
   className,
 }: RegionMapProps) {
   const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
@@ -67,6 +78,12 @@ export const RegionMap = memo(function RegionMap({
     () => geo.regions.find((r) => r.code === (focusCode ?? currentCode)),
     [geo, focusCode, currentCode],
   );
+  /*
+   * 라벨 글자 크기. 지도마다 viewBox가 다르므로 비율로 잡는다 —
+   * 고정값으로 두면 서울에서 알맞은 크기가 전국 지도에서는 깨알이 된다.
+   */
+  const fontSize = Math.round(geo.width * 0.055);
+
   const transform = useMemo(
     () => (focus ? focusTransform(camera, geo) : ""),
     [focus, camera, geo],
@@ -74,11 +91,25 @@ export const RegionMap = memo(function RegionMap({
   /** 모든 경계를 이어 붙인 한 장. 각 조각이 `M`으로 시작하므로 그대로 이으면 된다. */
   const silhouette = useMemo(() => geo.regions.map((r) => r.d).join(""), [geo]);
 
+  /*
+   * 짚어 보는 지도.
+   *
+   * 문제를 내는 지도(hint)에서는 어떤 경우에도 켜지지 않는다. 이름을 띄우는
+   * 순간 그게 답이기 때문이다 — 넘겨받은 값과 지도의 성격을 함께 본다.
+   */
+  const explorable = explore && variant === "route";
+  const [touched, setTouched] = useState<string | null>(null);
+  const label = useMemo(
+    () => geo.regions.find((r) => r.code === touched),
+    [geo, touched],
+  );
+
   return (
     <svg
       viewBox={`0 0 ${geo.width} ${geo.height}`}
       className={className}
       role="img"
+      onPointerLeave={explorable ? () => setTouched(null) : undefined}
       /*
        * 화면을 못 보는 사람에게도 진행이 전달되어야 한다. 지도는 그림이지만
        * 여기 담긴 정보는 "몇 곳 중 몇 곳을 했는가"이고 그건 말로 옮길 수 있다.
@@ -176,6 +207,11 @@ export const RegionMap = memo(function RegionMap({
                * 클래스를 껐다 켜는 방식보다 어긋날 여지가 없다.
                */
               key={r.code === justPassed ? `pass-${r.code}` : r.code}
+              onPointerEnter={explorable ? () => setTouched(r.code) : undefined}
+              onPointerLeave={
+                explorable ? () => setTouched((c) => (c === r.code ? null : c)) : undefined
+              }
+              style={explorable ? { cursor: "pointer" } : undefined}
               className={
                 r.code === justPassed
                   ? "map-pass"
@@ -208,6 +244,64 @@ export const RegionMap = memo(function RegionMap({
         </g>
       )}
 
+      {/*
+        짚은 곳을 한 번 감싼다. 이름만 띄우면 판이 어느 도형의 것인지 눈으로
+        잇지 못한다 — 지금 묻는 곳을 감싸는 것과 같은 테두리를 쓴다.
+      */}
+      {explorable && label && (
+        <path
+          d={label.d}
+          fill="none"
+          stroke="var(--color-ink)"
+          strokeWidth={3}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+          pointerEvents="none"
+        />
+      )}
+
+      {/*
+        짚은 곳의 이름.
+
+        도로표지 그대로 — 초록 판에 흰 글자다. 지도 위에 뜨는 이름이 이 사이트
+        어디에서나 같은 모양이어야 "저건 지명이다"가 설명 없이 읽힌다.
+        판은 지역 위에 뜨고, 위쪽 가장자리에서는 아래로 내려 붙는다.
+      */}
+      {explorable && label && (
+        <g className="region-label" pointerEvents="none">
+          <rect
+            x={Math.min(
+              Math.max(label.cx - plateWidth(label.name, fontSize) / 2, 4),
+              geo.width - plateWidth(label.name, fontSize) - 4,
+            )}
+            y={label.cy - fontSize * 2.4 < 4 ? label.cy + fontSize * 0.7 : label.cy - fontSize * 2.4}
+            width={plateWidth(label.name, fontSize)}
+            height={fontSize * 1.7}
+            rx={fontSize * 0.25}
+            fill="var(--color-sign)"
+          />
+          <text
+            x={Math.min(
+              Math.max(label.cx, 4 + plateWidth(label.name, fontSize) / 2),
+              geo.width - plateWidth(label.name, fontSize) / 2 - 4,
+            )}
+            y={
+              (label.cy - fontSize * 2.4 < 4
+                ? label.cy + fontSize * 0.7
+                : label.cy - fontSize * 2.4) +
+              fontSize * 0.85
+            }
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={fontSize}
+            fontWeight={700}
+            fill="var(--color-paint)"
+          >
+            {label.name}
+          </text>
+        </g>
+      )}
+
       {currentCode && (
         <path
           // 테두리도 함께 움직여야 한다.
@@ -226,6 +320,15 @@ export const RegionMap = memo(function RegionMap({
 
 /** 기본값을 인라인 배열로 두면 렌더마다 새 배열이라 memo가 무력해진다. */
 const EMPTY: string[] = [];
+
+/**
+ * 지명 판의 폭. 한글은 글자 하나가 거의 정사각형이라 글자 수로 잡으면 맞는다.
+ * 재 보지 않고 계산으로 두는 이유: SVG에서 글자 폭을 재려면 그린 뒤에 읽어야
+ * 하고, 그러면 판이 한 프레임 늦게 따라붙는다.
+ */
+function plateWidth(name: string, fontSize: number): number {
+  return [...name].length * fontSize * 1.02 + fontSize * 0.9;
+}
 
 /**
  * 카메라가 다음 지역으로 옮겨 가는 동안.

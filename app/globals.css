@@ -153,6 +153,27 @@ body {
 }
 
 /*
+ * 지도에서 짚은 곳의 이름.
+ *
+ * 슥 올라오며 뜬다. 짚는 동작에 곧바로 붙어야 하므로 짧다 — 길면 손이 이미
+ * 다음 지역으로 옮겨 간 뒤에 이름이 뜬다.
+ */
+@keyframes region-label {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.region-label {
+  animation: region-label 140ms ease-out;
+}
+
+/*
  * 완주.
  *
  * 마지막 한 곳을 맞힌 순간이 이 게임에서 가장 중요한 순간인데, 그동안은

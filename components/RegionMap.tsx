@@ -160,8 +160,14 @@ export const RegionMap = memo(function RegionMap({
                       : // 배경·면·경계선이 모두 비슷한 명도라 실루엣이 안개처럼 보였다.
                         "var(--color-map-idle)"
               }
+              /*
+               * 주변 경계는 지도를 읽는 데 필요한 만큼만.
+               * 2px 흰 선으로 다 두르면 지도가 아니라 퍼즐판으로 읽히고,
+               * 지금 묻는 곳의 검은 테두리와 세기를 다투게 된다. 강조는
+               * 타깃 하나가 독점해야 한다.
+               */
               stroke="var(--color-map-line)"
-              strokeWidth={2}
+              strokeWidth={1.5}
               strokeLinejoin="round"
               // 확대해도 경계선 두께는 그대로여야 지도가 뭉개지지 않는다.
               vectorEffect={focus ? "non-scaling-stroke" : undefined}

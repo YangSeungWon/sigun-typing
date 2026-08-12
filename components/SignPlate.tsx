@@ -231,9 +231,16 @@ export function SignPlate({
           aria-label="제출"
           // 흰 내곽선 안쪽에 놓는다. 선 위에 겹치면 표지판이 아니라
           // 인쇄가 밀린 것처럼 보인다.
-          className={`absolute top-1/2 right-5 z-10 flex -translate-y-1/2 items-center gap-1.5 rounded-md px-1.5 py-1 font-mono leading-none transition-colors duration-150 sm:right-7 ${
+          className={`absolute top-1/2 right-5 z-10 flex -translate-y-1/2 items-center gap-1.5 rounded-md px-1.5 py-1 font-mono leading-none underline-offset-4 transition-colors duration-150 hover:underline sm:right-7 ${
             onSubmit ? "cursor-pointer" : "pointer-events-none"
-          } ${typedChars.length > 0 ? "text-paint/90" : "text-paint/40"}`}
+          } ${
+            /*
+             * 칠 것이 생기면 확실히 진해진다. 흐린 채로 두면 "누를 수 있는
+             * 것"이 아니라 판에 인쇄된 장식으로 읽힌다. 그렇다고 늘 하얗게
+             * 두면 정작 읽어야 할 글자보다 튄다.
+             */
+            typedChars.length > 0 ? "text-paint" : "text-paint/45"
+          }`}
         >
           {/* 좁은 화면에는 판 아래 제출 버튼이 따로 있다. 여기서는 기호만. */}
           <span className="hidden text-sm tracking-[0.1em] sm:inline">제출</span>
@@ -298,7 +305,9 @@ export function SignPlate({
                   className={`mb-1 font-mono text-xl leading-none transition-opacity duration-200 sm:text-3xl ${
                     statuses[i] === "correct"
                       ? "text-paint/25"
-                      : "text-centerline/80"
+                      : // 힌트의 주인공은 초성이다. 빈 자리를 나타내는 ○보다
+                        // 먼저 읽혀야 한다.
+                        "text-centerline"
                   }`}
                 >
                   {hintInitials[i]}
@@ -329,7 +338,17 @@ export function SignPlate({
                         : CHAR_TONE[statuses[i]]
                 } transition-colors duration-100`}
               >
-                {slotContent(i)}
+                {/*
+                  아직 안 친 자리는 작은 점으로 둔다.
+                  글자 크기 그대로 ○를 그렸더니 초성보다 원이 먼저 읽혀,
+                  힌트가 아니라 자릿수 입력칸처럼 보였다. 바깥 span의 글자
+                  크기는 그대로라 줄 높이는 변하지 않는다 — 자리만 지킨다.
+                */}
+                {masked && !revealed && typedChars[i] === undefined ? (
+                  <span className="text-[0.42em] text-paint/30">○</span>
+                ) : (
+                  slotContent(i)
+                )}
               </span>
               {/* 지금 칠 차례인 글자 아래에만 커서를 둔다 */}
               <span

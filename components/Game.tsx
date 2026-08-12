@@ -588,7 +588,12 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
           {state.status === "ready" ? "" : course.name}
         </span>
 
-        <span className="ml-auto flex items-center gap-3">
+        {/*
+          오른쪽 묶음은 하나의 계기판으로 읽혀야 한다. 진행·시간·미니맵·소리가
+          제각각 다른 간격으로 놓이면 지도를 보다 눈이 올라올 때마다 어디에
+          무엇이 있는지 다시 찾게 된다. 간격을 하나로 고정한다.
+        */}
+        <span className="ml-auto flex items-center gap-4">
           {/*
             세는 동안에도 같은 줄을 채운다. 시작하면서 미니맵이 붙으면 그
             높이만큼 아래가 통째로 밀린다 — 하필 첫 문제가 뜨는 순간이다.

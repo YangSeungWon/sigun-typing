@@ -67,7 +67,12 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
       <div className="flex flex-col gap-3">
         <Link
           href={`/play/map/${course.id}?from=course_select`}
-          className="rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          /*
+            폭을 화면 끝까지 늘리지 않는다. 가로로 꽉 찬 초록 띠는 게임을
+            시작하는 문이 아니라 웹 폼의 제출 바처럼 읽힌다. 위의 지도와
+            비슷한 폭으로 세워 두면 둘이 한 덩어리로 묶인다.
+          */
+          className="mx-auto w-full max-w-md rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           지도 보고 맞히기
         </Link>
@@ -79,7 +84,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
           손이 닿으면 밑줄로 답한다. 구분 기호도 두지 않는다. 간격이 이미
           셋을 갈라 놓고 있고, 가운뎃점은 이 화면의 언어가 아니다.
         */}
-        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-2 font-mono text-sm text-ink/70">
+        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-2 font-mono text-sm text-ink/85">
           {(["timeattack", "learn", "test"] as const).map((mode) => (
             <li key={mode}>
               <Link

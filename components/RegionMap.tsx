@@ -98,10 +98,19 @@ export const RegionMap = memo(function RegionMap({
    * 순간 그게 답이기 때문이다 — 넘겨받은 값과 지도의 성격을 함께 본다.
    */
   const explorable = explore && variant === "route";
-  const [touched, setTouched] = useState<string | null>(null);
+  /**
+   * 짚는 것과 고르는 것은 다르다.
+   *
+   * 손이 지나가는 동안에만 이름이 뜨면, 다른 곳을 보려고 손을 옮기는 순간
+   * 사라져 두 지역을 견주지 못한다. 눌러 두면 남는다 — 지도책에 손가락을
+   * 얹어 두는 것과 같다. 같은 곳을 다시 누르거나 바깥을 누르면 놓는다.
+   */
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+  const active = picked ?? hovered;
   const label = useMemo(
-    () => geo.regions.find((r) => r.code === touched),
-    [geo, touched],
+    () => geo.regions.find((r) => r.code === active),
+    [geo, active],
   );
 
   return (
@@ -109,7 +118,15 @@ export const RegionMap = memo(function RegionMap({
       viewBox={`0 0 ${geo.width} ${geo.height}`}
       className={className}
       role="img"
-      onPointerLeave={explorable ? () => setTouched(null) : undefined}
+      onPointerLeave={explorable ? () => setHovered(null) : undefined}
+      // 지도 바깥(바다)을 누르면 놓는다.
+      onClick={
+        explorable
+          ? (e) => {
+              if (e.target === e.currentTarget) setPicked(null);
+            }
+          : undefined
+      }
       /*
        * 화면을 못 보는 사람에게도 진행이 전달되어야 한다. 지도는 그림이지만
        * 여기 담긴 정보는 "몇 곳 중 몇 곳을 했는가"이고 그건 말로 옮길 수 있다.
@@ -207,9 +224,14 @@ export const RegionMap = memo(function RegionMap({
                * 클래스를 껐다 켜는 방식보다 어긋날 여지가 없다.
                */
               key={r.code === justPassed ? `pass-${r.code}` : r.code}
-              onPointerEnter={explorable ? () => setTouched(r.code) : undefined}
+              onPointerEnter={explorable ? () => setHovered(r.code) : undefined}
               onPointerLeave={
-                explorable ? () => setTouched((c) => (c === r.code ? null : c)) : undefined
+                explorable ? () => setHovered((c) => (c === r.code ? null : c)) : undefined
+              }
+              onClick={
+                explorable
+                  ? () => setPicked((c) => (c === r.code ? null : r.code))
+                  : undefined
               }
               style={explorable ? { cursor: "pointer" } : undefined}
               className={
@@ -247,17 +269,31 @@ export const RegionMap = memo(function RegionMap({
       {/*
         짚은 곳을 한 번 감싼다. 이름만 띄우면 판이 어느 도형의 것인지 눈으로
         잇지 못한다 — 지금 묻는 곳을 감싸는 것과 같은 테두리를 쓴다.
+
+        눌러서 고른 곳은 한 겹 더 눌러 앉힌다. 색을 바꾸지 않고 어둡게만
+        덮는 이유: 초록(아는 곳)과 빨강(헷갈리는 곳)이 이 화면에서 뜻을
+        가지므로, 고른다고 그 뜻이 달라지면 안 된다.
       */}
       {explorable && label && (
-        <path
-          d={label.d}
-          fill="none"
-          stroke="var(--color-ink)"
-          strokeWidth={3}
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-          pointerEvents="none"
-        />
+        <>
+          {picked === label.code && (
+            <path
+              d={label.d}
+              fill="var(--color-ink)"
+              opacity={0.14}
+              pointerEvents="none"
+            />
+          )}
+          <path
+            d={label.d}
+            fill="none"
+            stroke="var(--color-ink)"
+            strokeWidth={3}
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            pointerEvents="none"
+          />
+        </>
       )}
 
       {/*

@@ -48,8 +48,7 @@ export function ShareResult({ courseId, courseName, mode, score }: ShareResultPr
 
   const text =
     `${courseName} ${formatPrecise(score.elapsedMs)}\n` +
-    `${score.completed}/${score.total} · 정확도 ${(score.accuracy * 100).toFixed(1)}% · ` +
-    `${Math.round(score.cpm)}타/분\n\n` +
+    `${score.completed}/${score.total} · 정확도 ${(score.accuracy * 100).toFixed(1)}%\n\n` +
     `너는 나보다 빠름?`;
 
   const share = async () => {

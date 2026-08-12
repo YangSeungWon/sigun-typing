@@ -33,12 +33,19 @@ export function MyStanding({ courseId, courseVersion, mode }: MyStandingProps) {
   const hydrated = useIsHydrated();
   const [around, setAround] = useState<Around | null>(null);
   const best = hydrated ? loadPersonalBest(courseId, mode, courseVersion) : null;
-  const cpm = best ? Math.round(best.cpm) : null;
+  // 순위 기준과 같은 값으로 물어본다 — 많이 끝낸 쪽이 먼저, 같으면 빠른 쪽.
+  const completed = best?.completed ?? null;
+  const elapsedMs = best?.elapsedMs ?? null;
 
   useEffect(() => {
-    if (cpm === null) return;
+    if (completed === null || elapsedMs === null) return;
     let alive = true;
-    const params = new URLSearchParams({ course: courseId, mode, cpm: String(cpm) });
+    const params = new URLSearchParams({
+      course: courseId,
+      mode,
+      completed: String(completed),
+      elapsed: String(elapsedMs),
+    });
     fetch(`/api/scores/standing?${params}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -50,7 +57,7 @@ export function MyStanding({ courseId, courseVersion, mode }: MyStandingProps) {
     return () => {
       alive = false;
     };
-  }, [courseId, mode, cpm]);
+  }, [courseId, mode, completed, elapsedMs]);
 
   // 아직 이 코스를 해 보지 않았다면 보여 줄 것이 없다.
   if (!best || !around || around.total === 0) return null;
@@ -66,7 +73,8 @@ export function MyStanding({ courseId, courseVersion, mode }: MyStandingProps) {
             key={entry.id}
             rank={around.rank - around.above.length + i}
             name={entry.nickname}
-            cpm={entry.cpm}
+            completed={entry.completed}
+            total={entry.total}
             elapsedMs={entry.elapsedMs}
           />
         ))}
@@ -74,7 +82,8 @@ export function MyStanding({ courseId, courseVersion, mode }: MyStandingProps) {
           mine
           rank={around.rank}
           name="내 기록"
-          cpm={best.cpm}
+          completed={best.completed}
+          total={best.total}
           elapsedMs={best.elapsedMs}
         />
         {around.below.map((entry, i) => (
@@ -82,35 +91,62 @@ export function MyStanding({ courseId, courseVersion, mode }: MyStandingProps) {
             key={entry.id}
             rank={around.rank + i + 1}
             name={entry.nickname}
-            cpm={entry.cpm}
+            completed={entry.completed}
+            total={entry.total}
             elapsedMs={entry.elapsedMs}
           />
         ))}
       </ol>
+      {/*
+        바로 위와의 차이. 같은 수를 끝냈으면 시간으로, 아니면 곳 수로 말한다 —
+        순위를 가른 그 값을 그대로 보여 줘야 따라잡을 거리가 읽힌다.
+      */}
       {around.above[around.above.length - 1] && (
-        <p className="font-mono text-sm text-dim">
-          바로 위와{" "}
-          <span className="text-ink">
-            {Math.max(1, Math.round(around.above[around.above.length - 1].cpm - best.cpm))}
-            타/분
-          </span>{" "}
-          차이
-        </p>
+        <Gap ahead={around.above[around.above.length - 1]} mine={best} />
       )}
     </section>
+  );
+}
+
+/**
+ * 바로 위와의 거리.
+ *
+ * 순위를 가른 값을 그대로 말한다 — 끝낸 곳 수가 다르면 곳 수로, 같으면 시간으로.
+ * "몇 타/분 차이"는 이제 순위와 상관없는 숫자다.
+ */
+function Gap({
+  ahead,
+  mine,
+}: {
+  ahead: { completed: number; elapsedMs: number };
+  mine: { completed: number; elapsedMs: number };
+}) {
+  const places = ahead.completed - mine.completed;
+  return (
+    <p className="font-mono text-sm text-dim">
+      바로 위와{" "}
+      <span className="text-ink">
+        {places > 0
+          ? `${places}곳`
+          : formatClock(Math.max(1000, mine.elapsedMs - ahead.elapsedMs))}
+      </span>{" "}
+      차이
+    </p>
   );
 }
 
 function Row({
   rank,
   name,
-  cpm,
+  completed,
+  total,
   elapsedMs,
   mine = false,
 }: {
   rank: number;
   name: string;
-  cpm: number;
+  completed: number;
+  total: number;
   elapsedMs: number;
   mine?: boolean;
 }) {
@@ -125,7 +161,7 @@ function Row({
         <span className={mine ? "text-sign" : ""}>{name}</span>
       </span>
       <span className="font-mono text-sm tabular-nums text-dim">
-        {Math.round(cpm)}타/분 · {formatClock(elapsedMs)}
+        {completed}/{total} · {formatClock(elapsedMs)}
       </span>
     </li>
   );

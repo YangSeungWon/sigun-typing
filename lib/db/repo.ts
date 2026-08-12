@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, gte, lte } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ModeId } from "../game/types";
 import {
@@ -22,6 +22,28 @@ export interface LeaderboardEntry {
   createdAt: Date;
 }
 
+/**
+ * 순위를 매기는 기준.
+ *
+ * **많이 끝낸 쪽이 먼저, 같으면 빠른 쪽이 먼저.** 개인 기록이 이미 쓰던
+ * 규칙이고(lib/score/personalBest.ts) 이제 순위표도 같은 것을 쓴다.
+ *
+ * 한때 타수(cpm) 내림차순이었다. 정확도를 제출 기준으로 바꾸면서 맞힌 타수가
+ * "완주한 지역들의 이름 길이 합"으로 고정됐고, 코스를 다 돌면 그 값은 상수라
+ * 타수 순위가 곧 시간 순위가 됐다 — 같은 말을 두 번 하는 셈이었다. 게다가
+ * 개인 기록과 순위표가 서로 다른 기준을 쓰고 있었다.
+ */
+export interface RankKey {
+  completed: number;
+  elapsedMs: number;
+}
+
+/** a가 b보다 나은 기록인가. */
+export function outranks(a: RankKey, b: RankKey): boolean {
+  if (a.completed !== b.completed) return a.completed > b.completed;
+  return a.elapsedMs < b.elapsedMs;
+}
+
 export interface ScoreRepository {
   /** 이미 제출된 세션이면 false. 중복 제출을 막는다. */
   insert(row: NewScoreRow): Promise<boolean>;
@@ -38,7 +60,7 @@ export interface ScoreRepository {
     since?: Date | null,
   ): Promise<LeaderboardEntry[]>;
   /**
-   * 이 기록이 지금 어디쯤인가. 순위표와 **같은 기준(타수 내림차순)** 이어야 한다.
+   * 이 기록이 지금 어디쯤인가. 순위표와 **같은 기준**이어야 한다.
    * 기준이 갈리면 "상위 8%"라고 해 놓고 등록하면 다른 자리에 가 있게 된다.
    */
   standing(
@@ -46,7 +68,7 @@ export interface ScoreRepository {
     mode: ModeId,
     scoringVersion: number,
     courseVersion: number,
-    cpm: number,
+    key: RankKey,
   ): Promise<{ better: number; total: number }>;
   /** 최근 `windowMs` 안에 이 기기가 제출한 횟수 */
   recentCount(deviceId: string, windowMs: number, now: number): Promise<number>;
@@ -63,7 +85,7 @@ export interface ScoreRepository {
     mode: ModeId,
     scoringVersion: number,
     courseVersion: number,
-    cpm: number,
+    key: RankKey,
     span: number,
   ): Promise<{ above: LeaderboardEntry[]; below: LeaderboardEntry[] }>;
   /** 오류 기록. 이걸 남기다 실패해도 호출한 쪽이 죽으면 안 된다. */
@@ -121,7 +143,7 @@ export class MemoryScoreRepository implements ScoreRepository {
           r.courseVersion === courseVersion &&
           (!since || r.createdAt >= since),
       )
-      .sort((a, b) => b.cpm - a.cpm)
+      .sort((a, b) => (outranks(a, b) ? -1 : outranks(b, a) ? 1 : 0))
       .slice(0, limit)
       .map(toEntry);
   }
@@ -131,7 +153,7 @@ export class MemoryScoreRepository implements ScoreRepository {
     mode: ModeId,
     scoringVersion: number,
     courseVersion: number,
-    cpm: number,
+    key: RankKey,
   ) {
     const pool = this.rows.filter(
       (r) =>
@@ -140,7 +162,7 @@ export class MemoryScoreRepository implements ScoreRepository {
         r.scoringVersion === scoringVersion &&
         r.courseVersion === courseVersion,
     );
-    return { better: pool.filter((r) => r.cpm > cpm).length, total: pool.length };
+    return { better: pool.filter((r) => outranks(r, key)).length, total: pool.length };
   }
 
   async neighbors(
@@ -148,7 +170,7 @@ export class MemoryScoreRepository implements ScoreRepository {
     mode: ModeId,
     scoringVersion: number,
     courseVersion: number,
-    cpm: number,
+    key: RankKey,
     span: number,
   ) {
     const pool = this.rows
@@ -159,10 +181,10 @@ export class MemoryScoreRepository implements ScoreRepository {
           r.scoringVersion === scoringVersion &&
           r.courseVersion === courseVersion,
       )
-      .sort((a, b) => b.cpm - a.cpm);
+      .sort((a, b) => (outranks(a, b) ? -1 : outranks(b, a) ? 1 : 0));
     return {
-      above: pool.filter((r) => r.cpm > cpm).slice(-span).map(toEntry),
-      below: pool.filter((r) => r.cpm <= cpm).slice(0, span).map(toEntry),
+      above: pool.filter((r) => outranks(r, key)).slice(-span).map(toEntry),
+      below: pool.filter((r) => !outranks(r, key)).slice(0, span).map(toEntry),
     };
   }
 
@@ -220,7 +242,7 @@ export class PostgresScoreRepository implements ScoreRepository {
           ...(since ? [gte(scores.createdAt, since)] : []),
         ),
       )
-      .orderBy(desc(scores.cpm))
+      .orderBy(desc(scores.completed), asc(scores.elapsedMs))
       .limit(limit);
     return rows.map(toEntry);
   }
@@ -230,7 +252,7 @@ export class PostgresScoreRepository implements ScoreRepository {
     mode: ModeId,
     scoringVersion: number,
     courseVersion: number,
-    cpm: number,
+    key: RankKey,
   ) {
     const scope = and(
       eq(scores.courseId, courseId),
@@ -238,12 +260,11 @@ export class PostgresScoreRepository implements ScoreRepository {
       eq(scores.scoringVersion, scoringVersion),
       eq(scores.courseVersion, courseVersion),
     );
+    // 나보다 나은 기록 — 더 많이 끝냈거나, 같은 수를 더 빨리 끝낸 기록.
+    const better = sql`(${scores.completed} > ${key.completed} or (${scores.completed} = ${key.completed} and ${scores.elapsedMs} < ${key.elapsedMs}))`;
     const [totalRow, betterRow] = await Promise.all([
       this.db.select({ n: count() }).from(scores).where(scope),
-      this.db
-        .select({ n: count() })
-        .from(scores)
-        .where(and(scope, gt(scores.cpm, cpm))),
+      this.db.select({ n: count() }).from(scores).where(and(scope, better)),
     ]);
     return {
       better: Number(betterRow[0]?.n ?? 0),
@@ -295,7 +316,7 @@ export class PostgresScoreRepository implements ScoreRepository {
     mode: ModeId,
     scoringVersion: number,
     courseVersion: number,
-    cpm: number,
+    key: RankKey,
     span: number,
   ) {
     const scope = and(
@@ -304,12 +325,13 @@ export class PostgresScoreRepository implements ScoreRepository {
       eq(scores.scoringVersion, scoringVersion),
       eq(scores.courseVersion, courseVersion),
     );
+    const better = sql`(${scores.completed} > ${key.completed} or (${scores.completed} = ${key.completed} and ${scores.elapsedMs} < ${key.elapsedMs}))`;
     const [above, below] = await Promise.all([
-      // 나보다 나은 기록 중 가장 가까운 쪽. 오름차순으로 뽑아야 바로 위가 나온다.
-      this.db.select().from(scores).where(and(scope, gt(scores.cpm, cpm)))
-        .orderBy(asc(scores.cpm)).limit(span),
-      this.db.select().from(scores).where(and(scope, lte(scores.cpm, cpm)))
-        .orderBy(desc(scores.cpm)).limit(span),
+      // 나보다 나은 기록 중 가장 가까운 쪽. 거꾸로 뽑아야 바로 위가 나온다.
+      this.db.select().from(scores).where(and(scope, better))
+        .orderBy(asc(scores.completed), desc(scores.elapsedMs)).limit(span),
+      this.db.select().from(scores).where(and(scope, sql`not ${better}`))
+        .orderBy(desc(scores.completed), asc(scores.elapsedMs)).limit(span),
     ]);
     return { above: above.reverse().map(toEntry), below: below.map(toEntry) };
   }

@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "랭킹 — 시군 타이핑",
-  description: "코스별 타수 순위. 서버에서 검증한 기록만 오릅니다.",
+  description: "코스별 기록 순위. 서버에서 검증한 기록만 오릅니다.",
 };
 
 /** 겨루는 판은 본편 하나다. lib/game/modes.ts의 RANKED_MODES가 그 목록이다. */
@@ -145,10 +145,15 @@ export default async function RankingPage({
               <tr className="border-b border-concrete-deep font-mono text-sm tracking-[0.12em] text-dim uppercase">
                 <th scope="col" className="py-3 pr-4 font-normal">순위</th>
                 <th scope="col" className="py-3 pr-4 font-normal">이름</th>
-                <th scope="col" className="py-3 pr-4 text-right font-normal">타/분</th>
-                <th scope="col" className="py-3 pr-4 text-right font-normal">정확도</th>
+                {/*
+                  순위는 완주 수와 시간으로 매겨진다. 그래서 그 둘이 앞에 온다.
+                  타수를 빼는 이유: 맞힌 타수가 완주한 지역들의 이름 길이 합으로
+                  고정되므로, 다 돈 판끼리는 타수 순위가 곧 시간 순위다.
+                  같은 말을 두 번 적을 이유가 없다.
+                */}
                 <th scope="col" className="py-3 pr-4 text-right font-normal">완주</th>
-                <th scope="col" className="py-3 text-right font-normal">기록</th>
+                <th scope="col" className="py-3 pr-4 text-right font-normal">기록</th>
+                <th scope="col" className="py-3 text-right font-normal">정확도</th>
               </tr>
             </thead>
             <tbody>
@@ -158,17 +163,14 @@ export default async function RankingPage({
                     {i + 1}
                   </td>
                   <td className="py-3 pr-4 font-medium">{entry.nickname}</td>
-                  <td className="py-3 pr-4 text-right font-mono text-lg tabular-nums">
-                    {Math.round(entry.cpm)}
-                  </td>
-                  <td className="py-3 pr-4 text-right font-mono tabular-nums text-dim">
-                    {(entry.accuracy * 100).toFixed(1)}%
-                  </td>
-                  <td className="py-3 pr-4 text-right font-mono tabular-nums text-dim">
+                  <td className="py-3 pr-4 text-right font-mono tabular-nums">
                     {entry.completed}/{entry.total}
                   </td>
-                  <td className="py-3 text-right font-mono tabular-nums text-dim">
+                  <td className="py-3 pr-4 text-right font-mono text-lg tabular-nums">
                     {formatClock(entry.elapsedMs)}
+                  </td>
+                  <td className="py-3 text-right font-mono tabular-nums text-dim">
+                    {(entry.accuracy * 100).toFixed(1)}%
                   </td>
                 </tr>
               ))}

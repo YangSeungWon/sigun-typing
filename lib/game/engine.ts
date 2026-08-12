@@ -1,4 +1,4 @@
-import { isOnTrack, matchProgress } from "../hangul/match";
+import { isOnTrack } from "../hangul/match";
 import { keystrokeCount } from "../hangul/keystrokes";
 import { computeScore } from "../score/core";
 import type {
@@ -217,7 +217,7 @@ export function setInput(state: GameState, text: string, now: number): GameState
   const delta = count - state.lastKeystrokeCount;
   const ok = onTrackForItem(item, text);
 
-  let next: GameState = {
+  const next: GameState = {
     ...state,
     input: text,
     lastKeystrokeCount: count,

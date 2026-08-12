@@ -207,10 +207,15 @@ export function ResultCard({
             </span>
           </p>
         )}
+        {/*
+          타수를 뺐다. 맞힌 타수가 완주한 지역들의 이름 길이 합으로 고정되므로,
+          다 돈 판끼리는 타수가 시간의 다른 표현일 뿐이다. 겨루는 값(완주 수와
+          시간)과 손을 재는 값(정확도)만 남긴다.
+        */}
         <p className="relative mt-3 font-mono text-sm text-paint/70">
           {perfect
-            ? `${Math.round(score.cpm)}타/분 · 정확도 ${(score.accuracy * 100).toFixed(1)}%`
-            : `${formatPrecise(score.elapsedMs)} · ${Math.round(score.cpm)}타/분`}
+            ? `정확도 ${(score.accuracy * 100).toFixed(1)}%`
+            : `${formatPrecise(score.elapsedMs)} · 정확도 ${(score.accuracy * 100).toFixed(1)}%`}
         </p>
 
         {/*
@@ -295,7 +300,7 @@ export function ResultCard({
             </span>
           </summary>
           <div className="flex flex-col pt-2">
-            <Row label="총 타수" value={`${score.correctKeystrokes}타`} />
+            <Row label="맞힌 타수" value={`${score.correctKeystrokes}타`} />
             <Row label="오타" value={`${score.totalErrors}회`} />
             {/*
               정확도가 손을 재는 숫자라면 정답률은 머리를 잰다. 회상 게임에서

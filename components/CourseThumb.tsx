@@ -5,7 +5,7 @@ interface CourseThumbProps {
   className?: string;
 }
 
-type Thumb = { d: string; from: number[]; to: number[] };
+type Thumb = { d: string; route: number[][] };
 
 /**
  * 코스 실루엣.
@@ -22,7 +22,9 @@ type Thumb = { d: string; from: number[]; to: number[] };
  */
 export function CourseThumb({ courseId, className }: CourseThumbProps) {
   const thumb = (thumbs as Record<string, Thumb>)[courseId];
-  if (!thumb) return null;
+  if (!thumb || thumb.route.length < 2) return null;
+  const start = thumb.route[0];
+  const end = thumb.route[thumb.route.length - 1];
 
   return (
     <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
@@ -43,38 +45,41 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
         인천처럼 작은 썸네일에서는 지도가 점 두 개짜리 아이콘이 되었다.
         기본 상태의 카드에 필요한 것은 지역명·실루엣·한 줄 설명뿐이다.
 
-        순서가 있다 — 시작점이 먼저 서고, 선이 그어지고, 끝점이 나중에 온다.
-        범례로 "● 시작 ○ 끝"이라고 적어 두는 것보다 이쪽이 빠르다.
-        이 선은 문제 순서가 아니라 코스가 어디서 어디로 가는지를 말한다.
+        **직선이 아니라 지나는 길이다.** 시작과 끝만 이으면 "어디서 어디까지"
+        밖에 말하지 못하는데, 코스의 값어치는 그 사이를 어떻게 도는가에 있다.
+        선이 지역들을 차례로 훑고 지나가면 `은평에서 강북을 돌아 한강을 건너,
+        강동에서 강서까지`라는 한 줄이 눈으로 한 번 더 읽힌다.
+
+        문제 순서가 아니라 코스의 지리적 흐름이다 — 실제 플레이에서는 순서가
+        섞인다. 그래서 번호를 붙이거나 한 곳씩 점멸시키지 않는다.
       */}
-      <line
-        x1={thumb.from[0]}
-        y1={thumb.from[1]}
-        x2={thumb.to[0]}
-        y2={thumb.to[1]}
+      <path
+        d={`M${thumb.route.map(([x, y]) => `${x},${y}`).join("L")}`}
+        fill="none"
         stroke="var(--color-sign)"
         strokeWidth={2}
         strokeLinecap="round"
+        strokeLinejoin="round"
         pathLength={1}
         className="course-line opacity-0 group-hover:opacity-80 group-focus-visible:opacity-80"
       />
 
       <circle
-        cx={thumb.from[0]}
-        cy={thumb.from[1]}
+        cx={start[0]}
+        cy={start[1]}
         r={3.5}
         fill="var(--color-sign)"
         className="opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
       />
       <circle
-        cx={thumb.to[0]}
-        cy={thumb.to[1]}
+        cx={end[0]}
+        cy={end[1]}
         r={3.5}
         fill="var(--color-paint)"
         stroke="var(--color-sign)"
         strokeWidth={2}
-        // 선이 도착한 뒤에 선다. 먼저 떠 있으면 그어질 곳이 이미 정해져 보인다.
-        className="opacity-0 transition-opacity delay-500 duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+        // 선이 도착한 뒤에 선다. 먼저 떠 있으면 갈 곳이 이미 정해져 보인다.
+        className="opacity-0 transition-opacity delay-700 duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
       />
     </svg>
   );

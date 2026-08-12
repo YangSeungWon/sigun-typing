@@ -77,20 +77,22 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
           지도 보고 맞히기
         </Link>
         {/*
-          다른 방식은 셋 다 링크다.
-          한때 너무 조용해서 링크인 줄 모르고 지나갈 수 있었다. 그렇다고 테두리를
-          씌우면 다시 네 모드가 경쟁하는 화면으로 돌아간다 — 이 화면의 위계는
-          `기본 하나 / 보조 셋`이다. 그래서 상자 대신 글자색만 한 단계 올리고,
-          손이 닿으면 밑줄로 답한다. 구분 기호도 두지 않는다. 간격이 이미
-          셋을 갈라 놓고 있고, 가운뎃점은 이 화면의 언어가 아니다.
+          다른 방식 셋.
+          글자만 놓아 두었더니 링크인 줄 모르고 지나갈 수 있었다. 그렇다고
+          채워진 버튼으로 만들면 다시 네 모드가 경쟁하는 화면이 된다 — 이
+          화면의 위계는 `기본 하나 / 보조 셋`이다.
+
+          그래서 아래 권역 코스와 같은 문법을 쓴다. 얇은 테두리, 채우지 않음,
+          작은 글자. 누를 수 있다는 것은 테두리가 말하고, 무엇이 본 게임인지는
+          초록 판이 말한다. 구분 기호는 두지 않는다 — 이제 칸이 갈라 준다.
         */}
-        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-2 font-mono text-sm text-ink/85">
+        <ul className="flex flex-wrap justify-center gap-2 font-mono text-sm">
           {(["timeattack", "learn", "test"] as const).map((mode) => (
             <li key={mode}>
               <Link
                 href={`/play/${mode}/${course.id}?from=course_select`}
                 title={MODE_SUMMARY[mode]}
-                className="underline-offset-4 transition-colors hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="inline-block rounded-lg border border-concrete-deep px-4 py-2 text-ink/85 transition-colors hover:bg-concrete-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
                 {MODE_LABELS[mode]}
               </Link>

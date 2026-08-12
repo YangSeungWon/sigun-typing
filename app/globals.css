@@ -53,8 +53,12 @@ body {
 /*
  * 코스 카드의 여정선.
  *
- * pathLength=1로 두었으므로 대시 길이도 0~1로 센다. 시작점에서 출발해
- * 끝점까지 그어지고 잠깐 머문 뒤 처음부터 다시. 마우스를 올린 동안만 돈다.
+ * pathLength=1로 두었으므로 대시 길이도 0~1로 센다. 시작 지역에서 출발해
+ * 코스가 지나는 지역들을 차례로 훑고 끝 지역까지 그어지고, 잠깐 머문 뒤
+ * 처음부터 다시. 손이 닿은 동안만 돈다.
+ *
+ * 속도는 일정하다(linear). 가감속을 넣으면 지도를 훑는 것이 아니라 무언가
+ * 나타나는 연출처럼 보인다 — 여기서 필요한 것은 "지나간다"는 감각이다.
  */
 @keyframes course-line {
   0% {
@@ -72,8 +76,9 @@ body {
   transition: opacity 200ms;
 }
 
-.group:hover .course-line {
-  animation: course-line 1.8s ease-in-out infinite;
+.group:hover .course-line,
+.group:focus-visible .course-line {
+  animation: course-line 1.8s linear infinite;
 }
 
 /*

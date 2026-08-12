@@ -225,6 +225,14 @@ async function loadCourses(): Promise<Course[]> {
   return courses.sort((a, b) => a.id.localeCompare(b.id));
 }
 
+/**
+ * 코스별 외곽선. 썸네일(`npm run build:thumbs`)이 쓴다.
+ *
+ * 코스 지도(`<id>.json`)에 같이 넣지 않는 이유: 그 파일은 플레이 화면이
+ * 통째로 읽는데, 외곽선은 거기서 한 번도 쓰이지 않는다.
+ */
+const outlines: Record<string, string> = {};
+
 interface Report {
   course: string;
   places: number;
@@ -343,9 +351,27 @@ async function buildCourse(course: Course): Promise<Report> {
     };
   });
 
+  /*
+   * 코스 하나를 통째로 합친 외곽선.
+   *
+   * 카드 썸네일이 그리는 것은 "지역 스물다섯 개"가 아니라 **코스 하나의
+   * 실루엣**이다. 그런데 지금까지는 지역별 도형을 각각 솎아 겹쳐 그렸다.
+   * 맞닿은 두 지역이 서로 다른 점을 남기니 공유 경계가 어긋났고, 내부 선을
+   * 안 그리는 실루엣에서 그 어긋남이 삐죽한 홈으로 남았다.
+   *
+   * 위상은 여기 있으므로 합치는 것은 merge 한 번이다. 내부 경계가 사라지면
+   * 어긋날 경계 자체가 없고, 점 수도 크게 준다.
+   */
+  const outline = path({
+    type: "Feature" as const,
+    properties: {},
+    geometry: merge(topology, pool),
+  })!;
+
   const out = { id: course.id, width, height, regions };
   await mkdir(OUT_DIR, { recursive: true });
   await writeFile(join(OUT_DIR, `${course.id}.json`), JSON.stringify(out));
+  outlines[course.id] = outline;
 
   const kb = (JSON.stringify(out).length / 1024).toFixed(0);
   process.stdout.write(
@@ -380,3 +406,13 @@ if (!allOk) {
   process.stderr.write("\n지도 데이터를 만들지 못했습니다.\n");
   process.exit(1);
 }
+
+/*
+ * 코스 지도 폴더 **밖에** 쓴다. 안에 두면 `./*.json`을 훑는 코드가 이 파일을
+ * 코스 지도로 집는다 — 실제로 지도 검사 여섯 개가 그렇게 깨진 적이 있다.
+ */
+await writeFile(join(ROOT, "data/outlines.json"), `${JSON.stringify(outlines)}\n`);
+process.stdout.write(
+  `외곽선 ${Object.keys(outlines).length}개 · ` +
+    `${Math.round(JSON.stringify(outlines).length / 1024)}KB\n`,
+);

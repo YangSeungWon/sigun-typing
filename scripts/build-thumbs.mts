@@ -24,10 +24,26 @@ const GEO_DIR = join(here, "..", "data", "geo");
  */
 const OUT = join(here, "..", "data", "thumbs.json");
 
-/** 한 지역에 남길 점의 수. 64px 카드에서는 이 정도면 형태가 산다. */
-const POINTS_PER_REGION = 14;
+/**
+ * 실루엣 하나에 남길 점의 수.
+ *
+ * 예전에는 지역마다 14점씩 남겼다. 지역별로 따로 솎으니 맞닿은 두 지역이
+ * 서로 다른 점을 남겨 공유 경계가 어긋났고, 내부 선을 그리지 않는 실루엣에서
+ * 그 어긋남이 삐죽한 홈으로 보였다. 이제는 합쳐진 외곽선 하나를 솎으므로
+ * 어긋날 경계 자체가 없고, 같은 점 수로 훨씬 매끄럽다.
+ */
+const POINTS_PER_SHAPE = 72;
 /** 지도 넓이의 이 비율보다 작은 덩어리는 버린다. */
 const MIN_AREA_RATIO = 0.004;
+
+/**
+ * 좌표를 소수 한 자리까지 남긴다.
+ *
+ * 0~100 격자에 정수로 반올림했더니 카드에서 1칸이 1.3px, 고해상도 화면에서는
+ * 2.6px짜리 계단이 됐다. 해안선이 톱니로 보이던 것이 대부분 이것이다.
+ * 한 자리만 늘려도 계단은 사실상 사라진다.
+ */
+const round = (v: number) => Math.round(v * 10) / 10;
 
 interface RegionShape {
   code: string;
@@ -47,9 +63,14 @@ interface CourseGeo {
 interface Thumb {
   /** 0~100 격자에 그린 실루엣 */
   d: string;
-  /** 코스의 시작과 끝 */
-  from: [number, number];
-  to: [number, number];
+  /**
+   * 코스가 지나는 길. 지역 순서대로 이은 꺾은선이다.
+   *
+   * 시작과 끝만 이은 직선으로는 "어디서 어디까지"밖에 말하지 못한다. 코스의
+   * 값어치는 그 사이를 **어떻게 도는가**에 있고(은평에서 강북을 돌아 한강을
+   * 건너…), 그건 길을 그려야 보인다.
+   */
+  route: [number, number][];
 }
 
 /** "M1,2L3,4Z" → [[1,2],[3,4]] 덩어리들 */
@@ -87,36 +108,27 @@ function area(points: [number, number][]): number {
   return (maxX - minX) * (maxY - minY);
 }
 
-function thumbOf(geo: CourseGeo): Thumb {
+function thumbOf(geo: CourseGeo, outline: string): Thumb {
   const mapArea = geo.width * geo.height;
 
   /*
-   * 남길 덩어리를 먼저 고른다.
+   * 그릴 덩어리를 고른다.
    *
-   * 원본 지도 전체에 맞춰 크기를 정하면, 인천처럼 먼 섬을 가진 코스는
-   * 본토가 손톱만 해진다. 여기는 지도 화면이 아니라 **고르는 데 쓰는 썸네일**
-   * 이므로, 실제로 그릴 것들의 범위에 맞춰 채우는 편이 낫다. 그래야 코스마다
-   * 시각적 크기가 고르게 나온다.
+   * 재료는 코스를 통째로 합친 외곽선 하나다(build-geo가 만든다). 여기서
+   * 덩어리 하나는 지역이 아니라 **떨어져 있는 땅 하나**다 — 본토, 강화도,
+   * 백령도처럼. 눈에 보이지도 않을 작은 섬은 버리되, 가장 큰 덩어리는
+   * 무조건 남긴다. 제주처럼 코스 전체가 섬인 경우가 있다.
    */
+  const parts = subpaths(outline).filter((points) => points.length >= 3);
+  const biggest = parts.length > 0
+    ? parts.reduce((a, b) => (area(a) >= area(b) ? a : b))
+    : null;
   const shapes: [number, number][][] = [];
-  for (const region of geo.regions) {
-    const parts = subpaths(region.d).filter((points) => points.length >= 3);
-    if (parts.length === 0) continue;
-
-    /*
-     * 지역마다 **가장 큰 덩어리는 무조건 남긴다.**
-     *
-     * 넓이만으로 걸렀더니 제주가 통째로 빠지고 끝 표시만 바다에 떠 있었다.
-     * 코스에 든 지역은 작든 크든 그 코스의 일부다. 버리는 것은 한 지역 안의
-     * 부속 섬들뿐이다.
-     */
-    const largest = parts.reduce((a, b) => (area(a) >= area(b) ? a : b));
-    for (const points of parts) {
-      if (points !== largest && area(points) / mapArea < MIN_AREA_RATIO) continue;
-      const step = Math.max(1, Math.floor(points.length / POINTS_PER_REGION));
-      const kept = points.filter((_, i) => i % step === 0);
-      if (kept.length >= 3) shapes.push(kept);
-    }
+  for (const points of parts) {
+    if (points !== biggest && area(points) / mapArea < MIN_AREA_RATIO) continue;
+    const step = Math.max(1, Math.floor(points.length / POINTS_PER_SHAPE));
+    const kept = points.filter((_, i) => i % step === 0);
+    if (kept.length >= 3) shapes.push(kept);
   }
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -195,11 +207,11 @@ function thumbOf(geo: CourseGeo): Thumb {
   const offsetX = 50 - cx * scale;
   const offsetY = 50 - cy * scale;
   const place = (x: number, y: number): [number, number] => [
-    Math.round(x * scale + offsetX),
-    Math.round(y * scale + offsetY),
+    round(x * scale + offsetX),
+    round(y * scale + offsetY),
   ];
   const grid = ([x, y]: [number, number]) => place(x, y).join(",");
-  /** 마커는 카드 안에 붙잡아 둔다. 실루엣은 잘려도 되지만 이건 안 된다. */
+  /** 경로의 점은 카드 안에 붙잡아 둔다. 실루엣은 잘려도 되지만 길은 안 된다. */
   const mark = (x: number, y: number): [number, number] => {
     const [px, py] = place(x, y);
     const clamp = (v: number) => Math.min(Math.max(v, 5), 95);
@@ -208,17 +220,22 @@ function thumbOf(geo: CourseGeo): Thumb {
 
   return {
     d: shapes.map((points) => `M${points.map(grid).join("L")}Z`).join(""),
-    from: mark(first.cx, first.cy),
-    to: mark(last.cx, last.cy),
+    route: geo.regions.map((r) => mark(r.cx, r.cy)),
   };
 }
 
 const files = (await readdir(GEO_DIR)).filter((f) => f.endsWith(".json"));
 
+const outlines = JSON.parse(
+  await readFile(join(here, "..", "data", "outlines.json"), "utf8"),
+) as Record<string, string>;
+
 const thumbs: Record<string, Thumb> = {};
 for (const file of files.sort()) {
   const geo = JSON.parse(await readFile(join(GEO_DIR, file), "utf8")) as CourseGeo;
-  thumbs[geo.id] = thumbOf(geo);
+  const outline = outlines[geo.id];
+  if (!outline) throw new Error(`${geo.id}의 외곽선이 없습니다 — npm run build:geo 먼저`);
+  thumbs[geo.id] = thumbOf(geo, outline);
 }
 
 await writeFile(OUT, `${JSON.stringify(thumbs)}\n`, "utf8");

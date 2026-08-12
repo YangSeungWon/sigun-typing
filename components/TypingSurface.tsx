@@ -5,8 +5,18 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 interface TypingSurfaceProps {
   /** 입력이 바뀔 때마다 호출 — IME 조합 중 문자열도 그대로 넘어온다 */
   onType: (value: string) => void;
-  /** 항목이 확정될 때마다 증가하는 값. 바뀌면 입력창을 비운다. */
-  advancedAt: number;
+  /**
+   * 엔진이 들고 있는 값. **이것이 정답이고 입력창은 그림자다.**
+   *
+   * 한때 "문제가 넘어갈 때 비운다"로 두었는데, 비울 계기를 하나씩 세는 방식은
+   * 반드시 어딘가 빠진다. 실제로 빠졌다 — 모르겠어요를 누르면 그 순간 문제가
+   * 넘어가므로, 그 **뒤에** 정답을 베껴 쓴 글자는 지울 계기가 없었다. 다음
+   * 문제에서 한 글자를 치면 `관악구ㄱ`이 통째로 들어왔다.
+   *
+   * 그래서 계기를 세지 않는다. 엔진이 비었다고 하는데 입력창에 글자가 남아
+   * 있으면, 그 글자는 이 판의 것이 아니므로 지운다.
+   */
+  value: string;
   /**
    * 항목과 무관하게 입력창을 비워야 하는 순간. 바뀌면 비운다.
    *
@@ -37,7 +47,7 @@ interface TypingSurfaceProps {
  */
 export function TypingSurface({
   onType,
-  advancedAt,
+  value,
   resetAt = 0,
   disabled,
   autoFocus = true,
@@ -56,10 +66,33 @@ export function TypingSurface({
   }, [disabled, autoFocus]);
 
   /*
-   * 항목이 넘어갈 때마다 입력창을 비운다.
+   * 엔진과 입력창을 맞춘다.
    *
-   * 오답을 냈을 때는 비우지 않는다 — 틀린 글자만 고칠 수 있도록 엔진이
-   * 입력을 그대로 들고 있고, 여기서 지우면 화면과 실제 입력창이 어긋난다.
+   * 엔진이 비었다고 할 때만 손댄다. 오답을 냈을 때는 엔진이 틀린 답을 그대로
+   * 들고 있으므로(틀린 글자만 고칠 수 있게) 여기서도 지우지 않는다.
+   *
+   * 조합 중에 값을 지우는 것이 이 게임에서 가장 깨지기 쉬운 지점이다. "수원"을
+   * 다 쳐서 정답이 확정되는 순간에도 IME는 아직 `원`을 조합 중이라, 값만
+   * 지우면 남아 있던 조합이 다음 지역명 앞에 다시 튀어나온다. 그래서 조합
+   * 중일 때만 blur/focus로 IME 버퍼를 확실히 끊는다.
+   */
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el || value !== "" || el.value === "") return;
+    el.value = "";
+    if (composingRef.current) {
+      composingRef.current = false;
+      el.blur();
+      el.focus();
+    }
+  }, [value]);
+
+  /*
+   * 출발선에서 한 번 더.
+   *
+   * 세는 동안 눌린 글자는 엔진이 받지 않으므로(아직 판이 아니다) 엔진 값은
+   * 내내 비어 있고, 위 규칙은 값이 **바뀔 때만** 돈다. 그래서 시작하는 순간을
+   * 따로 신호로 받는다.
    */
   useEffect(() => {
     const el = inputRef.current;
@@ -70,7 +103,7 @@ export function TypingSurface({
       el.blur();
       el.focus();
     }
-  }, [advancedAt, resetAt]);
+  }, [resetAt]);
 
   return (
     <div

@@ -168,7 +168,7 @@ export function MultiRace({
 
             <TypingSurface
               onType={type}
-              advancedAt={advancedAt}
+              value={state.input}
               // 세는 동안 눌린 글자는 이 경주의 것이 아니다. 출발선에서 비운다.
               resetAt={counting ? 0 : 1}
             >

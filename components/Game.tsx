@@ -799,7 +799,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               */}
               <TypingSurface
                 onType={type}
-                advancedAt={advancedAt}
+                // 엔진이 들고 있는 값. 정답을 베껴 쓰는 중이면 그쪽이다.
+                value={revealing ? state.revealInput : state.input}
                 // 세는 동안 눌린 글자는 이 판의 것이 아니다. 시작할 때 비운다.
                 resetAt={counting ? 0 : 1}
                 onFocusChange={onFocusChange}

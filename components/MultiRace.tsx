@@ -10,6 +10,7 @@ import type { RaceStart, RoomState } from "@/lib/multiplayer/types";
 import { KeyHint } from "./Keycap";
 import { Odometer } from "./Odometer";
 import { RegionMap } from "./RegionMap";
+import { CountdownPlate, useSecondsUntil } from "./CountdownPlate";
 import { SignPlate } from "./SignPlate";
 import { Standings } from "./Standings";
 import { SubmitScore } from "./SubmitScore";
@@ -54,11 +55,23 @@ export function MultiRace({
   const { state, current, score, advancedAt, rejectedAt, begin, type, submitAnswer, hint } =
     useGame(items, MODES.multi, room.seed);
 
+  /**
+   * 세는 중.
+   *
+   * 이 화면은 세는 동안에도 떠 있다. 대기실에 머물다가 출발 신호에 경주 화면이
+   * 붙는 구조였는데, 그러면 휴대폰에서 **출발과 동시에 자판이 없다** — 자판은
+   * 사람이 화면을 눌러야 올라오고, 그동안 남들은 달린다. 판을 미리 깔아 두면
+   * 세는 동안 한 번 누르는 것으로 준비가 끝난다.
+   */
+  const counting = room.status === "counting";
+  const seconds = useSecondsUntil(room.startsAt);
+
   // 서버가 출발을 알린 그 순간에 시작한다.
   useEffect(() => {
+    if (counting) return;
     beginGame();
     begin();
-  }, [begin]);
+  }, [counting, begin]);
 
   // 한 지역을 통과할 때마다 내 위치를 알린다. 매 타건마다 보낼 이유는 없다.
   useEffect(() => {
@@ -144,19 +157,29 @@ export function MultiRace({
             {geo && (
               <RegionMap
                 geo={geo}
-                currentCode={current.id}
+                // 세는 동안에는 아무 곳도 켜지 않는다. 미리 보여 주면 출발
+                // 신호가 오기 전에 생각할 시간을 공짜로 갖는 셈이다.
+                currentCode={counting ? undefined : current.id}
                 passedCodes={passedCodes}
                 variant="hint"
                 className="h-[24vh] max-h-80 min-h-32 w-auto sm:h-[32vh]"
               />
             )}
 
-            <TypingSurface onType={type} advancedAt={advancedAt}>
+            <TypingSurface
+              onType={type}
+              advancedAt={advancedAt}
+              // 세는 동안 눌린 글자는 이 경주의 것이 아니다. 출발선에서 비운다.
+              resetAt={counting ? 0 : 1}
+            >
               <div className="mx-auto flex w-full max-w-xl items-baseline justify-between pb-2 font-mono text-base text-dim">
                 <span className="tabular-nums">
                   {state.index + 1} / {state.items.length}
                 </span>
               </div>
+              {counting ? (
+                <CountdownPlate seconds={seconds} />
+              ) : (
               <SignPlate
                 target={current.answer}
                 typed={state.input}
@@ -172,6 +195,7 @@ export function MultiRace({
                 advancedAt={advancedAt}
                 onSubmit={submitAnswer}
               />
+              )}
             </TypingSurface>
 
             <p className="flex min-h-6 items-center justify-center text-sm text-dim">

@@ -27,6 +27,7 @@ import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
 import { formatClock, Odometer } from "./Odometer";
 import { KeyHint } from "./Keycap";
+import { CountdownPlate } from "./CountdownPlate";
 import { CourseComplete } from "./CourseComplete";
 import { MiniMap } from "./MiniMap";
 import { SoundToggle } from "./SoundToggle";
@@ -808,21 +809,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 onFocusChange={onFocusChange}
               >
                 {counting ? (
-                  /*
-                    세는 동안에도 판은 그대로 있다. 빈 화면에 숫자만 튀는 것보다
-                    어디에 무엇이 나올지 눈에 익히는 편이 낫다.
-                  */
-                  <div className="sign-face relative mx-auto flex w-full max-w-2xl items-center justify-center rounded-2xl px-4 py-6 shadow-[0_3px_0_0_var(--color-sign-deep)] sm:px-10 sm:py-8">
-                    <span className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
-                    <span
-                      // key로 매 초 요소를 다시 붙여 숫자마다 애니메이션이 새로 돈다.
-                      key={countdown}
-                      className="count-in relative font-mono text-6xl font-bold tabular-nums text-paint sm:text-7xl"
-                      aria-hidden="true"
-                    >
-                      {countdown}
-                    </span>
-                  </div>
+                  <CountdownPlate seconds={countdown} />
                 ) : (
                 <SignPlate
                   target={revealing ? revealing.answer : current.answer}
@@ -857,19 +844,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 )}
               </TypingSurface>
 
-              {counting ? (
-                /*
-                  세는 동안에는 아무 말도 하지 않는다.
-                  "손을 자판에 올려 두세요"는 숫자가 이미 하는 말을 한 번 더 하는
-                  것이었고, 자판이 없는 휴대폰에서는 아예 틀린 말이었다. 숫자
-                  셋이면 무엇이 일어날지 다 전해진다.
-
-                  화면을 못 보는 사람에게는 숫자가 그림이므로 여기서만 말로 옮긴다.
-                */
-                <p className="sr-only" role="status" aria-live="assertive">
-                  {countdown}초 뒤 시작
-                </p>
-              ) : (
+              {counting ? null : (
               <>
               {/*
                 모바일에는 Tab도 Esc도 없다. 키 안내만 두면 손가락으로 노는

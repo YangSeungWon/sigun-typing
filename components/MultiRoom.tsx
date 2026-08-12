@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { COURSES, getCourse } from "@/data/courses";
 import { useRoom } from "@/lib/multiplayer/useRoom";
@@ -206,8 +206,19 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
   const isHost = room.hostId === selfId;
   const me = room.players.find((p) => p.id === selfId);
 
-  // ── 경주 중 / 끝난 뒤 ─────────────────────────────────────────
-  if (room.status === "racing" || room.status === "finished") {
+  /*
+   * ── 세는 중 / 경주 중 / 끝난 뒤 ───────────────────────────────
+   *
+   * **세는 동안에도 경주 화면을 띄운다.** 대기실에 머물다가 출발 신호에 화면이
+   * 바뀌면 휴대폰에서는 그 순간 자판이 없다 — 자판은 사람이 화면을 눌러야
+   * 올라오는데, 그동안 남들은 이미 달린다. 판을 미리 깔아 두면 세는 3초 안에
+   * 한 번 누르는 것으로 준비가 끝난다.
+   */
+  if (
+    room.status === "counting" ||
+    room.status === "racing" ||
+    room.status === "finished"
+  ) {
     if (!course) return null;
     return (
       <div className="flex w-full max-w-xl flex-col gap-6">
@@ -230,11 +241,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     <div className="flex w-full max-w-md flex-col gap-6">
       <RoomHeader code={room.id} courseName={course?.name ?? room.courseId} />
 
-      {room.status === "counting" ? (
-        <Countdown startsAt={room.startsAt} />
-      ) : (
-        <InviteLink code={room.id} />
-      )}
+      <InviteLink code={room.id} />
 
       <Standings
         players={room.players}
@@ -345,31 +352,3 @@ function InviteLink({ code }: { code: string }) {
  * 남은 시간 표시. 실제 출발은 서버가 status를 racing으로 바꾸는 순간이고
  * 이 숫자는 보여 주기용이다 — 클라이언트 시계가 어긋나도 출발은 어긋나지 않는다.
  */
-function Countdown({ startsAt }: { startsAt: number | null }) {
-  const [left, setLeft] = useState(() =>
-    startsAt ? Math.max(0, Math.ceil((startsAt - Date.now()) / 1000)) : 0,
-  );
-
-  useEffect(() => {
-    if (!startsAt) return;
-    const id = setInterval(() => {
-      setLeft(Math.max(0, Math.ceil((startsAt - Date.now()) / 1000)));
-    }, 200);
-    return () => clearInterval(id);
-  }, [startsAt]);
-
-  return (
-    <div className="flex flex-col items-center gap-2 py-4">
-      <span
-        key={left}
-        className="count-in font-mono text-7xl font-semibold tabular-nums text-sign"
-        aria-hidden="true"
-      >
-        {left}
-      </span>
-      <p className="font-mono text-base text-dim" role="status" aria-live="assertive">
-        곧 출발합니다 — 손을 자판에 올려 두세요
-      </p>
-    </div>
-  );
-}

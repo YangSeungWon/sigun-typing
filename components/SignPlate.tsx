@@ -105,8 +105,20 @@ export function SignPlate({
   const lengthHidden = masked && !hinted && !revealed;
   /** 판면에 그릴 칸. 길이를 숨기는 동안에는 친 만큼만 있다. */
   const slots = lengthHidden ? typedChars : chars;
+  /**
+   * 커서가 놓이는 칸.
+   *
+   * **지금 쓰고 있는 칸**이지 다음에 찍힐 칸이 아니다. 한때 친 글자 수를 그대로
+   * 썼는데(`관` → 1 → 둘째 칸), 그러면 원고지에서 펜이 한 칸 앞에 떠 있는 꼴이
+   * 된다. 한글은 마지막 글자가 계속 변하므로(`ㄱ → 고 → 곡`) 손이 머무는 자리는
+   * 언제나 방금 친 그 칸이다.
+   *
+   * 아직 한 글자도 안 쳤으면 첫 칸을 가리킨다 — 여기서부터라는 뜻이다.
+   */
   const cursor = blind
-    ? Math.min(typedChars.length, slots.length)
+    ? // 넘겨 친 동안에는 여기서 켜지 않는다. 그 칸은 아래 extra가 맡는다 —
+      // 둘 다 켜면 밑줄이 두 개가 된다.
+      Math.max(0, typedChars.length - 1)
     : statuses.findIndex((s) => s === "untyped" || s === "pending");
   // 목표 길이를 넘겨 친 글자들. 보여 주지 않으면 몇 자를 지워야 할지 알 수 없다.
   // 길이를 숨기는 동안에는 "넘겼다"는 것 자체가 길이를 알려 주므로 없다.
@@ -433,7 +445,14 @@ export function SignPlate({
               >
                 {ch}
               </span>
-              <span className="mt-1 h-1 w-full rounded-full opacity-0" />
+              <span
+                className={`mt-1 h-1 w-full rounded-full transition-opacity ${
+                  // 넘겨 친 동안에도 펜은 마지막 칸 위에 있다.
+                  chars.length + i === typedChars.length - 1 && focused
+                    ? "bg-centerline opacity-100"
+                    : "opacity-0"
+                }`}
+              />
             </span>
           ))}
         </div>

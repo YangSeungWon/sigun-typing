@@ -5,7 +5,7 @@ interface CourseThumbProps {
   className?: string;
 }
 
-type Thumb = { d: string; route: number[][] };
+type Thumb = { d: string; borders: string; route: number[][] };
 
 /**
  * 코스 실루엣.
@@ -37,6 +37,36 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
         d={thumb.d}
         fill="var(--color-dim)"
         className="opacity-50 transition-opacity group-hover:opacity-70"
+      />
+
+      {/*
+        지역 경계.
+        실루엣을 하나로 합치면서 "여러 곳으로 나뉜다"는 감각을 잃었다. 그건
+        지도가 글자보다 빠르게 할 수 있는 말이라 되찾아 둔다 — 다만 늘 켜 두면
+        목록이 다시 얼기설기해지므로 손이 닿을 때만.
+
+        채우지 않고 선으로만 긋는다. 면을 겹쳐 칠할 때 생기던 실틈이 여기서는
+        생길 수 없다.
+      */}
+      <defs>
+        {/*
+          경계선을 실루엣 안쪽으로 잘라낸다. 경계는 실루엣보다 거칠게
+          줄여 놓았으므로, 자르지 않으면 바깥으로 삐져나가 가장자리에
+          후광처럼 남는다.
+        */}
+        <clipPath id={`thumb-${courseId}`}>
+          <path d={thumb.d} />
+        </clipPath>
+      </defs>
+      <path
+        d={thumb.borders}
+        clipPath={`url(#thumb-${courseId})`}
+        fill="none"
+        // 밝은 선은 면이 갈라진 것처럼 보인다. 지도책의 경계는 새겨진 선이다.
+        stroke="var(--color-ink)"
+        strokeWidth={0.5}
+        strokeLinejoin="round"
+        className="opacity-0 transition-opacity duration-300 group-hover:opacity-25 group-focus-visible:opacity-25"
       />
 
       {/*

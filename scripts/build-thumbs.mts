@@ -33,6 +33,15 @@ const OUT = join(here, "..", "data", "thumbs.json");
  * 어긋날 경계 자체가 없고, 같은 점 수로 훨씬 매끄럽다.
  */
 const POINTS_PER_SHAPE = 72;
+
+/**
+ * 경계선 하나에 남길 점의 수.
+ *
+ * 실루엣보다 적어도 되지만 너무 적으면 바깥 경계가 실루엣에서 벗어나
+ * 가장자리에 후광처럼 남는다. 어차피 실루엣으로 잘라내기는 하지만,
+ * 안쪽 경계도 이웃과 맞물려 보여야 구획으로 읽힌다.
+ */
+const POINTS_PER_BORDER = 16;
 /** 지도 넓이의 이 비율보다 작은 덩어리는 버린다. */
 const MIN_AREA_RATIO = 0.004;
 
@@ -63,6 +72,17 @@ interface CourseGeo {
 interface Thumb {
   /** 0~100 격자에 그린 실루엣 */
   d: string;
+  /**
+   * 지역 경계. 채우지 않고 선으로만 그린다.
+   *
+   * 실루엣을 하나로 합친 뒤 잃은 것이 하나 있다 — 이 코스가 **여러 곳으로
+   * 나뉜다**는 감각이다. 그건 지도가 할 수 있는 말이고 글자보다 빠르다.
+   * 다만 늘 켜 두면 목록이 다시 얼기설기해지므로, 손이 닿을 때만 떠오른다.
+   *
+   * 채우기가 아니라 선이므로 예전 같은 틈은 생기지 않는다. 틈은 서로 다른
+   * 면을 겹쳐 칠할 때 생기지, 선을 그을 때 생기지 않는다.
+   */
+  borders: string;
   /**
    * 코스가 지나는 길. 지역 순서대로 이은 꺾은선이다.
    *
@@ -218,8 +238,24 @@ function thumbOf(geo: CourseGeo, outline: string): Thumb {
     return [clamp(px), clamp(py)];
   };
 
+  /*
+   * 경계선. 지역마다 본체 하나씩만 그린다 — 이 크기에서 부속 섬의 경계는
+   * 점 몇 개로 뭉개져 얼룩으로 보인다.
+   */
+  const borders = geo.regions
+    .map((region) => {
+      const rings = subpaths(region.d).filter((points) => points.length >= 3);
+      if (rings.length === 0) return "";
+      const body = rings.reduce((a, b) => (area(a) >= area(b) ? a : b));
+      const step = Math.max(1, Math.floor(body.length / POINTS_PER_BORDER));
+      const kept = body.filter((_, i) => i % step === 0);
+      return kept.length >= 3 ? `M${kept.map(grid).join("L")}Z` : "";
+    })
+    .join("");
+
   return {
     d: shapes.map((points) => `M${points.map(grid).join("L")}Z`).join(""),
+    borders,
     route: geo.regions.map((r) => mark(r.cx, r.cy)),
   };
 }

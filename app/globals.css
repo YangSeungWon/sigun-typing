@@ -256,4 +256,25 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /*
+   * 움직임은 지우되 **정보는 지우지 않는다.**
+   *
+   * 위 규칙은 시간만 0으로 만든다. 그래서 "숨은 상태에서 출발하는" 연출은
+   * 숨은 채로 끝나 버리고, 움직임을 줄여 달라고 한 사람에게는 그 요소가
+   * 아예 없는 것이 된다 — 줄여 달라고 한 것은 움직임이지 내용이 아니다.
+   *
+   *   · 코스 카드의 여정선: 대시가 감긴 채 끝나 선이 통째로 사라졌다.
+   *     그어지는 과정 없이 처음부터 다 그어진 선으로 보여 준다.
+   *   · 카운트다운 숫자: 끝 상태가 opacity 0.15라 숫자가 거의 안 보였다.
+   *     또렷한 채로 세게 둔다.
+   */
+  .course-line {
+    stroke-dashoffset: 0;
+  }
+
+  .count-in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

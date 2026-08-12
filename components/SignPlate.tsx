@@ -26,9 +26,9 @@ interface SignPlateProps {
    * 가린 모드에서 로마자를 적으면 그게 곧 답이다.
    */
   roman?: string;
-  /** 퀴즈 모드처럼 정답을 가려야 할 때. 아직 안 친 글자를 ○로 덮는다. */
+  /** 퀴즈 모드처럼 정답을 가려야 할 때. 글자 자리는 빈 원고지 칸이 된다. */
   masked?: boolean;
-  /** 초성 힌트를 열었는지. 가려진 글자를 ○ 대신 초성으로 보여준다. */
+  /** 초성 힌트를 열었는지. 칸 위에 초성을 얹고, 그때 칸 수로 길이가 드러난다. */
   hinted?: boolean;
   /**
    * 오답을 언제 판정하는가. 모드 설정과 같은 값이다.
@@ -123,11 +123,27 @@ export function SignPlate({
   const rejecting = rejected && !revealed;
 
   /**
+   * 가린 모드의 글자 자리는 **원고지 네모칸**이다.
+   *
+   * 빈 자리를 ○로 채웠더니 두 가지가 걸렸다. 원을 글자만큼 키우면 초성보다
+   * 먼저 읽히고, 반대로 줄이면 글자가 들어오는 순간 칸이 넓어지면서 줄 전체가
+   * 밀린다 — 답을 떠올려 손을 움직이는 그 순간에 화면이 움직인다.
+   *
+   * 네모칸은 둘 다 아니다. 칸은 처음부터 글자 크기이므로 채워 넣어도 아무것도
+   * 움직이지 않고, 비어 있는 칸은 "여기에 한 글자"라는 말만 조용히 한다.
+   * 한글을 한 자씩 눌러 담는 자리라는 점에서 원고지는 이 게임의 그림이기도 하다.
+   *
+   * 이름이 이미 판에 적혀 있는 모드에는 칸을 그리지 않는다. 거기는 표지판이지
+   * 원고지가 아니다.
+   */
+  const boxed = masked && !revealed;
+
+  /**
    * 한 칸에 무엇을 그릴 것인가.
    *
    * 가린 모드에서는 **절대 목표 글자를 그리지 않는다.** 예전에는 글자가
    * pending이 되는 순간 목표를 그려서, 초성 하나만 맞혀도 답이 통째로
-   * 드러났다(`ㅅ` → `수`).
+   * 드러났다(`ㅅ` → `수`). 안 친 자리는 빈 칸으로 남는다.
    *
    * 오타 칸에도 목표 대신 실제로 친 글자를 그린다. 화면에 목표만 보이면
    * 내가 무엇을 쳤는지, 몇 자를 지워야 하는지 알 방법이 없다.
@@ -139,9 +155,9 @@ export function SignPlate({
   const slotContent = (i: number): string => {
     // 포기했으면 가리는 이유가 없다. 이제 알려 주려고 띄운 것이다.
     if (revealed) return chars[i];
-    // 초성은 아래 한 줄로 따로 보여 준다. 글자 자리에도 겹쳐 그리면 같은 것이
+    // 초성은 칸 위에 따로 보여 준다. 글자 자리에도 겹쳐 그리면 같은 것이
     // 두 번 보이고, 한 글자만 쳐도 그 자리의 초성이 사라진다.
-    if (masked) return typedChars[i] ?? "○";
+    if (masked) return typedChars[i] ?? "";
     if (blind) return typedChars[i] ?? chars[i];
     if (statuses[i] === "wrong" || statuses[i] === "pending")
       return typedChars[i] ?? chars[i];
@@ -179,14 +195,7 @@ export function SignPlate({
          * 가린 모드에서 그러면 판 너비가 곧 글자 수를 알려 준다 — 초성 힌트가
          * 5초를 받고 파는 정보를 공짜로 주는 셈이다.
          */
-        /*
-         * 이름 길이에 맞추는 판에서는 오른쪽에 제출 표시가 앉을 자리를
-         * 따로 비운다. 비우지 않으면 `서귀포시`처럼 긴 이름이 그 위로 올라탄다.
-         * 가린 판은 늘 최대 폭이라 그럴 일이 없다.
-         */
-        masked
-          ? "w-full max-w-2xl"
-          : "w-fit min-w-64 max-w-2xl pr-16 sm:min-w-80 sm:pr-28"
+        masked ? "w-full max-w-2xl" : "w-fit min-w-64 max-w-2xl sm:min-w-80"
       } ${focused ? "" : "opacity-70"}`}
     >
       {/*
@@ -249,7 +258,13 @@ export function SignPlate({
           </span>
       </button>
 
-      <div className="relative flex flex-col items-center gap-3">
+      {/*
+        양옆으로 제출 표시가 앉을 자리를 비운다.
+        비우지 않으면 좁은 화면에서 마지막 칸이 `제출 ↵` 위로 올라탄다.
+        한쪽만 비우면 글자가 왼쪽으로 밀리므로 양쪽을 같이 비운다 — 표지판의
+        여백은 대칭이어야 하고, 그래야 이름도 판 한가운데에 남는다.
+      */}
+      <div className="relative flex flex-col items-center gap-3 px-12 sm:px-24">
         {idle ? (
           /*
            * 안내 문구가 글자 줄보다 낮아서, 첫 타건에 판이 세로로 커지고
@@ -314,7 +329,19 @@ export function SignPlate({
                 </span>
               )}
               <span
+                // 원고지 칸임을 표시한다. 칸 수가 곧 "정답이 몇 글자인가"라,
+                // 답이 새지 않는지 검사가 이걸로 센다.
+                data-slot={boxed ? "" : undefined}
                 className={`${
+                  /*
+                   * 네모칸. 처음부터 글자 하나 크기라 채워 넣어도 줄이 밀리지
+                   * 않는다. 선은 판면에서 겨우 떠오를 만큼만 — 여기서 주장해야
+                   * 할 것은 칸이 아니라 그 위의 초성과 안에 들어갈 글자다.
+                   */
+                  boxed
+                    ? "flex size-[1.2em] items-center justify-center rounded-[0.08em] border border-paint/20 "
+                    : ""
+                }${
                   /*
                    * 공개된 정답은 노랑이다 — 맞힌 것처럼 하얗게 두면 방금
                    * 포기한 것과 구분이 안 된다. 다만 따라 친 글자는 하얗게
@@ -338,17 +365,8 @@ export function SignPlate({
                         : CHAR_TONE[statuses[i]]
                 } transition-colors duration-100`}
               >
-                {/*
-                  아직 안 친 자리는 작은 점으로 둔다.
-                  글자 크기 그대로 ○를 그렸더니 초성보다 원이 먼저 읽혀,
-                  힌트가 아니라 자릿수 입력칸처럼 보였다. 바깥 span의 글자
-                  크기는 그대로라 줄 높이는 변하지 않는다 — 자리만 지킨다.
-                */}
-                {masked && !revealed && typedChars[i] === undefined ? (
-                  <span className="text-[0.42em] text-paint/30">○</span>
-                ) : (
-                  slotContent(i)
-                )}
+                {/* 빈 칸에는 아무것도 그리지 않는다. 칸이 이미 자리를 말한다. */}
+                {boxed && typedChars[i] === undefined ? "" : slotContent(i)}
               </span>
               {/* 지금 칠 차례인 글자 아래에만 커서를 둔다 */}
               <span
@@ -366,9 +384,10 @@ export function SignPlate({
           {lengthHidden && (
             <span aria-hidden="true" className="relative flex flex-col items-center">
               {/* 높이만 빌린다. 폭은 커서 하나만큼이면 된다. */}
-              <span className="invisible w-0">가</span>
+              {/* 칸 하나 폭. 다음 글자가 앉을 자리와 정확히 겹쳐야 한다. */}
+              <span className="invisible w-[1.2em]">가</span>
               <span
-                className={`mt-1 h-1 w-3 rounded-full transition-opacity sm:w-4 ${
+                className={`mt-1 h-1 w-[1.2em] rounded-full transition-opacity ${
                   focused ? "bg-centerline opacity-100" : "opacity-0"
                 }`}
               />
@@ -378,7 +397,15 @@ export function SignPlate({
           {extra.map((ch, i) => (
             <span key={`extra-${i}`} className="relative flex flex-col items-center">
               {/* 길이를 넘겼다는 것도 정보다. 제출 전에는 알려 주지 않는다. */}
-              <span className={blind ? "text-paint" : "text-alert"}>{ch}</span>
+              <span
+                className={`${
+                  boxed
+                    ? "flex size-[1.2em] items-center justify-center rounded-[0.08em] border border-paint/20 "
+                    : ""
+                }${blind ? "text-paint" : "text-alert"}`}
+              >
+                {ch}
+              </span>
               <span className="mt-1 h-1 w-full rounded-full opacity-0" />
             </span>
           ))}

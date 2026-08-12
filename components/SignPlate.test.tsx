@@ -2,6 +2,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { SignPlate } from "./SignPlate";
 
+/** 원고지 칸 수. 가린 모드에서 이 수가 곧 "정답이 몇 글자인가"다. */
+const cells = (html: string) => (html.match(/data-slot=""/g) ?? []).length;
+
 const plate = (props: Partial<Parameters<typeof SignPlate>[0]> = {}) =>
   renderToStaticMarkup(
     <SignPlate target="수원" typed="" focused {...props} />,
@@ -26,13 +29,13 @@ describe("가린 모드에서 답이 새지 않는다", () => {
   it("치기 시작해도 글자 수는 여전히 숨긴다", () => {
     // 첫 타건이 힌트 요청처럼 작동하면 안 된다. 길이는 힌트를 연 사람만 본다.
     const html = plate({ masked: true, typed: "ㅅ" });
-    expect(html).not.toContain("○");
+    expect(cells(html), "친 만큼만 칸이 있어야 한다").toBe(1);
     expect(html).not.toContain("지역명을 입력하세요");
   });
 
   it("힌트를 열어야 글자 수가 드러난다", () => {
     const html = plate({ masked: true, typed: "ㅅ", hinted: true });
-    expect(html).toContain("○");
+    expect(cells(html)).toBe(2);
   });
 
   it("초성만 쳐도 목표 글자가 드러나지 않는다", () => {
@@ -45,6 +48,11 @@ describe("가린 모드에서 답이 새지 않는다", () => {
     const html = plate({ masked: true, typed: "수" });
     expect(html).toContain("수");
     expect(html, "다음 글자는 여전히 가려져야 한다").not.toContain("원");
+  });
+
+  it("이름이 적혀 있는 모드에는 원고지 칸을 그리지 않는다", () => {
+    // 거기는 표지판이지 원고지가 아니다.
+    expect(cells(plate({ typed: "수" }))).toBe(0);
   });
 
   it("다 맞히면 그때 전부 보인다", () => {

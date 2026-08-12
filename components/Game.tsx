@@ -121,7 +121,15 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   const [challenge] = useState(() => readChallenge());
 
   const startRun = useCallback(() => {
-    setCountdown(3);
+    /*
+     * 연습 판은 세지 않는다.
+     *
+     * 세는 이유는 기록 때문이다 — 출발을 누른 손이 홈 포지션으로 돌아갈 시간을
+     * 주지 않으면 첫 지역에서만 타수가 유독 낮게 찍히고, 그 판이 남의 기록과
+     * 나란히 놓인다. 오답 연습은 순위에도 개인 기록에도 남지 않으므로 셀 이유가
+     * 없고, 틀린 곳을 한 번 더 보러 온 사람에게 3초는 그냥 기다림이다.
+     */
+    setCountdown(practice ? null : 3);
     // 이 판의 모든 이벤트가 하나의 gameId로 묶인다.
     // 오답 연습(practice)은 개인화된 문제 집합이라 퍼널에서 제외한다.
     primeSound();
@@ -134,8 +142,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
       source: entrySource(),
     });
     // 연습 판은 랭킹에 올리지 않으므로 토큰을 받을 이유가 없다.
-    if (!practice) requestToken(course.id, mode, seed).then(setToken);
-  }, [course.id, course.regions.length, mode, seed, practice]);
+    if (practice) begin();
+    else requestToken(course.id, mode, seed).then(setToken);
+  }, [course.id, course.regions.length, mode, seed, practice, begin]);
 
   /*
    * 화면에 들어오면 알아서 센다.
@@ -355,6 +364,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
    * 붙이면 어차피 모든 코스가 당기는 쪽이 된다.
    */
   const showMiniMap = !!geo;
+
+  /** 세는 중. 판은 이미 깔려 있지만 시계는 아직 돌지 않는다. */
+  const counting = countdown !== null;
 
   const revealing =
     state.status === "revealing" && state.revealed
@@ -674,67 +686,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
             ? "justify-center"
             : "justify-start"
         }`}>
-        {countdown !== null ? (
-          <>
-            {/*
-              세는 동안에도 판은 그대로 있다. 빈 화면에 숫자만 튀는 것보다
-              어디에 무엇이 나올지 눈에 익히는 편이 낫다.
-
-              지도에는 아무 곳도 켜지 않는다. 미리 보여 주면 시계가 돌기 전에
-              생각할 시간을 공짜로 주는 셈이라 기록이 흔들린다.
-            */}
-            {geo && (
-              <div className="play-map relative w-full max-w-2xl overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
-                <RegionMap
-                  geo={geo}
-                  variant="route"
-                  className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto sm:h-[44vh]"
-                />
-
-                {/*
-                  도전장을 받고 온 사람은 무엇을 깨러 왔는지 봐야 한다.
-                  예전에는 출발 화면에 있었는데 그 화면이 없어졌다.
-
-                  지도 위에 겹쳐 둔다 — 자리를 차지하면 시작하는 순간 그 높이만큼
-                  아래가 밀리고, 하필 첫 문제가 뜨는 순간이다.
-                */}
-                {hydrated && challenge && (
-                  <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
-                    <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint/90 px-4 py-2">
-                      <span className="font-mono text-xs tracking-[0.18em] text-sign uppercase">
-                        도전
-                      </span>
-                      <span className="font-mono text-lg font-semibold tabular-nums">
-                        {formatChallengeTime(challenge.beatMs)}
-                      </span>
-                      {challenge.by && (
-                        <span className="text-sm text-dim">{challenge.by}</span>
-                      )}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="play-input flex w-full flex-col items-center gap-2 sm:gap-3">
-              <div className="sign-face relative mx-auto flex w-full max-w-2xl items-center justify-center rounded-2xl px-4 py-6 shadow-[0_3px_0_0_var(--color-sign-deep)] sm:px-10 sm:py-8">
-                <span className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
-                <span
-                  // key로 매 초 요소를 다시 붙여 숫자마다 애니메이션이 새로 돈다.
-                  key={countdown}
-                  className="count-in relative font-mono text-6xl font-bold tabular-nums text-paint sm:text-7xl"
-                  aria-hidden="true"
-                >
-                  {countdown}
-                </span>
-              </div>
-              <p className="font-mono text-xs text-dim/80" role="status" aria-live="assertive">
-                {countdown}초 뒤 시작 — 손을 자판에 올려 두세요
-              </p>
-            </div>
-          </>
-        ) : state.status === "ready" ? (
+        {state.status === "ready" && countdown === null ? (
           <div className="flex flex-col items-center gap-6 text-center">
+            {/* 이 화면은 순간이다 — 판이 준비되면 곧바로 세기 시작한다. */}
             {/*
               도전장을 받고 온 사람에게 코스 소개부터 읽히면 안 된다.
               무엇을 깨러 왔는지가 먼저다.
@@ -776,15 +730,41 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 <div className="play-map relative w-full max-w-2xl overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
                 <RegionMap
                   geo={geo}
-                  currentCode={revealing ? revealing.id : current.id}
+                  /*
+                   * 세는 동안에는 아무 곳도 켜지 않고 당기지도 않는다. 미리
+                   * 보여 주면 시계가 돌기 전에 생각할 시간을 공짜로 주는 셈이다.
+                   * 시작하는 순간 카메라가 첫 지역으로 들어간다.
+                   */
+                  currentCode={counting ? undefined : revealing ? revealing.id : current.id}
                   passedCodes={passedCodes}
                   missedCodes={missedCodes}
-                  focus
+                  focus={!counting}
                   variant={config.reveal ? "route" : "hint"}
                   // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
                   // 접혀 주행 중에 스크롤해야 한다.
                   className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto sm:h-[44vh]"
                 />
+
+                {/*
+                  도전장을 받고 온 사람은 무엇을 깨러 왔는지 봐야 한다.
+                  지도 위에 겹쳐 둔다 — 자리를 차지하면 시작하는 순간 그 높이만큼
+                  아래가 밀리고, 하필 첫 문제가 뜨는 순간이다.
+                */}
+                {counting && hydrated && challenge && (
+                  <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
+                    <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint/90 px-4 py-2">
+                      <span className="font-mono text-xs tracking-[0.18em] text-sign uppercase">
+                        도전
+                      </span>
+                      <span className="font-mono text-lg font-semibold tabular-nums">
+                        {formatChallengeTime(challenge.beatMs)}
+                      </span>
+                      {challenge.by && (
+                        <span className="text-sm text-dim">{challenge.by}</span>
+                      )}
+                    </span>
+                  </div>
+                )}
                 </div>
               )}
 
@@ -794,11 +774,37 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               */}
               {/* 가로로 누우면 이 덩어리가 지도 오른쪽으로 간다. */}
               <div className="play-input flex w-full flex-col items-center gap-2 sm:gap-3">
+              {/*
+                입력창은 세는 동안에도 **같은 것 하나**다.
+                예전에는 카운트다운 화면과 판 화면이 서로 다른 덩어리라, 시작하는
+                순간 입력창이 떨어졌다 다시 붙었다. 휴대폰에서는 그 순간 자판이
+                내려간다 — 그리고 자판은 사람이 화면을 눌러야만 다시 올라온다.
+                시계는 이미 돌고 있는데.
+              */}
               <TypingSurface
                 onType={type}
                 advancedAt={advancedAt}
+                // 세는 동안 눌린 글자는 이 판의 것이 아니다. 시작할 때 비운다.
+                resetAt={counting ? 0 : 1}
                 onFocusChange={onFocusChange}
               >
+                {counting ? (
+                  /*
+                    세는 동안에도 판은 그대로 있다. 빈 화면에 숫자만 튀는 것보다
+                    어디에 무엇이 나올지 눈에 익히는 편이 낫다.
+                  */
+                  <div className="sign-face relative mx-auto flex w-full max-w-2xl items-center justify-center rounded-2xl px-4 py-6 shadow-[0_3px_0_0_var(--color-sign-deep)] sm:px-10 sm:py-8">
+                    <span className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
+                    <span
+                      // key로 매 초 요소를 다시 붙여 숫자마다 애니메이션이 새로 돈다.
+                      key={countdown}
+                      className="count-in relative font-mono text-6xl font-bold tabular-nums text-paint sm:text-7xl"
+                      aria-hidden="true"
+                    >
+                      {countdown}
+                    </span>
+                  </div>
+                ) : (
                 <SignPlate
                   target={revealing ? revealing.answer : current.answer}
                   typed={revealing ? state.revealInput : state.input}
@@ -829,8 +835,23 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                   // 판면의 제출 표시를 눌러도 같은 길로 간다.
                   onSubmit={submitAnswer}
                 />
+                )}
               </TypingSurface>
 
+              {counting ? (
+                /*
+                  세는 동안에는 아무 말도 하지 않는다.
+                  "손을 자판에 올려 두세요"는 숫자가 이미 하는 말을 한 번 더 하는
+                  것이었고, 자판이 없는 휴대폰에서는 아예 틀린 말이었다. 숫자
+                  셋이면 무엇이 일어날지 다 전해진다.
+
+                  화면을 못 보는 사람에게는 숫자가 그림이므로 여기서만 말로 옮긴다.
+                */
+                <p className="sr-only" role="status" aria-live="assertive">
+                  {countdown}초 뒤 시작
+                </p>
+              ) : (
+              <>
               {/*
                 모바일에는 Tab도 Esc도 없다. 키 안내만 두면 손가락으로 노는
                 사람은 힌트도 포기도 쓸 수 없어, 한 곳을 모르는 순간 막다른
@@ -915,6 +936,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 )}
               </p>
 
+              </>
+              )}
+
               {/*
                 타수와 정확도는 플레이 중 판단에 쓰이지 않는다. 좁은 화면에서는
                 그 자리를 지도에 준다.
@@ -934,7 +958,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               */}
               </div>
 
-              {config.timeLimitMs !== undefined && (
+              {config.timeLimitMs !== undefined && !counting && (
                 <div className="hidden w-full sm:block">
                   <Odometer
                     cpm={score.cpm}

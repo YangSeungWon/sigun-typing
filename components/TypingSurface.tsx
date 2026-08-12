@@ -7,6 +7,14 @@ interface TypingSurfaceProps {
   onType: (value: string) => void;
   /** 항목이 확정될 때마다 증가하는 값. 바뀌면 입력창을 비운다. */
   advancedAt: number;
+  /**
+   * 항목과 무관하게 입력창을 비워야 하는 순간. 바뀌면 비운다.
+   *
+   * 카운트다운이 도는 동안에도 이 입력창은 살아 있다(휴대폰에서 자판을 미리
+   * 올려 두기 위해서다). 그때 눌린 글자는 이 판의 것이 아니므로 출발선에서
+   * 한 번 비운다.
+   */
+  resetAt?: number;
   disabled?: boolean;
   /**
    * 뜨자마자 입력창을 잡을지.
@@ -30,6 +38,7 @@ interface TypingSurfaceProps {
 export function TypingSurface({
   onType,
   advancedAt,
+  resetAt = 0,
   disabled,
   autoFocus = true,
   onFocusChange,
@@ -61,7 +70,7 @@ export function TypingSurface({
       el.blur();
       el.focus();
     }
-  }, [advancedAt]);
+  }, [advancedAt, resetAt]);
 
   return (
     <div

@@ -74,16 +74,21 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
         </Link>
         {/*
           판은 둘뿐이다 — 진짜 하는 것과 연습.
-          초록 판이 본편이고, 그 아래 얇은 테두리 하나가 연습이다. 한때 여기에
-          타임어택·실력 테스트까지 넷이 늘어서 있었는데, 셋 다 같은 게임에
-          스위치 하나씩만 다른 것이라 고르는 사람만 고단했다.
+
+          그래서 **같은 폭으로 쌓는다.** 큰 판 아래 작은 칩 하나가 붙어 있으면
+          빼먹은 것처럼 보인다. 폭이 같으면 여기가 "둘 중 하나 고르는 자리"라는
+          것이 모양만으로 읽히고, 연습이 부가 옵션이 아니라 다른 하나의 길이 된다.
+          무게는 색과 굵기로만 가른다 — 채운 초록이 본편, 테두리만 있는 것이 연습.
+
+          옆에 옅게 붙는 한 줄은 이름이 말하지 않는 것을 말한다. `이름 보고
+          익히기`가 무엇인지는 이름에 있지만, **답을 보고 친다**는 사실은 없다.
         */}
         <Link
           href={`/play/learn/${course.id}?from=course_select`}
-          title={MODE_SUMMARY.learn}
-          className="mx-auto inline-block rounded-lg border border-concrete-deep px-4 py-2 font-mono text-sm text-ink/85 transition-colors hover:bg-concrete-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="mx-auto flex w-full max-w-md items-baseline justify-center gap-2 rounded-xl border border-concrete-deep px-6 py-3 text-center text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           {MODE_LABELS.learn}
+          <span className="text-sm text-dim">{MODE_SUMMARY.learn}</span>
         </Link>
         <CourseMistakes courseId={course.id} />
       </div>

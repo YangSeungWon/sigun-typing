@@ -61,6 +61,9 @@ server {
     # nginx는 접두사 location 중 **가장 긴 것**을 고른다. 파일에서의 순서는
     # 상관없다(순서가 중요한 건 정규식 location이다). 그래서 /socket.io/ 가
     # 언제나 / 보다 먼저 잡힌다.
+    #
+    # 이미 쓰던 프록시가 있다면 아래 두 줄(Upgrade·Connection)이 그쪽 공통
+    # 스니펫에 들어 있는지 먼저 보라. 아래 "웹소켓이 400으로 끊길 때" 참고.
     location /socket.io/ {
         proxy_pass http://127.0.0.1:18731;
         proxy_http_version 1.1;
@@ -95,6 +98,42 @@ server {
     }
 }
 ```
+
+### 웹소켓이 400으로 끊길 때
+
+폴링은 되는데 웹소켓만 `400 Invalid Upgrade header`로 끊긴다면, 십중팔구
+**같은 헤더를 두 번 보내고 있다.**
+
+```
+Upgrade: websocket, websocket
+```
+
+nginx는 `proxy_set_header`를 같은 이름으로 두 번 적으면 합치지 않고 두 번
+보낸다. 이미 쓰던 서버에 붙일 때 흔하다 — 공통 스니펫이 이미 업그레이드
+헤더를 넣고 있는데 위 블록을 그대로 복사해 붙이면 그렇게 된다.
+
+```nginx
+location /socket.io/ {
+    proxy_pass http://127.0.0.1:18731;
+    include /etc/nginx/snippets/proxy-common.conf;   # 여기서 이미 넣는다면
+    proxy_set_header Upgrade $http_upgrade;          # ← 이 두 줄은 빼야 한다
+    proxy_set_header Connection $connection_upgrade; # ←
+}
+```
+
+확인은 이렇게 한다.
+
+```bash
+curl -i --http1.1 -H "Connection: Upgrade" -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
+  "https://sigun-typing.ysw.kr/socket.io/?EIO=4&transport=websocket"
+```
+
+`101 Switching Protocols`가 나와야 한다. 소켓 포트로 직접 쏘면 101인데 도메인으로
+쏠 때만 400이면 프록시 쪽 문제다.
+
+브라우저에서는 `방 만들기` 버튼이 계속 비활성인 것으로 드러난다 — 연결되지
+않으면 누를 수 없게 되어 있다.
 
 ### Caddy
 
@@ -176,7 +215,11 @@ curl -sS "https://sigun-typing.ysw.kr/socket.io/?EIO=4&transport=polling" | head
 - `SCORE_SECRET`은 **web과 socket이 같은 값**이어야 한다. 소켓 서버가 발급한
   토큰을 web이 검증하기 때문이다. 다르면 멀티플레이 기록이 전부 `bad_token`으로
   거부된다.
-- `APP_ORIGIN`은 실제 서비스 주소와 정확히 같아야 한다.
+- `APP_ORIGIN`은 실제 서비스 주소와 정확히 같아야 한다. **비워 두면 안 된다** —
+  compose 기본값(`http://localhost:18730`)이 들어가고, 소켓 서버가 브라우저의
+  출처(`https://…`)를 거부해 멀티가 통째로 붙지 않는다. 증상은 아래
+  "웹소켓이 400으로 끊길 때"와 같아 보이지만 원인이 다르다: 이쪽은
+  `docker compose exec socket printenv APP_ORIGIN`으로 바로 확인된다.
 - `NEXT_PUBLIC_SOCKET_URL`은 **비워 둔다.** 비어 있으면 브라우저가 현재 오리진으로
   붙는다. 여기에 도메인을 넣으면 그 값이 빌드 시점에 번들에 박혀서, 도메인을
   바꿀 때마다 이미지를 다시 빌드해야 한다.

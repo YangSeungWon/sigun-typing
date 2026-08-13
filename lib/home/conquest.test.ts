@@ -4,9 +4,9 @@ import type { CourseMastery } from "../score/mastery";
 import type { CourseSummary, SidoSummary } from "./summary";
 
 const COURSES: CourseSummary[] = [
-  { id: "sido", name: "전국 17 시도", version: 1, total: 17, sido: "11" },
-  { id: "seoul", name: "서울 25개 구", version: 2, total: 25, sido: "11" },
-  { id: "jeju", name: "제주 2 행정시", version: 1, total: 2, sido: "50" },
+  { id: "sido", name: "전국 17 시도", shortName: "전국", version: 1, total: 17, sido: "11" },
+  { id: "seoul", name: "서울 25개 구", shortName: "서울", version: 2, total: 25, sido: "11" },
+  { id: "jeju", name: "제주 2 행정시", shortName: "제주", version: 1, total: 2, sido: "50" },
 ];
 
 const SIDO: SidoSummary[] = [

@@ -13,7 +13,9 @@ describe("첫 화면 씨앗", () => {
   it("지역 배열을 들고 가지 않는다", () => {
     // 클라이언트로 내려가는 값이다. 245개 지역 객체가 따라오면 안 된다.
     for (const c of seed.courses) {
-      expect(Object.keys(c).sort()).toEqual(["id", "name", "sido", "total", "version"]);
+      expect(Object.keys(c).sort()).toEqual([
+        "id", "name", "shortName", "sido", "total", "version",
+      ]);
     }
   });
 
@@ -45,6 +47,27 @@ describe("첫 화면 씨앗", () => {
   it("시도별 지역 수를 다 더하면 228이다", () => {
     // 245 - 17(전국 코스). 어느 시군 코스도 빠지지 않았다는 뜻이다.
     expect(seed.sido.reduce((sum, s) => sum + s.total, 0)).toBe(228);
+  });
+
+  it("짧은 이름은 그 시도의 이름이다", () => {
+    // 코스마다 손으로 적어 두지 않는다 — 시도 이름이 이미 데이터에 있다.
+    const short = new Map(seed.courses.map((c) => [c.id, c.shortName]));
+    expect(short.get("busan")).toBe("부산");
+    expect(short.get("gyeonggi")).toBe("경기");
+    expect(short.get("jeonnam")).toBe("전남");
+    // 전국 코스만 자기 시도가 없다.
+    expect(short.get("sido")).toBe("전국");
+  });
+
+  it("짧은 이름에는 개수가 들어가지 않는다", () => {
+    /*
+     * 이 필드가 있는 이유다. 정식 이름(`경기도 31 시군`) 옆에 진행도를 적으면
+     * 한 줄에 같은 숫자가 두 번 나오고, 버튼에 넣기에도 길다.
+     */
+    for (const c of seed.courses) {
+      expect(c.shortName, c.id).not.toMatch(/\d/);
+      expect(c.shortName.length, c.id).toBeLessThanOrEqual(3);
+    }
   });
 
   it("오늘의 도전은 실재하는 코스다", () => {

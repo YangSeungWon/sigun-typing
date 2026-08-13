@@ -17,6 +17,14 @@ import { kstDateKey, pickDailyCourse } from "./today";
 export interface CourseSummary {
   id: string;
   name: string;
+  /**
+   * 버튼과 한 줄 상태에 쓰는 짧은 이름. `부산 16개 구·군` → `부산`.
+   *
+   * 정식 이름에는 개수가 들어 있어서(`경기도 31 시군`) 그 옆에 진행도를 적으면
+   * 한 줄에 31이 두 번 나온다. 버튼에 넣기에도 길다 — `부산 이어하기`는
+   * 읽는 데 반 초지만 `부산 16개 구·군 이어하기`는 아니다.
+   */
+  shortName: string;
   version: number;
   /** 이 코스에 든 지역 수 */
   total: number;
@@ -59,13 +67,22 @@ export interface HomeSeed {
   today: TodaySummary;
 }
 
+/** 시도 코드 → 시도 이름. `11` → `서울` */
+const SIDO_NAME = new Map(sidoCourse.regions.map((r) => [r.code, r.name]));
+
 function summarize(course: (typeof COURSES)[number]): CourseSummary {
+  const sido = course.regions[0].code.slice(0, 2);
   return {
     id: course.id,
     name: course.name,
+    /*
+     * 시군 코스의 짧은 이름은 그 시도의 이름이다 — 이미 데이터에 있으므로
+     * 코스마다 손으로 적어 두지 않는다. 전국 코스만 자기 시도가 없다.
+     */
+    shortName: course.id === sidoCourse.id ? "전국" : (SIDO_NAME.get(sido) ?? course.name),
     version: course.version,
     total: course.regions.length,
-    sido: course.regions[0].code.slice(0, 2),
+    sido,
   };
 }
 

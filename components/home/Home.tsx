@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import { formatClock } from "@/components/Odometer";
 import { NationalMap } from "./NationalMap";
@@ -31,12 +31,69 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
   const data = useHomeData(seed);
   const router = useRouter();
 
-  const progress = useMemo(
-    () => new Map(data.sidoProgress.map((s) => [s.code, s])),
-    [data.sidoProgress],
+  /**
+   * 지도에서 고른 시도. 아무것도 안 고르면 null이고, 그때는 이어하기가 뜬다.
+   *
+   * 지도가 색만 칠해진 그림이던 동안에는 비어 있는 곳이 눈에 띄어도 거기서 할
+   * 수 있는 일이 없었다 — 목록으로 가서 이름으로 다시 찾아야 했다. 눈에 띈
+   * 자리에서 바로 시작할 수 있어야 지도가 첫 화면의 절반을 차지할 값을 한다.
+   */
+  const [picked, setPicked] = useState<string | null>(null);
+
+  const byId = useMemo(
+    () => new Map(seed.courses.map((c) => [c.id, c])),
+    [seed.courses],
   );
 
-  const remaining = data.resume.total - (data.resume.known ?? 0);
+  /** 지도 한 조각이 알아야 하는 것들. 진행도는 해 본 시도에만 있다. */
+  const mapRegions = useMemo(() => {
+    const known = new Map(data.sidoProgress.map((s) => [s.code, s]));
+    return new Map(
+      seed.sido.map((s) => {
+        const course = s.courseId ? byId.get(s.courseId) : undefined;
+        const hit = known.get(s.code);
+        return [
+          s.code,
+          {
+            code: s.code,
+            name: s.name,
+            courseId: s.courseId,
+            courseName: course?.name,
+            known: hit?.known ?? 0,
+            total: s.total,
+            percent: hit?.percent ?? 0,
+          },
+        ];
+      }),
+    );
+  }, [seed.sido, byId, data.sidoProgress]);
+
+  /**
+   * 지금 버튼이 가리키는 코스.
+   *
+   * 고른 것이 있으면 그것이 이긴다 — 방금 지도를 누른 사람의 뜻이 지난번에
+   * 하던 코스보다 최근이다.
+   */
+  const pickedRegion = picked ? mapRegions.get(picked) : undefined;
+  const pickedCourse = pickedRegion?.courseId ? byId.get(pickedRegion.courseId) : undefined;
+
+  const target = pickedCourse
+    ? {
+        courseId: pickedCourse.id,
+        shortName: pickedCourse.shortName,
+        known: pickedRegion!.known,
+        total: pickedCourse.total,
+      }
+    : {
+        courseId: data.resume.courseId,
+        shortName: byId.get(data.resume.courseId)?.shortName ?? "",
+        known: data.resume.known ?? 0,
+        total: data.resume.total,
+      };
+
+  /** 처음 여는 코스면 `시작`, 하다 만 코스면 `이어하기`. */
+  const verb = target.known > 0 && target.known < target.total ? "이어하기" : "시작";
+
   const hasConfusion = data.confusion !== null;
   const hasConquest = data.sidoProgress.length > 0;
 
@@ -74,8 +131,15 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
             <span className="text-dim"> / {data.conquest.total}</span>
           </span>
         </h1>
+        {/*
+          `전국`을 붙인다.
+
+          바로 아래 줄이 코스 하나의 진행(`부산 · 1 / 16`)이라 두 숫자가 세로로
+          붙어 있는데, 위가 무엇의 분모인지 말해 주지 않으면 `1 / 245`가
+          부산에서 1곳 맞혔다는 뜻으로도 읽힌다. 한 단어로 갈린다.
+        */}
         <p className="font-mono text-lg text-sign" aria-hidden>
-          정복도 {data.conquest.percent}%
+          전국 정복도 {data.conquest.percent}%
         </p>
 
         {/*
@@ -98,7 +162,12 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       <div className="home-map-slot flex items-center justify-center">
         {geo && (
           <div className="w-full max-w-sm md:max-w-md">
-            <NationalMap geo={geo} progress={progress} />
+            <NationalMap
+              geo={geo}
+              regions={mapRegions}
+              selectedCode={picked}
+              onSelect={setPicked}
+            />
           </div>
         )}
       </div>
@@ -113,20 +182,24 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           그리고 이어하기 버튼 옆에서 궁금한 것은 얼마나 왔나가 아니라 얼마나
           남았나다.
         */}
-        <p className="flex h-6 items-center font-mono text-sm text-dim">
-          {data.resume.kind === "resume" && remaining > 0 && (
+        <p className="flex h-6 items-center font-mono text-sm text-dim tabular-nums">
+          {target.shortName && (
             <span>
-              {data.resume.courseName} · {remaining}곳 남음
+              {target.shortName} · {target.known} / {target.total}
             </span>
           )}
         </p>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {/*
+            버튼이 어디로 가는지 스스로 말한다. `이어하기`만 적혀 있으면 지도에서
+            방금 고른 곳으로 가는지 지난번 코스로 가는지 눌러 봐야 안다.
+          */}
           <Link
-            href={`/play/map/${data.resume.courseId}?from=home_hero`}
+            href={`/play/map/${target.courseId}?from=home_hero`}
             className="rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:px-10"
           >
-            {data.resume.kind === "start" ? "시작" : "이어하기"}
+            {target.shortName} {verb}
           </Link>
 
           {/*

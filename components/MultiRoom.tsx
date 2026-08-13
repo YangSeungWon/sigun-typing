@@ -137,6 +137,12 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
   if (!room) {
     return (
       <div className="flex w-full max-w-md flex-col gap-8">
+        {/*
+          제목이 없었다. 다른 화면은 다 갖고 있고, 탭 바로 들어온 사람에게는
+          여기가 어디인지 말해 주는 것이 이 한 줄뿐이다.
+        */}
+        <h1 className="text-3xl font-bold tracking-tight">친구와 대결</h1>
+
         <section className="flex flex-col gap-3">
           <label htmlFor="nickname" className="text-sm font-medium text-dim">
             이름
@@ -176,26 +182,31 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
 
         {tab === "create" ? (
         <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-6">
-          <h2 className="text-sm font-medium text-dim">
-            어느 코스로 겨룰까요
-          </h2>
-          <div className="flex flex-wrap gap-2">
+          <label htmlFor="course" className="text-sm font-medium text-dim">
+            코스
+          </label>
+          {/*
+            칩 열일곱 개였다. 코스를 고르는 것이 이 화면의 전부일 때는 그게
+            맞았는데, 위에 이름 칸과 갈래 버튼이 생기면서 칩들이 열한 줄을
+            차지하고 **정작 `대결방 만들기` 버튼을 화면 밖으로 밀어냈다.**
+            휴대폰에서는 아래 탭 바 뒤에 숨어서 아예 보이지 않았다.
+
+            골라야 하는 것이 열일곱 중 하나뿐이므로 목록으로 충분하다. 브라우저
+            기본 select를 쓰는 이유: 휴대폰에서 운영체제 선택기가 뜨는 것이
+            직접 만든 어떤 것보다 낫고, 키보드와 스크린리더도 공짜로 따라온다.
+          */}
+          <select
+            id="course"
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value)}
+            className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
             {COURSES.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setCourseId(c.id)}
-                aria-pressed={c.id === courseId}
-                className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                  c.id === courseId
-                    ? "bg-sign text-on-sign"
-                    : "border border-concrete-deep text-ink hover:bg-concrete-deep"
-                }`}
-              >
+              <option key={c.id} value={c.id}>
                 {c.name}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
           <button
             type="button"
             onClick={doCreate}

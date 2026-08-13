@@ -182,7 +182,7 @@ export function setInput(state: GameState, text: string, now: number): GameState
     if (/\s/.test(text)) {
       const typed = text.replace(/\s+/g, "");
       return typed === state.revealed.answer
-        ? settleReveal(state)
+        ? settleReveal(state, now)
         : { ...state, revealInput: typed };
     }
     return { ...state, revealInput: text };
@@ -267,7 +267,9 @@ export function setInput(state: GameState, text: string, now: number): GameState
 export function submit(state: GameState, now: number): GameState {
   // 정답을 베껴 쓰는 중이라면, 다 썼을 때만 넘어간다.
   if (state.status === "revealing" && state.revealed) {
-    return state.revealInput.trim() === state.revealed.answer ? settleReveal(state) : state;
+    return state.revealInput.trim() === state.revealed.answer
+      ? settleReveal(state, now)
+      : state;
   }
   if (state.status !== "playing") return state;
 
@@ -336,20 +338,19 @@ export function giveUp(state: GameState, now: number): GameState {
    * 게다가 마지막 하나만 다르게 굴면 놀란다. 모르겠다고 눌렀는데 답을 보기도
    * 전에 판이 끝나 있다.
    *
-   * 시계는 여기서 이미 멈춰 있다(commitItem이 끝을 기록했다). 답을 베껴 쓰는
-   * 동안 기록이 늘지 않는다.
+   * 시계는 계속 간다. 마지막 항목이면 commitItem이 끝을 찍어 두는데, 그것을
+   * 도로 지운다 — 다른 문제에서 베껴 쓰는 시간은 전부 기록에 들어가므로
+   * 마지막만 공짜면 앞뒤가 안 맞는다. 끝은 정답을 다 쓰고 빠져나갈 때 찍힌다.
    */
-  return { ...next, status: "revealing", revealed: { answer } };
+  return { ...next, status: "revealing", revealed: { answer }, endedAt: null };
 }
 
 /** 정답을 다 썼으니 넘어간다. 이 호출 전까지는 그대로 머문다. */
-export function settleReveal(state: GameState): GameState {
+export function settleReveal(state: GameState, now: number): GameState {
   if (state.status !== "revealing") return state;
   const cleared = { ...state, revealed: null, revealInput: "" };
-  // 더 낼 문제가 없으면 여기가 끝이다. endedAt은 포기한 순간에 이미 박혔다.
-  if (cleared.index >= cleared.items.length) {
-    return { ...cleared, status: "finished" };
-  }
+  // 더 낼 문제가 없으면 여기가 끝이다. 그래서 끝난 시각도 여기서 찍는다.
+  if (cleared.index >= cleared.items.length) return finish(cleared, now);
   return { ...cleared, status: "playing" };
 }
 

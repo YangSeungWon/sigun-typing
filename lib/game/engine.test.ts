@@ -268,7 +268,7 @@ describe("모르겠어요", () => {
     expect(g.status).toBe("revealing");
     expect(g.revealed?.answer).toBe(answer);
 
-    g = settleReveal(g);
+    g = settleReveal(g, 9_500);
     expect(g.status).toBe("playing");
     expect(g.revealed).toBeNull();
     expect(g.index).toBe(1);
@@ -294,16 +294,19 @@ describe("모르겠어요", () => {
     const last = g.items[g.items.length - 1].answer;
     for (let i = 0; i < g.items.length - 1; i++) {
       g = giveUp(g, 1_000 * (i + 1));
-      g = settleReveal(g);
+      g = settleReveal(g, 1_000 * (i + 1) + 100);
     }
     g = giveUp(g, 9_000);
     expect(g.status, "마지막에도 정답을 보여 준다").toBe("revealing");
     expect(g.revealed?.answer).toBe(last);
 
-    g = settleReveal(g);
+    g = settleReveal(g, 9_500);
     expect(g.status).toBe("finished");
-    // 시계는 포기한 순간에 멈춘다. 베껴 쓰는 시간이 기록에 붙지 않는다.
-    expect(g.endedAt).toBe(9_000);
+    /*
+     * 시계는 베껴 쓰는 동안에도 간다. 다른 문제에서는 그 시간이 전부 기록에
+     * 들어가므로(끝은 판이 끝날 때 한 번 찍힌다) 마지막만 공짜면 앞뒤가 안 맞는다.
+     */
+    expect(g.endedAt).toBe(9_500);
   });
 
   it("정답을 보여 주는 동안에도 제한 시간은 흐른다", () => {
@@ -636,7 +639,7 @@ describe("정답 베껴 쓰기", () => {
   });
 
   it("쓰기 싫으면 빠져나갈 수 있다 — 막다른 길을 만들지 않는다", () => {
-    const g = settleReveal(stuck());
+    const g = settleReveal(stuck(), 200);
     expect(g.status).toBe("playing");
   });
 });

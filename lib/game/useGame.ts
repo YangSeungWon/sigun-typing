@@ -105,7 +105,7 @@ export function useGame(items: GameItem[], config: ModeConfig, seed = 1) {
   }, []);
 
   const skipReveal = useCallback(() => {
-    setState(settleReveal);
+    setState((s) => settleReveal(s, Date.now()));
   }, []);
 
   const hint = useCallback(() => {

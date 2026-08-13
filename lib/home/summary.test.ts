@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildHomeSeed } from "./summary";
 import { COURSES } from "@/data/courses";
 
-const seed = buildHomeSeed(Date.parse("2026-08-13T03:00:00Z"));
+const seed = buildHomeSeed();
 
 describe("첫 화면 씨앗", () => {
   it("245곳이다 — 시도 17 + 시군구 228", () => {
@@ -77,8 +77,4 @@ describe("첫 화면 씨앗", () => {
     }
   });
 
-  it("오늘의 도전은 실재하는 코스다", () => {
-    expect(seed.courses.map((c) => c.id)).toContain(seed.today.courseId);
-    expect(seed.today.dateKey).toBe("2026-08-13");
-  });
 });

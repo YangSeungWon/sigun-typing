@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { CourseGeo } from "@/data/geo/types";
-import { formatClock } from "@/components/Odometer";
 import { NationalMap } from "./NationalMap";
 import { SidoPicker } from "./SidoPicker";
 import { useHomeData } from "@/lib/home/useHomeData";
@@ -19,7 +18,12 @@ import type { HomeSeed } from "@/lib/home/summary";
  * 있나"가 아니라 "어디까지 했더라"가 먼저다.
  *
  * 그래서 목록은 `/courses`로 내리고 여기는 상태판이 된다.
- * 정복도 → 이어하기 → 오늘의 도전 → 오답, 네 가지만 답한다.
+ *
+ * 남긴 것은 넷이다 — 얼마나 왔나(숫자), 어디가 비었나(지도), 무엇을 이어할까
+ * (버튼), 무엇을 자꾸 틀리나(오답). `오늘의 도전`과 `대한민국 정복도` 카드가
+ * 있었는데 지웠다. 지도 옆에 목록을 붙이면서 정복도 카드가 그 목록의 열등한
+ * 사본이 됐고(같은 숫자를 열여섯 개 대신 다섯 개만), 오늘의 도전은 히어로와
+ * 지도와 목록에 이어 **네 번째로 코스를 고르는 자리**였다.
  *
  * 없는 값은 **자리째 없다.** 아직 아무것도 안 한 사람에게 `0 / 245`와 빈 막대
  * 다섯 줄을 보여 주는 것은 정보가 아니라, 시작하기도 전에 뒤처졌다는 말이다.
@@ -138,13 +142,11 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
   const secondary = pickedCourse ? nationwide : scoped;
 
   const hasConfusion = data.confusion !== null;
-  const hasConquest = data.sidoProgress.length > 0;
 
   return (
     <main
       className="home-grid mx-auto w-full max-w-5xl flex-1 px-5 py-5 md:px-6 md:py-8"
       data-confuse={hasConfusion ? "on" : "off"}
-      data-conquest={hasConquest ? "on" : "off"}
     >
       {/*
         넓은 화면에서 copy와 actions는 지도 옆의 두 행이라 각자 반 칸씩 갖는다.
@@ -322,28 +324,6 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         메타와 버튼을 한 줄에 둔다. 세로로 쌓으면 내용에 비해 카드가 길어져
         빈 칸이 남는데, 이 카드가 말하는 것은 코스 이름 하나와 기록 하나뿐이다.
       */}
-      <section className="home-today flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-4">
-        <h2 className="font-mono text-sm text-dim">오늘의 도전</h2>
-        <p className="text-xl font-semibold">{data.today.courseName}</p>
-        <div className="mt-auto flex items-center justify-between gap-3 pt-1">
-          <p className="flex items-baseline gap-3 font-mono text-sm text-dim tabular-nums">
-            <span>{data.today.total}곳</span>
-            {data.today.bestMs !== undefined && <span>최고 {formatClock(data.today.bestMs)}</span>}
-          </p>
-        {/*
-          카드가 줄을 통째로 쓸 때가 있다(헷갈리는 곳과 정복도가 아직 없는
-          첫 방문). 그때 버튼까지 늘어나면 화면을 가로지르는 초록 띠가 된다.
-          좁은 화면에서는 카드 자체가 한 칸이므로 채우는 것이 맞다.
-        */}
-          <Link
-            href={`/play/map/${data.today.courseId}?from=home_challenge`}
-            className="shrink-0 rounded-lg bg-sign px-6 py-2.5 text-center font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-          >
-            시작
-          </Link>
-        </div>
-      </section>
-
       {/*
         헷갈리는 짝.
 
@@ -364,41 +344,6 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
             className="mt-auto rounded-lg border border-concrete-deep px-5 py-3 text-center font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             오답 복습
-          </Link>
-        </section>
-      )}
-
-      {hasConquest && (
-        <section className="home-conquest flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-4">
-          <h2 className="font-mono text-sm text-dim">대한민국 정복도</h2>
-          <ul className="flex flex-col gap-2">
-            {/*
-              좁은 화면에서는 셋까지. 열일곱 줄을 다 세우면 첫 화면이 이
-              표 하나로 끝나고, 이 블록은 요약이지 목록이 아니다.
-            */}
-            {data.sidoProgress.slice(0, 5).map((s, i) => (
-              <li
-                key={s.code}
-                className={`flex items-center gap-3 ${i >= 3 ? "hidden md:flex" : ""}`}
-              >
-                <span className="w-10 shrink-0 text-sm">{s.name}</span>
-                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-concrete-deep">
-                  <span
-                    className="block h-full rounded-full bg-sign"
-                    style={{ width: `${s.percent}%` }}
-                  />
-                </span>
-                <span className="w-16 shrink-0 text-right font-mono text-xs text-dim tabular-nums">
-                  {s.known} / {s.total}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="/courses"
-            className="mt-auto font-mono text-sm text-dim transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-          >
-            전체 보기 →
           </Link>
         </section>
       )}

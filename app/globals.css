@@ -243,11 +243,9 @@ body {
  * 세 브레이크포인트에 걸친 배치 규칙은 근거를 한 문단 달아야 하는데 클래스
  * 문자열 안에는 주석을 쓸 수 없다. 블록 *안쪽*은 그대로 유틸리티다.
  *
- * ── 빈 자리 함정 ─────────────────────────────────────────────
- * 자식이 없는 행은 높이 0으로 접히지만 `gap`은 남아서 간격이 두 배가 된다.
- * 선택 블록 둘(헷갈리는 곳·정복도)의 유무는 하이드레이션 뒤에야 알 수 있으므로
- * React가 data 속성으로 알려 주고, 넓은 화면에서만 areas를 바꿔 끼운다.
- * 좁은 화면은 한 줄로 흐르므로 고칠 것이 없다.
+ * 한때 자리가 일곱이었다(오늘의 도전·정복도 카드가 있었다). 그 둘을 지우면서
+ * 화면마다 areas를 네 벌씩 갈아 끼우던 것도 함께 사라졌다 — 선택 블록이
+ * 하나뿐이라 빈 자리 함정도 한 번만 다루면 된다.
  */
 .home-grid {
   display: grid;
@@ -256,25 +254,20 @@ body {
     "copy"
     "map"
     "actions"
-    "today"
     "confuse"
-    "conquest"
     "friends";
 }
 
 .home-copy { grid-area: copy; }
 .home-map-slot { grid-area: map; }
 .home-actions { grid-area: actions; }
-.home-today { grid-area: today; }
 .home-confuse { grid-area: confuse; }
-.home-conquest { grid-area: conquest; }
 .home-friends { grid-area: friends; }
 
 /*
  * 좁은 화면에서 `copy`가 맨 위인 것은 카피를 앞세우려는 것이 아니다. 그 자리에
  * 다시 온 사람에게는 `82 / 245`가, 처음 온 사람에게는 제목이 들어간다 —
  * 둘 다 화면을 열자마자 첫 줄에 있어야 하는 것이라 자리를 나눌 이유가 없다.
- * 그 아래 지도와 이어하기까지가 첫 판이고, 카드들은 스크롤 아래로 내려간다.
  */
 
 @media (min-width: 768px) {
@@ -284,34 +277,19 @@ body {
     grid-template-areas:
       "copy    map"
       "actions map"
-      "today   confuse"
-      "conquest conquest"
+      "confuse confuse"
       "friends friends";
   }
 
-  /* 카드가 빠지면 남은 하나가 그 줄을 다 쓴다. 반쪽짜리 빈칸을 남기지 않는다. */
+  /*
+   * 자식이 없는 행은 높이 0으로 접히지만 `gap`은 남아 간격이 두 배가 된다.
+   * 헷갈리는 곳이 있는지는 하이드레이션 뒤에야 알 수 있으므로 React가 data
+   * 속성으로 알려 준다. 좁은 화면은 한 줄로 흐르므로 고칠 것이 없다.
+   */
   .home-grid[data-confuse="off"] {
     grid-template-areas:
       "copy    map"
       "actions map"
-      "today   today"
-      "conquest conquest"
-      "friends friends";
-  }
-
-  .home-grid[data-conquest="off"] {
-    grid-template-areas:
-      "copy    map"
-      "actions map"
-      "today   confuse"
-      "friends friends";
-  }
-
-  .home-grid[data-confuse="off"][data-conquest="off"] {
-    grid-template-areas:
-      "copy    map"
-      "actions map"
-      "today   today"
       "friends friends";
   }
 }
@@ -323,7 +301,7 @@ body {
     grid-template-areas:
       "copy     map map"
       "actions  map map"
-      "today    confuse conquest"
+      "confuse  confuse confuse"
       "friends  friends friends";
   }
 
@@ -331,23 +309,6 @@ body {
     grid-template-areas:
       "copy     map map"
       "actions  map map"
-      "today    conquest conquest"
-      "friends  friends friends";
-  }
-
-  .home-grid[data-conquest="off"] {
-    grid-template-areas:
-      "copy     map map"
-      "actions  map map"
-      "today    confuse confuse"
-      "friends  friends friends";
-  }
-
-  .home-grid[data-confuse="off"][data-conquest="off"] {
-    grid-template-areas:
-      "copy     map map"
-      "actions  map map"
-      "today    today today"
       "friends  friends friends";
   }
 }

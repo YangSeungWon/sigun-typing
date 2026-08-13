@@ -1,6 +1,5 @@
-import { COURSES, getCourse } from "@/data/courses";
+import { COURSES } from "@/data/courses";
 import { sidoCourse } from "@/data/courses/sido";
-import { kstDateKey, pickDailyCourse } from "./today";
 
 /**
  * 서버가 첫 화면에 쥐여 주는 값.
@@ -55,15 +54,6 @@ export interface SidoSummary {
   total: number;
 }
 
-export interface TodaySummary {
-  courseId: string;
-  courseName: string;
-  version: number;
-  total: number;
-  /** 어느 날짜로 고른 것인지. 서버에서 정하고 클라이언트는 다시 계산하지 않는다. */
-  dateKey: string;
-}
-
 export interface HomeSeed {
   courses: CourseSummary[];
   sido: SidoSummary[];
@@ -74,7 +64,6 @@ export interface HomeSeed {
    * 이미 시도별 코스로 세고 있는 바로 그 228곳이다.
    */
   totalRegions: number;
-  today: TodaySummary;
 }
 
 /** 시도 코드 → 시도 이름. `11` → `서울` */
@@ -97,7 +86,7 @@ function summarize(course: (typeof COURSES)[number]): CourseSummary {
   };
 }
 
-export function buildHomeSeed(now: number): HomeSeed {
+export function buildHomeSeed(): HomeSeed {
   const courses = COURSES.map(summarize);
   /*
    * 시도 → 그 시도의 시군 코스. 전국 코스들(17 시도, 228 시군구)은 자기 시도가
@@ -124,21 +113,6 @@ export function buildHomeSeed(now: number): HomeSeed {
     };
   });
 
-  const dateKey = kstDateKey(now);
-  /*
-   * 고를 수 없는 날은 없다(코스가 열일곱 개니까). 그래도 pickDailyCourse는
-   * 빈 목록에 null을 돌려주므로, 여기서 받아 두고 첫 코스로 떨어뜨린다.
-   */
-  /*
-   * 오늘의 도전에서 겹치는 코스를 뺀다.
-   *
-   * 전국 시군구는 스무 판쯤 걸리는 코스다. 매일 열어 보는 자리에서 오늘 할 일로
-   * 그것이 뜨면 대부분 그날은 아무것도 안 하고 닫는다. 끝판왕은 찾아가는
-   * 것이지 배달되는 것이 아니다.
-   */
-  const daily = courses.filter((c) => !c.overlapping);
-  const todayId = pickDailyCourse(daily.map((c) => c.id), dateKey) ?? daily[0].id;
-  const todayCourse = getCourse(todayId) ?? COURSES[0];
 
   return {
     courses,
@@ -146,12 +120,5 @@ export function buildHomeSeed(now: number): HomeSeed {
     totalRegions: courses
       .filter((c) => !c.overlapping)
       .reduce((sum, c) => sum + c.total, 0),
-    today: {
-      courseId: todayCourse.id,
-      courseName: todayCourse.name,
-      version: todayCourse.version,
-      total: todayCourse.regions.length,
-      dateKey,
-    },
   };
 }

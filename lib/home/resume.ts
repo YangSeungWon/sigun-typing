@@ -43,8 +43,9 @@ function target(course: CourseSummary, kind: ResumeTarget["kind"], known?: numbe
  *      의사이고, 그걸 무시하고 다른 곳을 권하면 이어하기가 아니다.
  *   ② 아니면 남은 곳이 가장 많은, 해 본 코스. 다 끝낸 코스로 데려가지 않는다.
  *   ③ 해 본 코스가 없으면 입문 코스. 이때만 `시작`이다.
- *   ④ 전부 정복했으면 오늘의 도전. 더 채울 곳이 없는 사람에게 이어하기를
- *      들이밀 수는 없고, 그렇다고 버튼을 없애면 첫 화면에 할 일이 사라진다.
+ *   ④ 전부 정복했으면 입문 코스. 더 채울 곳이 없는 사람에게 이어하기를 들이밀
+ *      수는 없고, 그렇다고 버튼을 없애면 첫 화면에 할 일이 사라진다. 다시 도는
+ *      것이 남은 유일한 일이므로 처음 그 자리로 보낸다.
  *
  * `last.courseId`가 지금도 실재하는 코스인지는 여기서 확인한다 — 저장 계층은
  * 코스 데이터를 모르는 채로 두었으므로 그쪽에서 걸러 줄 수 없다.
@@ -53,7 +54,6 @@ export function pickResumeTarget(
   courses: CourseSummary[],
   mastery: Map<string, CourseMastery>,
   last: LastRun | null,
-  todayCourseId: string,
 ): ResumeTarget {
   const byId = new Map(courses.map((c) => [c.id, c]));
   const remaining = (c: CourseSummary) => {
@@ -78,6 +78,6 @@ export function pickResumeTarget(
     return target(next, "resume", mastery.get(next.id)?.known ?? 0);
   }
 
-  const today = byId.get(todayCourseId) ?? courses[0];
-  return target(today, "resume", mastery.get(today.id)?.known ?? today.total);
+  const entry = byId.get(ENTRY_COURSE_ID) ?? courses[0];
+  return target(entry, "resume", mastery.get(entry.id)?.known ?? entry.total);
 }

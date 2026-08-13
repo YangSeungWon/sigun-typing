@@ -6,8 +6,6 @@ import { formatClock } from "./Odometer";
 
 interface CourseCompleteProps {
   courseName: string;
-  total: number;
-  placeUnit: string;
   elapsedMs: number;
   geo?: CourseGeo | null;
   passedCodes: string[];
@@ -25,8 +23,6 @@ interface CourseCompleteProps {
  */
 export function CourseComplete({
   courseName,
-  total,
-  placeUnit,
   elapsedMs,
   geo,
   passedCodes,
@@ -37,10 +33,13 @@ export function CourseComplete({
         <p className="font-mono text-sm tracking-[0.28em] text-sign uppercase">
           완성
         </p>
-        <p className="text-3xl font-bold sm:text-4xl">
-          {courseName} {total}
-          {placeUnit === "시도" ? "곳" : ` ${placeUnit}`} 전부
-        </p>
+        {/*
+          코스 이름에 이미 개수가 들어 있다(`서울 25개 구`). 뒤에 개수와 단위를
+          한 번 더 붙였더니 `서울 25개 구 25 구 전부`가 됐다 — 사람이 읽는
+          문장이 아니다. 이름만 크게 두면 충분하고, 다 돌았다는 사실은 위의
+          `완성`과 아래 시간이 이미 말한다.
+        */}
+        <p className="text-3xl font-bold sm:text-4xl">{courseName}</p>
         <p className="font-mono text-2xl tabular-nums text-dim">
           {formatClock(elapsedMs)}
         </p>

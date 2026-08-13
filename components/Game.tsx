@@ -500,8 +500,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
       <main className="flex flex-1 items-center justify-center px-6 py-16">
         <CourseComplete
           courseName={course.name}
-          total={score.total}
-          placeUnit={course.placeUnit}
           elapsedMs={score.elapsedMs}
           geo={geo}
           passedCodes={passedCodes}
@@ -719,11 +717,15 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 <span className="font-mono text-sm tracking-[0.18em] text-sign uppercase">
                   도전
                 </span>
-                <span className="text-2xl font-bold">
-                  {challenge.by ? `${challenge.by}님의 ` : ""}
-                  <span className="font-mono tabular-nums">
-                    {formatChallengeTime(challenge.beatMs)}
-                  </span>
+                {/*
+                  `양승원님의 02:14`처럼 숫자로 끝나면 문장이 끊긴 것처럼
+                  읽힌다. 누구의 무엇인지를 먼저 말하고 숫자를 그 아래 둔다.
+                */}
+                <span className="text-base text-dim">
+                  {challenge.by ? `${challenge.by}님의 기록` : "받은 기록"}
+                </span>
+                <span className="font-mono text-2xl font-bold tabular-nums">
+                  {formatChallengeTime(challenge.beatMs)}
                 </span>
                 <span className="text-base text-dim">이 기록을 깨 보세요</span>
               </div>

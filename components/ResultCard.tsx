@@ -224,11 +224,11 @@ export function ResultCard({
         */}
         {bestSlot && <div className="relative mt-4">{bestSlot}</div>}
 
-        {!perfect && score.completed > 0 && (
-          <p className="relative mt-3 text-base text-paint/70">
-            {score.total - score.completed}곳은 다음에 만나요
-          </p>
-        )}
+        {/*
+          `4곳은 다음에 만나요`가 있었다. 문법은 멀쩡한데 말투가 혼자 달랐다 —
+          이 사이트의 다른 문구는 지도책 캡션에 가깝게 담백한데 여기만
+          어린이 앱 톤이었다. 게다가 바로 위의 `16 / 25`가 이미 같은 말이다.
+        */}
       </div>
 
       <div className="order-3 flex flex-col gap-3 md:order-none md:col-start-2 md:row-start-2">

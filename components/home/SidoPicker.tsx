@@ -27,7 +27,7 @@ interface SidoPickerProps {
 export function SidoPicker({ regions, selectedCode, onSelect }: SidoPickerProps) {
   return (
     <ul
-      className="flex flex-wrap gap-1.5 lg:w-32 lg:flex-none lg:flex-col lg:flex-nowrap lg:gap-0.5"
+      className="flex flex-wrap gap-1.5 lg:w-32 lg:flex-none lg:flex-col lg:flex-nowrap lg:gap-1"
       aria-label="시도 고르기"
     >
       {regions.map((region) => {
@@ -38,10 +38,18 @@ export function SidoPicker({ regions, selectedCode, onSelect }: SidoPickerProps)
               type="button"
               onClick={() => onSelect(selected ? null : region.code)}
               aria-pressed={selected}
-              className={`flex w-full items-baseline justify-between gap-2 rounded-lg px-2.5 py-1.5 text-sm lg:py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+              /*
+                테두리를 두른다.
+                
+                처음에는 글자만 두었더니 목록이 아니라 **표**로 읽혔다. 누를 수
+                있다는 것이 손을 올려 봐야 드러나면, 손을 올려 볼 생각을 안 한
+                사람에게는 없는 기능이다. 화면 전체가 낮은 채도라 색만으로는
+                모자라고, 칸으로 두르는 것이 가장 확실하다.
+              */
+              className={`flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:py-1 ${
                 selected
-                  ? "bg-sign text-on-sign"
-                  : "text-ink/80 hover:bg-concrete-deep hover:text-ink"
+                  ? "border-sign bg-sign text-on-sign"
+                  : "border-concrete-deep bg-paint/50 text-ink hover:border-dim hover:bg-paint"
               }`}
             >
               <span>{region.name}</span>

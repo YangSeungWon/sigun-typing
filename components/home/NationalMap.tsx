@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 
 /** 지도 한 조각이 알아야 하는 것 전부. 이 컴포넌트는 코스 데이터를 모른다. */
@@ -68,6 +68,25 @@ export const NationalMap = memo(function NationalMap({
   onHover,
   className,
 }: NationalMapProps) {
+  /*
+   * 강조된 조각을 맨 나중에 그린다.
+   *
+   * SVG는 나중에 그린 것이 위에 온다. 원래 순서대로 두면 서울에 손을 올려도
+   * 뒤에 오는 경기가 자기 흰 경계선을 그 위에 덧그려, 검은 테두리가 맞닿은
+   * 쪽부터 잘려 나간다.
+   *
+   * 테두리만 따로 위에 얹는 방법도 있지만 그러면 키보드 포커스 표시가 같은
+   * 문제를 그대로 안는다. 순서를 바꾸면 셋(고름·손 얹힘·포커스)이 한 번에
+   * 풀린다. 자리만 옮기는 것이라 React가 노드를 새로 만들지 않으므로
+   * 포커스도 따라 움직인다.
+   */
+  const ordered = useMemo(() => {
+    const lift = (code: string) =>
+      code === selectedCode ? 2 : code === hoveredCode ? 1 : 0;
+    // 정렬은 안정적이라 나머지 조각의 순서는 그대로다.
+    return [...geo.regions].sort((a, b) => lift(a.code) - lift(b.code));
+  }, [geo.regions, selectedCode, hoveredCode]);
+
   return (
     <svg
       viewBox={`0 0 ${geo.width} ${geo.height}`}
@@ -80,7 +99,7 @@ export const NationalMap = memo(function NationalMap({
       role="group"
       aria-label="시도 고르기"
     >
-      {geo.regions.map((shape) => {
+      {ordered.map((shape) => {
         const region = regions.get(shape.code);
         const ratio = (region?.percent ?? 0) / 100;
         const selected = shape.code === selectedCode;

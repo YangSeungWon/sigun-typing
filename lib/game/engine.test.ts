@@ -558,7 +558,7 @@ describe("엔터 제출", () => {
     expect(g.results[0].keystrokes).toBe(keystrokeCount(answer));
   });
 
-  it("첫 제출에 맞힌 수가 정답률이 된다", () => {
+  it("첫 제출에 맞힌 수가 정확도가 된다", () => {
     let g = recall();
     const wrongFor = (a: string) => ITEMS.map((i) => i.answer).find((n) => n !== a)!;
     // 첫 곳만 한 번 틀리고, 나머지는 한 번에 맞힌다.
@@ -570,7 +570,8 @@ describe("엔터 제출", () => {
     const s = score(g, 1_000);
     expect(s.completed).toBe(3);
     expect(s.firstTry).toBe(2);
-    expect(s.answerRate).toBeCloseTo(2 / 3);
+    // 정확도는 곳 기준이다 — 끝낸 곳 중 한 번에 맞힌 비율.
+    expect(s.accuracy).toBeCloseTo(2 / 3);
   });
 });
 

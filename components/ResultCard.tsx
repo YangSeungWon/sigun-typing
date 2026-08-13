@@ -212,10 +212,15 @@ export function ResultCard({
           다 돈 판끼리는 타수가 시간의 다른 표현일 뿐이다. 겨루는 값(완주 수와
           시간)과 손을 재는 값(정확도)만 남긴다.
         */}
+        {/*
+          정확도를 퍼센트로 적지 않는다. 이 게임의 단위는 곳이라 `한 번에 22곳`이
+          `정확도 91.3%`보다 정확하고 빨리 읽힌다 — 분모(끝낸 곳)는 바로 위의
+          큰 숫자가 이미 말하고 있다.
+        */}
         <p className="relative mt-3 font-mono text-sm text-paint/70">
           {perfect
-            ? `정확도 ${(score.accuracy * 100).toFixed(1)}%`
-            : `${formatPrecise(score.elapsedMs)} · 정확도 ${(score.accuracy * 100).toFixed(1)}%`}
+            ? `한 번에 ${score.firstTry}곳`
+            : `${formatPrecise(score.elapsedMs)} · 한 번에 ${score.firstTry}곳`}
         </p>
 
         {/*
@@ -302,14 +307,6 @@ export function ResultCard({
           <div className="flex flex-col pt-2">
             <Row label="맞힌 타수" value={`${score.correctKeystrokes}타`} />
             <Row label="오타" value={`${score.totalErrors}회`} />
-            {/*
-              정확도가 손을 재는 숫자라면 정답률은 머리를 잰다. 회상 게임에서
-              "몇 곳을 떠올릴 수 있었나"가 진짜 성적이다.
-            */}
-            <Row
-              label="한 번에 맞힌 곳"
-              value={`${score.firstTry} / ${score.total} · ${(score.answerRate * 100).toFixed(0)}%`}
-            />
             {score.hintsUsed > 0 && (
               <Row label="초성 힌트" value={`${score.hintsUsed}회 · 기록에 가산됨`} />
             )}

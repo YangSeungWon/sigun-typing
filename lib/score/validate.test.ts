@@ -70,7 +70,6 @@ function makeRun(opts: RunOptions = {}) {
     total: sidoCourse.regions.length,
     hintsUsed: 0,
     firstTry: results.length,
-    answerRate: 1,
   };
 
   const { token } = issueToken(
@@ -332,7 +331,6 @@ describe("초성 힌트 페널티", () => {
         correctKeystrokes,
         totalErrors: 0,
         firstTry: results.length,
-        answerRate: 1,
         completed: results.length,
         total: sidoCourse.regions.length,
         hintsUsed,

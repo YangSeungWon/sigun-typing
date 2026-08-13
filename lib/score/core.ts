@@ -15,8 +15,6 @@ import type { Score } from "../game/types";
 export interface ScoreInputs {
   /** 정답으로 인정된 타수 */
   correctKeystrokes: number;
-  /** 실제로 친 타수. 정확도의 분모다 */
-  typedKeystrokes: number;
   /** 힌트 페널티까지 포함한 경과 시간 */
   elapsedMs: number;
   totalErrors: number;
@@ -29,22 +27,31 @@ export interface ScoreInputs {
 }
 
 export function computeScore(inputs: ScoreInputs): Score {
-  const typed = Math.max(0, inputs.typedKeystrokes);
   const correct = Math.max(0, inputs.correctKeystrokes);
+  const firstTry = Math.max(0, inputs.firstTry);
   return {
     cpm: cpm(correct, inputs.elapsedMs),
-    // 한 타도 안 친 판은 정확도를 정의할 수 없다. 0%로 두면 시작만 하고 나간
-    // 사람이 순위표 맨 아래에 0%로 남는다.
-    accuracy: typed === 0 ? 1 : Math.min(1, correct / typed),
+    /*
+     * 정확도는 **곳 기준**이다 — 끝낸 곳 중 한 번에 맞힌 비율.
+     *
+     * 한때 타수 기준이었다(맞은 타수 ÷ 제출한 타수). 그러면 긴 이름을 틀린
+     * 것이 짧은 이름을 틀린 것보다 더 깎이는데, 이 게임에서 `서귀포시`를
+     * 틀린 것이 `중구`를 틀린 것보다 나쁠 이유가 없다. 이 게임의 단위는
+     * 타수가 아니라 곳이다.
+     *
+     * 분모는 끝낸 곳이다. 건너뛴 곳은 이미 완주 수에서 빠졌으므로 여기서 또
+     * 세면 같은 일로 두 번 벌하는 셈이다. 하나도 끝내지 못한 판은 정의할 수
+     * 없으므로 1로 둔다 — 0%로 두면 시작만 하고 나간 사람이 순위표 맨 아래에
+     * 0%로 남는다.
+     */
+    accuracy:
+      inputs.completed === 0 ? 1 : Math.min(1, firstTry / inputs.completed),
     elapsedMs: inputs.elapsedMs,
     correctKeystrokes: correct,
     totalErrors: inputs.totalErrors,
     completed: inputs.completed,
     total: inputs.total,
     hintsUsed: inputs.hintsUsed,
-    firstTry: Math.max(0, inputs.firstTry),
-    // 아무것도 안 한 판은 정의할 수 없다. 정확도와 같은 규칙으로 1로 둔다.
-    answerRate:
-      inputs.total === 0 ? 1 : Math.min(1, Math.max(0, inputs.firstTry) / inputs.total),
+    firstTry,
   };
 }

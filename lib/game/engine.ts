@@ -411,27 +411,14 @@ export function score(state: GameState, now: number): Score {
   const correctKeystrokes = state.results.reduce((a, r) => a + r.keystrokes, 0);
   const totalErrors = state.results.reduce((a, r) => a + r.errors, 0);
   /*
-   * 정확도의 분모는 **제출한 타수**다.
-   *
-   * 예전에는 실제로 누른 타건을 전부 셌다(state.keystrokes). 그러면 치다가
-   * 한 글자를 잘못 눌러 지우고 다시 친 것이 그대로 기록에 남아, 손이 미끄러진
-   * 것과 몰라서 틀린 것이 같은 값으로 찍혔다. 지우고 고칠 자유는 제출 전까지
-   * 온전히 열려 있어야 한다.
-   *
-   * 타건 기록(state.keystrokes)은 그대로 남긴다 — 서버가 사람의 리듬인지
-   * 보는 데 쓰고, 점수에는 쓰지 않는다.
+   * 타건 기록(state.keystrokes)은 점수에 쓰지 않는다. 서버가 사람의 리듬인지
+   * 보는 데만 쓴다.
    */
-  const wrongKeystrokes = [
-    ...state.results.flatMap((r) => r.wrongAnswers ?? []),
-    ...state.itemWrong,
-  ].reduce((a, text) => a + keystrokeCount(text), 0);
-  const typed = correctKeystrokes + wrongKeystrokes;
 
   // 규칙은 lib/score/core.ts 한 벌뿐이다. 여기서는 재료만 모은다 —
   // 서버가 같은 규칙으로 다시 계산해 대조하기 때문이다.
   return computeScore({
     correctKeystrokes,
-    typedKeystrokes: typed,
     elapsedMs,
     totalErrors,
     completed: state.results.filter((r) => !r.skipped).length,

@@ -75,8 +75,19 @@ export const NationalMap = memo(function NationalMap({
         const selected = shape.code === selectedCode;
         const selectable = Boolean(region?.courseId);
 
-        const fill =
-          ratio > 0
+        /*
+         * 고를 수 없는 곳은 옅게 그린다.
+         *
+         * 세종 하나뿐이다. 시도이면서 그 아래 시군이 없어 코스가 없는데,
+         * 다른 시도와 똑같은 회색으로 그려 놓으니 **아직 안 해 본 곳처럼**
+         * 보였다. 눌러도 아무 일이 없으니 고장으로 읽힌다.
+         *
+         * 바탕 쪽으로 한 단계 물려 "여기는 칠할 수 있는 칸이 아니다"를
+         * 보이게 한다. 지우지는 않는다 — 없으면 지도에 구멍이 뚫린다.
+         */
+        const fill = !selectable
+          ? { fill: "var(--color-map-idle)", fillOpacity: 0.3 }
+          : ratio > 0
             ? { fill: "var(--color-sign)", fillOpacity: 0.12 + 0.88 * ratio }
             : { fill: "var(--color-map-idle)", fillOpacity: 1 };
 
@@ -127,7 +138,10 @@ export const NationalMap = memo(function NationalMap({
                   // 세종. 그릴 것은 있고 고를 것은 없다.
                   className: "transition-[fill-opacity] duration-500",
                 })}
-          />
+          >
+            {/* 왜 눌러지지 않는지, 손을 올린 사람에게만 한 줄로 답한다. */}
+            {!selectable && region && <title>{region.name} — 시군 코스가 없습니다</title>}
+          </path>
         );
       })}
 

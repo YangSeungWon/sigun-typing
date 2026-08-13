@@ -51,46 +51,47 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         둘 다 가운데 정렬하면 사이가 크게 벌어지므로 서로를 향해 붙인다.
       */}
       <section className="home-copy flex flex-col justify-center gap-3 md:justify-end">
-        {data.conquest ? (
-          <>
-            {/*
-              숫자가 문장을 대신한다. `대한민국의 33%를 기억하고 있어요`는
-              어느 앱에 붙여도 말이 되는 문장이고, 그만큼 이 서비스에 대해
-              아무것도 말하지 않는다.
+        {/*
+          숫자가 문장을 대신한다. 처음 온 사람에게도 그렇다.
 
-              이것이 이 화면의 h1이다. 다시 온 사람에게 이 화면의 제목은
-              서비스 이름이 아니라 지금 어디까지 왔는가다. 화면을 눈으로 훑을 수
-              없는 사람에게도 그게 첫 줄이어야 하므로 숫자를 말로 옮겨 붙인다 —
-              `63 / 245`를 그대로 읽으면 분수처럼 들린다.
-            */}
-            <h1
-              className="font-mono text-5xl font-bold tabular-nums sm:text-6xl"
-              aria-label={`245곳 중 ${data.conquest.known}곳, 정복도 ${data.conquest.percent}퍼센트`}
-            >
-              <span aria-hidden>
-                {data.conquest.known}
-                <span className="text-dim"> / {data.conquest.total}</span>
-              </span>
-            </h1>
-            <p className="font-mono text-lg text-sign" aria-hidden>
-              정복도 {data.conquest.percent}%
-            </p>
-          </>
-        ) : (
-          <>
-            {/*
-              break-keep은 한글에 필요하다. 기본값은 글자 단위로 끊어서
-              `있 / 나요?`처럼 낱말 가운데가 갈린다.
-            */}
-            <h1 className="text-4xl leading-tight font-bold tracking-tight break-keep sm:text-5xl">
-              지도는 아는데,
-              <br />
-              이름도 맞힐 수 있나요?
-            </h1>
-            <p className="font-mono text-base text-dim">
-              {seed.totalRegions}개 지역 · {seed.sido.length}개 시도
-            </p>
-          </>
+          한때 여기 카피가 있었고(`지도는 아는데, 이름도 맞힐 수 있나요?`)
+          기록이 생기면 숫자로 갈아 끼웠다. 그러느라 첫 방문과 재방문의 첫
+          화면이 서로 다른 물건이 됐다 — 한쪽은 문장이 맞아 주고 다른 쪽은
+          계기판이 맞아 준다. 245라는 분모는 카피가 하려던 말("대한민국 전체가
+          걸려 있다")을 더 짧게 한다.
+
+          이것이 이 화면의 h1이다. 이 화면의 제목은 서비스 이름이 아니라 지금
+          어디까지 왔는가다. 화면을 눈으로 훑을 수 없는 사람에게도 그게 첫
+          줄이어야 하므로 숫자를 말로 옮겨 붙인다 — `63 / 245`를 그대로 읽으면
+          분수처럼 들린다.
+        */}
+        <h1
+          className="font-mono text-5xl font-bold tabular-nums sm:text-6xl"
+          aria-label={`${data.conquest.total}곳 중 ${data.conquest.known}곳, 정복도 ${data.conquest.percent}퍼센트`}
+        >
+          <span aria-hidden>
+            {data.conquest.known}
+            <span className="text-dim"> / {data.conquest.total}</span>
+          </span>
+        </h1>
+        <p className="font-mono text-lg text-sign" aria-hidden>
+          정복도 {data.conquest.percent}%
+        </p>
+
+        {/*
+          규칙 한 줄. 아직 한 곳도 모르는 사람에게만 나온다.
+
+          이건 카피가 아니라 안내다. 첫 화면에서 목록을 걷어낸 뒤로 처음 온
+          사람이 보는 것은 지도 한 장과 버튼 두 개뿐인데, 그것만으로는 이
+          게임이 무엇을 시키는지 알 수 없다 — 예전에는 코스 목록이 그 설명을
+          대신하고 있었다.
+
+          한 판이라도 하면 사라진다. 익숙해질수록 화면이 조용해져야 한다.
+        */}
+        {data.conquest.known === 0 && (
+          <p className="text-base text-dim break-keep">
+            지도에 표시된 곳의 이름을 입력합니다.
+          </p>
         )}
       </section>
 

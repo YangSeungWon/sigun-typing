@@ -25,9 +25,13 @@ function mastery(entries: Record<string, Partial<CourseMastery>>): Map<string, C
 }
 
 describe("정복도", () => {
-  it("아는 곳이 없으면 아무것도 아니다", () => {
-    // `0 / 245 · 0%`는 시작하기도 전에 뒤처진 기분만 준다.
-    expect(aggregateConquest(COURSES, mastery({}), 245)).toBeNull();
+  it("아는 곳이 없어도 눈금은 보여 준다", () => {
+    // 0은 부끄러운 숫자가 아니라 시작점이다. 245라는 분모가 이 게임을 설명한다.
+    expect(aggregateConquest(COURSES, mastery({}), 245)).toEqual({
+      known: 0,
+      total: 245,
+      percent: 0,
+    });
   });
 
   it("코스를 가로질러 더한다", () => {

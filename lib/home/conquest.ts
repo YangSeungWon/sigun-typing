@@ -15,24 +15,31 @@ export interface Conquest {
   percent: number;
 }
 
+/*
+ * 한 곳도 없어도 숫자를 보여 준다.
+ *
+ * 한때 0이면 통째로 감추고 카피를 대신 띄웠다. 처음 보는 숫자가 0이면
+ * 시작하기도 전에 뒤처진 기분을 준다고 봤기 때문인데, 그러느라 첫 방문자와
+ * 재방문자의 첫 화면이 서로 다른 물건이 됐다 — 한쪽은 문장이 맞아 주고
+ * 다른 쪽은 계기판이 맞아 준다.
+ *
+ * 이 게임에서 0은 부끄러운 숫자가 아니라 **눈금의 시작점**이다. 245라는
+ * 분모를 먼저 보여 주는 편이 "여기서 무엇을 모으는 것인가"를 문장보다 빨리
+ * 설명한다. 대신 처음 온 사람에게는 규칙 한 줄을 함께 둔다 — 그건 카피가
+ * 아니라 안내다.
+ */
 export function aggregateConquest(
   courses: CourseSummary[],
   mastery: Map<string, CourseMastery>,
   totalRegions: number,
-): Conquest | null {
+): Conquest {
   const known = courses.reduce((sum, c) => sum + (mastery.get(c.id)?.known ?? 0), 0);
-
-  /*
-   * 한 곳도 없으면 아무것도 아니다. `0 / 245 · 정복도 0%`는 정보가 아니라
-   * 아직 아무것도 안 했다는 말을 숫자로 늘여 놓은 것이고, 첫 화면에서 처음
-   * 보는 숫자가 0이면 시작하기 전에 뒤처진 기분부터 준다.
-   */
-  if (known === 0) return null;
 
   return {
     known,
     total: totalRegions,
-    percent: Math.round((known / totalRegions) * 100),
+    // 분모가 0인 일은 없지만(코스가 열일곱이다) 나눗셈에 기대를 걸지는 않는다.
+    percent: totalRegions === 0 ? 0 : Math.round((known / totalRegions) * 100),
   };
 }
 

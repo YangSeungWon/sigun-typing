@@ -24,8 +24,11 @@ import type { HomeSeed } from "./summary";
 export interface HomeData {
   /** 하이드레이션이 끝나 기기 기록을 읽었는가. */
   ready: boolean;
-  /** 정복한 곳이 하나도 없으면 null — 블록을 그리지 않는다. */
-  conquest: Conquest | null;
+  /**
+   * 늘 있다. 한 곳도 모르면 `0 / 245`다 — 0은 부끄러운 숫자가 아니라 눈금의
+   * 시작점이고, 245라는 분모가 이 게임이 무엇을 모으는 것인지 설명한다.
+   */
+  conquest: Conquest;
   /** 손댄 시도만. 비어 있으면 블록을 그리지 않는다. */
   sidoProgress: SidoProgress[];
   resume: ResumeTarget;
@@ -47,7 +50,8 @@ export function useHomeData(seed: HomeSeed): HomeData {
     if (!hydrated) {
       return {
         ready: false,
-        conquest: null,
+        // 서버가 그린 것과 한 글자도 달라선 안 된다. 기록을 모르면 0이다.
+        conquest: { known: 0, total: seed.totalRegions, percent: 0 },
         sidoProgress: [],
         // 서버는 이 기기의 기록을 모른다. 처음 온 사람과 같은 것을 그린다.
         resume: pickResumeTarget(seed.courses, EMPTY_MASTERY, null, seed.today.courseId),

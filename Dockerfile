@@ -16,6 +16,8 @@ ENV SITE_URL=$SITE_URL
 # 화면 판번호. 이벤트마다 함께 저장돼, 화면을 고치면서도 숫자를 가를 수 있게 한다.
 ARG UI_REVISION=dev
 ENV NEXT_PUBLIC_UI_REVISION=$UI_REVISION
+# 같은 값을 배포 판번호로도 쓴다 — 옛 탭이 새 서버를 만나면 통째로 새로고침한다.
+ENV NEXT_DEPLOYMENT_ID=$UI_REVISION
 # DATABASE_URL은 일부러 주지 않는다.
 #
 # 빌드 시점에 DB가 없는 것은 고장이 아니라 정상이다. 코스 목록은 1위를

@@ -21,6 +21,22 @@ const nextConfig: NextConfig = {
   // 컨테이너 이미지를 가볍게 하려고 필요한 것만 담은 서버를 뽑는다.
   output: "standalone",
 
+  /**
+   * 배포 판번호.
+   *
+   * 배포하는 동안 열려 있던 탭은 **옛 자바스크립트를 들고 새 서버에 말을 건다.**
+   * 서버가 내려보내는 값의 모양이 바뀌면 그 탭은 그 자리에서 깨진다 — 첫 화면에서
+   * `오늘의 도전`을 걷어냈을 때 실제로 그랬다(`e.today is undefined`).
+   *
+   * 이 값이 있으면 Next가 응답에 배포 판번호를 실어 보내고, 클라이언트는 자기
+   * 것과 다르면 화면 안에서 넘어가는 대신 **통째로 새로고침한다.** 낡은 코드가
+   * 새 값을 만나는 일 자체가 없어진다.
+   *
+   * 값은 배포 때 넘기는 git 해시를 그대로 쓴다(docker-compose.yml).
+   * 개발 중에는 비어 있고, 그때는 이 장치가 필요 없다.
+   */
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID,
+
   async redirects() {
     return MODE_MOVES.flatMap(([from, to]) => [
       { source: `/play/${from}`, destination: `/play/${to}`, permanent: true },

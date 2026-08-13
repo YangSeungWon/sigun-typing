@@ -748,7 +748,13 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
             <h1 className="text-4xl font-bold sm:text-5xl">{course.name}</h1>
           </div>
         ) : (
-          current && (
+          /*
+            마지막 문제를 포기하면 `current`가 사라진다 — 엔진이 다음 칸으로
+            넘겨 둔 뒤 정답을 베껴 쓰게 하기 때문이다. 그 상태에서도 화면은
+            떠 있어야 하므로 `revealing`을 함께 본다. 아래 판면들은 이미
+            `revealing`일 때 그쪽 값을 쓰도록 되어 있다.
+          */
+          (current || revealing) && (
             <>
               {/*
                 지도가 이 게임의 주인공이다. 퀴즈에서는 문제 그 자체이고,

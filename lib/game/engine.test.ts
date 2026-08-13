@@ -283,13 +283,27 @@ describe("모르겠어요", () => {
     expect(score(g, 2_000).completed).toBe(0);
   });
 
-  it("마지막 문제에서 포기하면 바로 끝난다", () => {
+  it("마지막 문제도 정답을 쓴 뒤에 끝난다", () => {
+    /*
+     * 한때 마지막만 예외였다. 포기하면 답을 보기도 전에 결과가 떴다 —
+     * 어차피 결과 화면이 못 맞힌 곳을 이름으로 보여 준다는 이유였는데,
+     * 이 기능이 하려는 일은 보여 주는 것이 아니라 손으로 쓰게 하는 것이다.
+     */
     let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
-    for (let i = 0; i < ITEMS.length; i++) {
+    // 섞이는 모드라 마지막 문제는 판이 정한다. 원본 배열의 끝이 아니다.
+    const last = g.items[g.items.length - 1].answer;
+    for (let i = 0; i < g.items.length - 1; i++) {
       g = giveUp(g, 1_000 * (i + 1));
       g = settleReveal(g);
     }
+    g = giveUp(g, 9_000);
+    expect(g.status, "마지막에도 정답을 보여 준다").toBe("revealing");
+    expect(g.revealed?.answer).toBe(last);
+
+    g = settleReveal(g);
     expect(g.status).toBe("finished");
+    // 시계는 포기한 순간에 멈춘다. 베껴 쓰는 시간이 기록에 붙지 않는다.
+    expect(g.endedAt).toBe(9_000);
   });
 
   it("정답을 보여 주는 동안에도 제한 시간은 흐른다", () => {

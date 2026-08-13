@@ -326,15 +326,31 @@ export function giveUp(state: GameState, now: number): GameState {
   if (state.status !== "playing" || !state.config.allowSkip) return state;
   const answer = state.items[state.index].answer;
   const next = commitItem(state, now, true);
-  // 마지막 문제였다면 결과 화면이 곧 뜬다. 거기서 못 맞힌 곳을 이름으로 보여 준다.
-  if (next.status === "finished") return next;
+  /*
+   * 마지막 문제도 예외가 아니다.
+   *
+   * 한때 여기서 바로 결과로 보냈다 — 어차피 결과 화면이 못 맞힌 곳을 이름으로
+   * 보여 주니까. 그런데 이 기능이 하려는 일은 이름을 **보여 주는 것**이 아니라
+   * 손으로 한 번 쓰게 하는 것이다. 눈으로 보고 지나가면 다음에 또 모른다.
+   *
+   * 게다가 마지막 하나만 다르게 굴면 놀란다. 모르겠다고 눌렀는데 답을 보기도
+   * 전에 판이 끝나 있다.
+   *
+   * 시계는 여기서 이미 멈춰 있다(commitItem이 끝을 기록했다). 답을 베껴 쓰는
+   * 동안 기록이 늘지 않는다.
+   */
   return { ...next, status: "revealing", revealed: { answer } };
 }
 
 /** 정답을 다 썼으니 넘어간다. 이 호출 전까지는 그대로 머문다. */
 export function settleReveal(state: GameState): GameState {
   if (state.status !== "revealing") return state;
-  return { ...state, status: "playing", revealed: null, revealInput: "" };
+  const cleared = { ...state, revealed: null, revealInput: "" };
+  // 더 낼 문제가 없으면 여기가 끝이다. endedAt은 포기한 순간에 이미 박혔다.
+  if (cleared.index >= cleared.items.length) {
+    return { ...cleared, status: "finished" };
+  }
+  return { ...cleared, status: "playing" };
 }
 
 /** @deprecated giveUp을 쓴다. 이름만 남겨 둔 옛 호출부용. */

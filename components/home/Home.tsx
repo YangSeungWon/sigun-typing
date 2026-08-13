@@ -289,7 +289,13 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           <button
             type="button"
             onClick={() => {
-              const pick = seed.courses[Math.floor(Math.random() * seed.courses.length)];
+              /*
+               * 겹치는 코스는 뽑지 않는다. `랜덤`을 누르는 사람은 가볍게 한 판
+               * 하겠다는 뜻인데 스무 판쯤 걸리는 전국 시군구가 나오면 약속이
+               * 다르다. 끝판왕은 찾아가는 것이지 걸리는 것이 아니다.
+               */
+              const pool = seed.courses.filter((c) => !c.overlapping);
+              const pick = pool[Math.floor(Math.random() * pool.length)];
               router.push(`/play/map/${pick.id}?from=home_secondary`);
             }}
             className="rounded-xl border border-concrete-deep px-6 py-4 text-center text-base font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"

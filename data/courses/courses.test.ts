@@ -23,12 +23,38 @@ describe("코스 데이터 무결성", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it.each(COURSES)("$name — 지역이 중복되지 않는다", (course) => {
+  it.each(COURSES)("$name — 같은 지역이 두 번 나오지 않는다", (course) => {
     const codes = course.regions.map((r) => r.code);
-    const names = course.regions.map((r) => r.name);
     expect(new Set(codes).size).toBe(codes.length);
-    expect(new Set(names).size).toBe(names.length);
   });
+
+  /*
+   * 이름 중복은 코스 종류에 따라 뜻이 다르다.
+   *
+   * 한 시도 안에서 이름이 겹치면 데이터 실수다 — 부산에 중구는 하나뿐이다.
+   * 여러 시도를 한꺼번에 도는 코스에서는 실수가 아니라 사실이다. `중구`는
+   * 여섯 도시에 있고, 그걸 없애려면 있는 지명을 고쳐 적어야 한다.
+   */
+  it.each(COURSES.filter((c) => !c.overlapping))(
+    "$name — 이름이 중복되지 않는다",
+    (course) => {
+      const names = course.regions.map((r) => r.name);
+      expect(new Set(names).size).toBe(names.length);
+    },
+  );
+
+  it.each(COURSES.filter((c) => c.overlapping))(
+    "$name — 이름이 겹쳐도 코드로는 갈린다",
+    (course) => {
+      // 이름이 같은 곳들이 서로 다른 지역임을 못박는다. 지도가 어디인지 말해 준다.
+      const byName = new Map<string, Set<string>>();
+      for (const r of course.regions) {
+        byName.set(r.name, (byName.get(r.name) ?? new Set()).add(r.code));
+      }
+      const shared = [...byName].filter(([, codes]) => codes.size > 1);
+      expect(shared.length, "겹치는 이름이 없으면 이 코스를 나눌 이유가 없다").toBeGreaterThan(0);
+    },
+  );
 
   it.each(COURSES)("$name — 이름은 한글 음절로만 이루어진다", (course) => {
     for (const r of course.regions) {
@@ -91,8 +117,11 @@ describe("코스 데이터 무결성", () => {
   it.each(COURSES)("$name — 지도를 선언했으면 원본과 범위가 함께 적혀 있다", (course) => {
     if (!course.geo) return;
     expect(course.geo.file).toMatch(/^(provinces|municipalities)$/);
-    // 전국 지도 말고는 접두사로 범위를 좁혀야 한다. `중구`는 여섯 도시에 있다.
-    if (course.geo.file === "municipalities") {
+    /*
+     * 전국 지도 말고는 접두사로 범위를 좁혀야 한다. `중구`는 여섯 도시에 있다.
+     * 전국 시군구 코스가 바로 그 예외라 접두사가 없다 — 원본 전체가 그 범위다.
+     */
+    if (course.geo.file === "municipalities" && !course.overlapping) {
       expect(course.geo.prefix, course.name).toBeTruthy();
     }
   });

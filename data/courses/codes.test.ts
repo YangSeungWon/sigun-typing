@@ -17,7 +17,17 @@ import { PINNED_CODES, PINNED_COURSES } from "../reference/pinned-2025";
  * 모든 코드가 현행 공식 코드라는 뜻은 아니다.
  */
 
-const sigunguCourses = COURSES.filter((c) => c.geo?.file === "municipalities");
+/*
+ * 여러 시도를 한꺼번에 도는 코스는 여기서 빼고 본다.
+ *
+ * 그 코스의 지역은 전부 원래 속한 시도 코스에 이미 들어 있고 거기서 검사된다.
+ * 두 번 볼 값이 없을 뿐 아니라, 접두사 일관성처럼 **한 시도 안에서만 뜻이
+ * 있는 검사**와 pinned-2025의 코스 단위 예외 목록이 이 코스에서는 성립하지
+ * 않는다.
+ */
+const sigunguCourses = COURSES.filter(
+  (c) => c.geo?.file === "municipalities" && !c.overlapping,
+);
 const sidoCourses = COURSES.filter((c) => c.geo?.file === "provinces");
 
 describe("형식 (consistency)", () => {

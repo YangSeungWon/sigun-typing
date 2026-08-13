@@ -33,7 +33,10 @@ export function aggregateConquest(
   mastery: Map<string, CourseMastery>,
   totalRegions: number,
 ): Conquest {
-  const known = courses.reduce((sum, c) => sum + (mastery.get(c.id)?.known ?? 0), 0);
+  // 분모와 같은 규칙으로 센다. 겹치는 코스를 더하면 같은 곳을 두 번 센다.
+  const known = courses
+    .filter((c) => !c.overlapping)
+    .reduce((sum, c) => sum + (mastery.get(c.id)?.known ?? 0), 0);
 
   return {
     known,

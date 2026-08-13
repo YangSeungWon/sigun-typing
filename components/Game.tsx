@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { CourseGeo } from "@/data/geo/types";
 import type { Course } from "@/data/types";
+import { COURSES } from "@/data/courses";
+import { splitNotebooks } from "@/lib/score/notebooks";
 import { MODES, MODE_LABELS, isRankedMode } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { useGame } from "@/lib/game/useGame";
@@ -494,6 +496,15 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
    * 그냥 지나간다. 전부 맞힌 판에서만 뜬다 — 절반만 맞히고 끝난 판에
    * 축하가 뜨면 그건 축하가 아니라 조롱이다.
    */
+  /*
+   * 이 판의 결과를 담을 오답노트들. 보통 한 권이고, 여러 시도를 한꺼번에 도는
+   * 코스만 지역이 원래 속한 코스별로 나뉜다(lib/score/notebooks.ts).
+   */
+  const notebooks = useMemo(
+    () => splitNotebooks(state.results, course, COURSES),
+    [state.results, course],
+  );
+
   const perfect = state.status === "finished" && score.completed === score.total;
   if (perfect && !celebrated) {
     return (
@@ -512,12 +523,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-16">
         {/* 붙었다는 것 자체가 판이 끝났다는 뜻이다. */}
-        <RunRecorder
-          courseId={course.id}
-          mode={mode}
-          results={state.results}
-          peers={course.regions}
-        />
+        <RunRecorder courseId={course.id} mode={mode} notebooks={notebooks} />
         <RunLifecycle
           courseId={course.id}
           mode={mode}

@@ -39,6 +39,18 @@ const POINTS_PER_SHAPE = 72;
 const MIN_AREA_RATIO = 0.004;
 
 /**
+ * 이보다 지역이 많으면 내부 경계선과 여정선을 그리지 않는다.
+ *
+ * 카드에서 그 선들이 하는 말은 "여기가 여러 곳으로 나뉜다"와 "이런 순서로
+ * 돈다"인데, 128px에 이백스물여덟 조각을 그으면 둘 다 전달되지 않는다.
+ * 남는 것은 회색 얼룩과 낙서, 그리고 코스 하나에 45KB다 — 그 파일은 코스
+ * 목록을 여는 모두에게 실린다.
+ *
+ * 실루엣만 남긴다. 그 크기에서 읽히는 것은 원래 그것뿐이다.
+ */
+const MAX_DETAILED_REGIONS = 60;
+
+/**
  * 좌표를 소수 한 자리까지 남긴다.
  *
  * 0~100 격자에 정수로 반올림했더니 카드에서 1칸이 1.3px, 고해상도 화면에서는
@@ -289,10 +301,12 @@ const CORE_SHARE = 0.85;
     })
     .join("");
 
+  const detailed = geo.regions.length <= MAX_DETAILED_REGIONS;
+
   return {
     d: shapes.map((points) => `M${points.map(grid).join("L")}Z`).join(""),
-    borders,
-    route: geo.regions.map((r) => mark(r.cx, r.cy)),
+    borders: detailed ? borders : "",
+    route: detailed ? geo.regions.map((r) => mark(r.cx, r.cy)) : [],
   };
 }
 

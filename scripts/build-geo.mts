@@ -50,6 +50,14 @@ interface RegionProps {
 
 type Area = Polygon<RegionProps> | MultiPolygon<RegionProps>;
 
+/**
+ * 어느 코스도 가져가지 않는 원본 조각.
+ *
+ * 세종은 시도이면서 그 아래 시군이 없다. 그래서 시군구 원본에 한 조각으로
+ * 들어 있지만 시군구 코스는 존재하지 않는다 — 빠뜨린 것이 아니라 없는 것이다.
+ */
+const UNCOVERED = new Set(["세종특별자치시"]);
+
 /** 원본의 제각각인 필드명을 여기서 한 번만 정규화한다. */
 function propsOf(g: Area): { code: string; name: string } {
   const p = g.properties!;
@@ -286,40 +294,108 @@ interface Report {
   merged: string[];
 }
 
-async function buildCourse(course: Course): Promise<Report> {
-  const source = course.geo!;
-  const topology = await loadTopology(
-    source.file,
-    source.prefix,
-    source.simplifyPercent ?? SIMPLIFY_PERCENT,
-  );
-  const objectKey = Object.keys(topology.objects)[0];
-  const collection = topology.objects[objectKey] as GeometryCollection<RegionProps>;
+/**
+ * 지역 코드 앞 두 자리(행정표준코드) → 원본 경계 파일의 옛 시도 코드.
+ *
+ * 원본과 우리 데이터가 서로 다른 코드 체계를 쓴다. 부산은 우리 쪽에서 `26`인데
+ * 원본에서는 `21`이다. 그래서 경계를 코드로 맞출 수 없고 이름으로 맞춰 왔다.
+ *
+ * 한 시도 안에서는 이름이 유일하므로 그걸로 충분했다. 전국 시군구 코스는
+ * 접두사가 없어 온 나라의 경계가 한 통에 들어오고, 거기서는 `중구`가 여섯
+ * 개다. 지역마다 자기 시도로 통을 좁혀 주면 다시 유일해진다.
+ *
+ * 대응표는 코스들이 이미 갖고 있다 — 시군구 코스마다 옛 접두사(geo.prefix)와
+ * 지역 코드(현행)를 둘 다 들고 있으므로 여기서 짝지어 읽기만 하면 된다.
+ */
+function legacyPrefixes(all: Course[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const c of all) {
+    if (c.geo?.file !== "municipalities" || !c.geo.prefix) continue;
+    map.set(c.regions[0].code.slice(0, 2), c.geo.prefix);
+  }
+  return map;
+}
 
-  const pool = collection.geometries
-    .filter(isArea)
-    .filter((g) => !source.prefix || propsOf(g).code.startsWith(source.prefix));
+type Loaded = Awaited<ReturnType<typeof loadTopology>>;
+
+/** 원본 한 조각과, 그것이 나온 위상. 조각을 합칠 때 같은 위상이어야 한다. */
+interface Piece {
+  geom: Area;
+  topology: Loaded;
+  code: string;
+  name: string;
+}
+
+/**
+ * 이 코스가 쓸 원본 조각들.
+ *
+ * 한 통에서만 꺼낸다. 시도마다 따로 축약해 모으는 안도 있었지만, 그러면 시도
+ * 경계가 양쪽에서 다르게 줄어들어 실루엣에 이음매가 생긴다 — 이 파일이
+ * 지역별로 축약하지 않는 이유와 같다.
+ *
+ * 전국을 한꺼번에 축약해도 작은 자치구가 살아남는지가 걱정이었는데, 재 보니
+ * 20%에서 가장 작은 도형(중구)도 15점을 남긴다. 뭉개지던 원인은 축약이 아니라
+ * **좌표 반올림**이었다(PRECISION 참조).
+ */
+async function poolFor(course: Course): Promise<Piece[]> {
+  const source = course.geo!;
+  const percent = source.simplifyPercent ?? SIMPLIFY_PERCENT;
+
+  const load = async (prefix: string | undefined): Promise<Piece[]> => {
+    const topology = await loadTopology(source.file, prefix, percent);
+    const objectKey = Object.keys(topology.objects)[0];
+    const collection = topology.objects[objectKey] as GeometryCollection<RegionProps>;
+    return collection.geometries
+      .filter(isArea)
+      .map((geom) => ({ geom, topology, ...propsOf(geom) }))
+      .filter((piece) => !prefix || piece.code.startsWith(prefix));
+  };
+
+  return load(source.prefix);
+}
+
+async function buildCourse(course: Course, legacy: Map<string, string>): Promise<Report> {
+  const source = course.geo!;
+  const pool = await poolFor(course);
 
   const unmatched: string[] = [];
   const features = course.regions.map((region) => {
-    const parts = pool.filter((g) => belongsTo(region, propsOf(g).name));
+    /*
+     * 접두사로 통을 좁혀 두지 않은 코스(전국 시군구)에서는 지역마다 자기
+     * 시도로 좁힌다. 그러지 않으면 `중구`가 여섯 조각을 한꺼번에 물어 온다.
+     */
+    const scope = source.prefix ? undefined : legacy.get(region.code.slice(0, 2));
+    const candidates = scope ? pool.filter((p) => p.code.startsWith(scope)) : pool;
+    const parts = candidates.filter((p) => belongsTo(region, p.name));
     if (parts.length === 0) unmatched.push(region.name);
     return {
       region,
-      sources: parts.map((p) => propsOf(p).name),
-      geometry: parts.length > 0 ? merge(topology, parts) : null,
+      sources: parts.map((p) => ({ code: p.code, name: p.name })),
+      // 합치는 것은 같은 위상 안에서만. 한 지역의 조각들은 늘 한 시도에서 온다.
+      geometry:
+        parts.length > 0 ? merge(parts[0].topology, parts.map((p) => p.geom)) : null,
     };
   });
 
-  // 한 원본 조각이 두 지역에 동시에 들어가면 매칭 규칙이 잘못된 것이다.
+  /*
+   * 한 원본 조각이 두 지역에 동시에 들어가면 매칭 규칙이 잘못된 것이다.
+   *
+   * **코드**로 센다. 이름으로 세면 전국 코스에서 서울 중구와 부산 중구가 같은
+   * 조각으로 잡혀, 멀쩡히 나뉜 것을 중복이라고 신고한다.
+   */
   const used = features.flatMap((f) => f.sources);
-  const duplicated = [...new Set(used.filter((n, i) => used.indexOf(n) !== i))];
+  const usedCodes = used.map((u) => u.code);
+  const duplicated = [
+    ...new Set(
+      used.filter((u, i) => usedCodes.indexOf(u.code) !== i).map((u) => u.name),
+    ),
+  ];
 
   // 아무 지역도 가져가지 않은 원본 — 코스에 빠진 지역이 있다는 뜻이다.
-  const claimed = new Set(used);
+  const claimed = new Set(usedCodes);
   const orphans = pool
-    .map((g) => propsOf(g).name)
-    .filter((n) => !claimed.has(n));
+    .filter((p) => !claimed.has(p.code) && !UNCOVERED.has(p.name))
+    .map((p) => p.name);
 
   const report: Report = {
     course: course.id,
@@ -351,7 +427,21 @@ async function buildCourse(course: Course): Promise<Report> {
     ],
     all,
   );
-  const path = geoPath(projection).digits(1);
+  /*
+   * 좌표 소수점 자리.
+   *
+   * 1000px 판에 지역 스물다섯 개를 그릴 때는 한 자리면 넘친다 — 0.1px보다
+   * 작은 차이는 화면에 없다. 전국 시군구는 다르다. 대구 중구는 온 나라를
+   * 1000px에 담았을 때 14px짜리이고, 그 안의 열다섯 점이 한 자리 반올림에서
+   * 여섯 점으로 뭉친다. 실제로 그 때문에 축약 비율을 올려도 소용이 없었다.
+   *
+   * 게다가 플레이 화면은 이 좌표를 그대로 확대해서 쓴다. 그러니 뭉친 점은
+   * 작게 보일 때만 괜찮은 것이 아니라 크게 볼 때 육각형으로 남는다.
+   *
+   * 지역이 많을수록 한 지역이 차지하는 자리가 작아지므로 자리를 하나 더 준다.
+   * 파일은 그만큼 커지지만, 이 코스는 원래 큰 코스다.
+   */
+  const path = geoPath(projection).digits(course.regions.length > 60 ? 2 : 1);
 
   const [[x0, y0], [x1, y1]] = path.bounds(all);
   projection.translate([
@@ -404,10 +494,17 @@ async function buildCourse(course: Course): Promise<Report> {
    * 위상은 여기 있으므로 합치는 것은 merge 한 번이다. 내부 경계가 사라지면
    * 어긋날 경계 자체가 없고, 점 수도 크게 준다.
    */
-  const outline = path({
+  /*
+   * 실루엣은 늘 한 자리로 족하다. 카드 썸네일에서만 쓰이고 확대되지 않으므로
+   * 지역 도형에 준 여유(PRECISION 주석)를 여기까지 끌고 오면 파일만 커진다 —
+   * 전국 코스에서 outlines.json이 그것 때문에 네 배가 됐다.
+   */
+  const outlinePath = geoPath(projection).digits(1);
+  const outline = outlinePath({
     type: "Feature" as const,
     properties: {},
-    geometry: merge(topology, pool),
+    // pool은 한 위상에서만 나온다(poolFor 참조). 조각에 실려 온 것을 그대로 쓴다.
+    geometry: merge(pool[0].topology, pool.map((p) => p.geom)),
   })!;
 
   /*
@@ -453,9 +550,10 @@ function printReport(r: Report): boolean {
 }
 
 const courses = (await loadCourses()).filter((c) => c.geo);
+const legacy = legacyPrefixes(courses);
 let allOk = true;
 for (const course of courses) {
-  const report = await buildCourse(course);
+  const report = await buildCourse(course, legacy);
   if (!printReport(report)) allOk = false;
 }
 

@@ -9,6 +9,7 @@ import type { CourseGeo } from "@/data/geo/types";
  */
 const LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   sido: () => import("@/data/geo/sido.json"),
+  nationwide: () => import("@/data/geo/nationwide.json"),
   seoul: () => import("@/data/geo/seoul.json"),
   gyeonggi: () => import("@/data/geo/gyeonggi.json"),
   gangwon: () => import("@/data/geo/gangwon.json"),

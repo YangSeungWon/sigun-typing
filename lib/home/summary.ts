@@ -29,6 +29,11 @@ export interface CourseSummary {
   /** 이 코스에 든 지역 수 */
   total: number;
   /**
+   * 이 코스의 지역이 다른 코스에도 있는가(`data/types.ts`의 overlapping).
+   * 정복도는 이런 코스를 세지 않는다 — 세면 같은 곳을 두 번 센다.
+   */
+  overlapping: boolean;
+  /**
    * 이 코스가 속한 시도 코드.
    *
    * `geo.prefix`가 아니다. 그쪽은 원본 경계 파일의 옛 코드(21~39)라 서울만
@@ -62,7 +67,12 @@ export interface TodaySummary {
 export interface HomeSeed {
   courses: CourseSummary[];
   sido: SidoSummary[];
-  /** 245 = 17 시도 + 228 시군·구. 세지 않고 적어 두면 코스가 늘 때 거짓말이 된다. */
+  /**
+   * 245 = 17 시도 + 228 시군·구. 세지 않고 적어 두면 코스가 늘 때 거짓말이 된다.
+   *
+   * 겹치는 코스는 빠진다. 전국 시군구 코스를 더하면 473이 되는데, 그 228곳은
+   * 이미 시도별 코스로 세고 있는 바로 그 228곳이다.
+   */
   totalRegions: number;
   today: TodaySummary;
 }
@@ -80,6 +90,7 @@ function summarize(course: (typeof COURSES)[number]): CourseSummary {
      * 코스마다 손으로 적어 두지 않는다. 전국 코스만 자기 시도가 없다.
      */
     shortName: course.id === sidoCourse.id ? "전국" : (SIDO_NAME.get(sido) ?? course.name),
+    overlapping: course.overlapping ?? false,
     version: course.version,
     total: course.regions.length,
     sido,
@@ -88,8 +99,14 @@ function summarize(course: (typeof COURSES)[number]): CourseSummary {
 
 export function buildHomeSeed(now: number): HomeSeed {
   const courses = COURSES.map(summarize);
+  /*
+   * 시도 → 그 시도의 시군 코스. 전국 코스들(17 시도, 228 시군구)은 자기 시도가
+   * 없거나 온 나라에 걸쳐 있으므로 여기 들어가지 않는다.
+   */
   const byPrefix = new Map(
-    courses.filter((c) => c.id !== sidoCourse.id).map((c) => [c.sido, c]),
+    courses
+      .filter((c) => c.id !== sidoCourse.id && !c.overlapping)
+      .map((c) => [c.sido, c]),
   );
 
   /*
@@ -112,13 +129,23 @@ export function buildHomeSeed(now: number): HomeSeed {
    * 고를 수 없는 날은 없다(코스가 열일곱 개니까). 그래도 pickDailyCourse는
    * 빈 목록에 null을 돌려주므로, 여기서 받아 두고 첫 코스로 떨어뜨린다.
    */
-  const todayId = pickDailyCourse(courses.map((c) => c.id), dateKey) ?? courses[0].id;
+  /*
+   * 오늘의 도전에서 겹치는 코스를 뺀다.
+   *
+   * 전국 시군구는 스무 판쯤 걸리는 코스다. 매일 열어 보는 자리에서 오늘 할 일로
+   * 그것이 뜨면 대부분 그날은 아무것도 안 하고 닫는다. 끝판왕은 찾아가는
+   * 것이지 배달되는 것이 아니다.
+   */
+  const daily = courses.filter((c) => !c.overlapping);
+  const todayId = pickDailyCourse(daily.map((c) => c.id), dateKey) ?? daily[0].id;
   const todayCourse = getCourse(todayId) ?? COURSES[0];
 
   return {
     courses,
     sido,
-    totalRegions: courses.reduce((sum, c) => sum + c.total, 0),
+    totalRegions: courses
+      .filter((c) => !c.overlapping)
+      .reduce((sum, c) => sum + c.total, 0),
     today: {
       courseId: todayCourse.id,
       courseName: todayCourse.name,

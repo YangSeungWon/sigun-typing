@@ -1,5 +1,6 @@
 import { loadMistakes } from "./mistakes";
 import { loadPersonalBest } from "./personalBest";
+import { loadPlayed } from "./played";
 
 /**
  * 한 코스에서 내가 아는 곳이 몇 곳인가.
@@ -33,14 +34,23 @@ export interface CourseMastery {
   stuckCodes: string[];
 }
 
-export function readCourseMastery(course: CourseRef): CourseMastery {
+export function readCourseMastery(
+  course: CourseRef,
+  playedCourses: Set<string> = loadPlayed(),
+): CourseMastery {
   const stuck = loadMistakes(course.id);
 
   /*
-   * 해 본 적이 있는가. 오답이 남아 있거나, 두 모드 중 하나에 개인 기록이 있으면
-   * 해 본 것이다. 둘 다 없으면 첫 방문이고 — 첫 방문자의 지도는 색이 없어야 한다.
+   * 해 본 적이 있는가.
+   *
+   * 셋 중 하나면 해 본 것이다 — 끝낸 목록에 있거나, 오답이 남아 있거나, 두 모드
+   * 중 하나에 개인 기록이 있거나. 앞의 하나가 사실이고 뒤의 둘은 추론인데,
+   * 추론을 남겨 두는 이유는 목록이 생기기 전에 놀던 기록 때문이다.
+   *
+   * 셋 다 아니면 첫 방문이고 — 첫 방문자의 지도는 색이 없어야 한다.
    */
   const played =
+    playedCourses.has(course.id) ||
     stuck.length > 0 ||
     (["map", "learn"] as const).some((mode) =>
       loadPersonalBest(course.id, mode, course.version),
@@ -62,5 +72,7 @@ export function readCourseMastery(course: CourseRef): CourseMastery {
 }
 
 export function readAllMastery(courses: CourseRef[]): Map<string, CourseMastery> {
-  return new Map(courses.map((c) => [c.id, readCourseMastery(c)]));
+  // 목록은 한 번만 읽는다. 코스마다 읽으면 열일곱 번 파싱한다.
+  const played = loadPlayed();
+  return new Map(courses.map((c) => [c.id, readCourseMastery(c, played)]));
 }

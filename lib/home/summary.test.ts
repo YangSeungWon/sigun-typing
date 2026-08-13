@@ -6,15 +6,22 @@ const seed = buildHomeSeed(Date.parse("2026-08-13T03:00:00Z"));
 
 describe("첫 화면 씨앗", () => {
   it("245곳이다 — 시도 17 + 시군구 228", () => {
+    /*
+     * 코스는 열여덟인데 분모는 245다. 전국 시군구 코스의 228곳은 이미 시도별
+     * 코스로 세고 있는 바로 그 228곳이라, 더하면 같은 곳을 두 번 센다.
+     */
     expect(seed.totalRegions).toBe(245);
-    expect(seed.courses).toHaveLength(17);
+    expect(seed.courses).toHaveLength(18);
+    expect(seed.courses.filter((c) => c.overlapping).map((c) => c.id)).toEqual([
+      "nationwide",
+    ]);
   });
 
   it("지역 배열을 들고 가지 않는다", () => {
     // 클라이언트로 내려가는 값이다. 245개 지역 객체가 따라오면 안 된다.
     for (const c of seed.courses) {
       expect(Object.keys(c).sort()).toEqual([
-        "id", "name", "shortName", "sido", "total", "version",
+        "id", "name", "overlapping", "shortName", "sido", "total", "version",
       ]);
     }
   });

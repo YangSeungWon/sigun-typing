@@ -1,4 +1,5 @@
 import type { Course } from "../types";
+import { place } from "./place.ts";
 import { seoul } from "./seoul.ts";
 import { incheon } from "./incheon.ts";
 import { gyeonggi } from "./gyeonggi.ts";
@@ -17,7 +18,7 @@ import { busan } from "./busan.ts";
 import { jeju } from "./jeju.ts";
 
 /**
- * 전국 228개 시군구. 끝판왕.
+ * 전국 229개 시군구. 끝판왕.
  *
  * 지금까지 가장 긴 코스가 경기 31곳이었다. 한 시도를 다 외운 사람에게 다음에
  * 할 것이 다른 시도밖에 없었고, 열여섯 개를 다 돌아도 그 사실을 한 판으로
@@ -29,7 +30,9 @@ import { jeju } from "./jeju.ts";
  * 제주까지, 대체로 북에서 남으로)대로 이으면 전국을 한 바퀴 도는 경로가 된다.
  * 228곳을 처음부터 다시 이으면 그 열여섯 번의 판단을 버리는 셈이다.
  *
- * 세종은 없다. 시도이면서 그 아래 시군이 없어서 시군구 코스가 없다.
+ * 세종은 여기에만 있다. 시도이면서 그 아래 시군이 없어 시군구 코스가 따로
+ * 없는데, 빼 놓으면 **지도 한복판에 구멍이 남는다.** 대전과 전북 사이, 전국
+ * 17 시도가 세종을 두는 바로 그 자리에 넣는다.
  *
  * ── 이름이 겹치는 곳 ──────────────────────────────────────────
  * 광역시 자치구 때문에 같은 이름이 스물아홉 곳 있다(`중구` 여섯, `동구` 여섯,
@@ -46,10 +49,14 @@ import { jeju } from "./jeju.ts";
  */
 export const nationwide: Course = {
   id: "nationwide",
-  name: "전국 228 시군구",
+  name: "전국 229 시군구",
   group: "nationwide",
   placeUnit: "시군구",
-  version: 1,
+  /*
+   * v1은 228곳이었다. 세종을 넣으면서 총 타수가 달라졌으므로 옛 기록과 같은
+   * 순위표에 섞을 수 없다(data/types.ts의 판번호 규칙).
+   */
+  version: 2,
   description: "서울에서 제주까지, 대한민국 시군구 전부",
   // 접두사가 없으면 시군구 원본 전체가 들어온다.
   geo: { file: "municipalities", simplifyPercent: 20 },
@@ -62,6 +69,11 @@ export const nationwide: Course = {
     ...chungbuk.regions,
     ...chungnam.regions,
     ...daejeon.regions,
+    /*
+     * 세종. 시군 코스가 없어 어느 코스에도 안 들어 있던 곳이라 여기서만 만난다.
+     * 오답도 갈 곳이 없어 이 코스 노트에 남는다(lib/score/notebooks.ts의 기본값).
+     */
+    place("36110", "세종", "시", ["세종특별자치시"]),
     ...jeonbuk.regions,
     ...jeonnam.regions,
     ...gwangju.regions,

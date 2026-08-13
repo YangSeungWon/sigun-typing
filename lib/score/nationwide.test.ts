@@ -102,6 +102,16 @@ describe("전국 시군구 한 판", () => {
     expect(played.has("sejong")).toBe(false);
   });
 
+  it("세종은 갈 노트가 없어 이 코스에 남는다", () => {
+    /*
+     * 세종은 시군 코스가 없는 유일한 곳이다. 여기서만 만나므로 나눠 담을
+     * 곳이 없고, 그건 버리는 것보다 낫다.
+     */
+    vi.stubGlobal("localStorage", fakeStorage());
+    record(run(new Set(["36110"])));
+    expect(loadMistakes("nationwide").map((r) => r.name)).toEqual(["세종시"]);
+  });
+
   it("정복도가 두 번 세지 않는다", () => {
     vi.stubGlobal("localStorage", fakeStorage());
     record(run(new Set()));

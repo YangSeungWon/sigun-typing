@@ -94,7 +94,7 @@ export function focusScale(
 export function focusTransform(
   region: RegionShape | undefined,
   view: { width: number; height: number },
-  options: { fill?: number; maxScale?: number } = {},
+  options: { fill?: number; maxScale?: number; minSpan?: number } = {},
 ): string {
   if (!region) return "";
 
@@ -122,7 +122,30 @@ export function focusTransform(
     (view.width * fill) / box.width,
     (view.height * fill) / box.height,
   );
-  const scale = Math.min(Math.max(raw, 1), maxScale);
+
+  /*
+   * 기본 상한 아래에 **바닥**을 깐다.
+   *
+   * 상한 3은 한 지역이 지도에서 제법 큰 자리를 차지할 때를 전제로 잡은 값이다.
+   * 전국 시군구 지도에서는 대구 중구가 3px이라, 3배로 당겨도 10px짜리 점으로
+   * 남는다 — 어디가 문제인지 보이지 않는다.
+   *
+   * 그래서 "지도의 이만큼보다는 커야 한다"는 선을 하나 두고, 상한과 그 선 중
+   * 큰 쪽을 쓴다. 기존 코스는 이 선에 닿지 않으므로(코스 열여덟 중 인천의
+   * 한 지역만 3.0 → 3.3) 지금까지의 화면이 그대로 유지된다.
+   *
+   * 상한을 **직접 준 호출부**에는 적용하지 않는다. 그건 "여기까지만"이라고
+   * 말한 것이지 "적당히 알아서"가 아니다.
+   */
+  const cap =
+    options.maxScale !== undefined
+      ? options.maxScale
+      : Math.max(
+          maxScale,
+          ((options.minSpan ?? 0.09) * Math.min(view.width, view.height)) /
+            Math.min(box.width, box.height),
+        );
+  const scale = Math.min(Math.max(raw, 1), cap);
 
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;

@@ -50,14 +50,6 @@ interface RegionProps {
 
 type Area = Polygon<RegionProps> | MultiPolygon<RegionProps>;
 
-/**
- * 어느 코스도 가져가지 않는 원본 조각.
- *
- * 세종은 시도이면서 그 아래 시군이 없다. 그래서 시군구 원본에 한 조각으로
- * 들어 있지만 시군구 코스는 존재하지 않는다 — 빠뜨린 것이 아니라 없는 것이다.
- */
-const UNCOVERED = new Set(["세종특별자치시"]);
-
 /** 원본의 제각각인 필드명을 여기서 한 번만 정규화한다. */
 function propsOf(g: Area): { code: string; name: string } {
   const p = g.properties!;
@@ -394,7 +386,7 @@ async function buildCourse(course: Course, legacy: Map<string, string>): Promise
   // 아무 지역도 가져가지 않은 원본 — 코스에 빠진 지역이 있다는 뜻이다.
   const claimed = new Set(usedCodes);
   const orphans = pool
-    .filter((p) => !claimed.has(p.code) && !UNCOVERED.has(p.name))
+    .filter((p) => !claimed.has(p.code))
     .map((p) => p.name);
 
   const report: Report = {

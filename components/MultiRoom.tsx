@@ -34,6 +34,15 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
   const codeRef = useRef<HTMLInputElement>(null);
   const [courseId, setCourseId] = useState(COURSES[0].id);
   const [busy, setBusy] = useState(false);
+  /**
+   * 방을 만들 것인가, 남의 방에 들어갈 것인가.
+   *
+   * 한 화면에 이름·코스 열일곱 개·방 코드가 함께 있었다. 정보량 자체는 많지
+   * 않지만 사람은 실제로 **둘 중 하나만** 한다 — 카톡으로 코드를 받은 사람에게
+   * 코스 목록은 통째로 남의 일이다. 먼저 갈래를 고르게 하면 그 뒤에 보이는
+   * 것은 자기 일뿐이다.
+   */
+  const [tab, setTab] = useState<"create" | "join">("create");
   // 대기실에 있는 동안 지도를 받아 둔다. 출발 신호를 받고 부르면
   // 첫 문제에서만 지도가 비는데, 회상 게임에서는 문제가 안 보이는 것과 같다.
   const geo = useCourseGeo(room?.courseId);
@@ -141,9 +150,34 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
           />
         </section>
 
+        {/* 갈래를 먼저 고른다. 고른 쪽만 아래에 펼쳐진다. */}
+        <div className="flex gap-2">
+          {(
+            [
+              ["create", "방 만들기"],
+              ["join", "코드로 참가"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              aria-pressed={tab === id}
+              className={`flex-1 rounded-lg px-4 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                tab === id
+                  ? "bg-sign text-paint"
+                  : "border border-concrete-deep text-ink hover:bg-concrete-deep"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "create" ? (
         <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-6">
           <h2 className="text-sm font-medium text-dim">
-            방 만들기
+            어느 코스로 겨룰까요
           </h2>
           <div className="flex flex-wrap gap-2">
             {COURSES.map((c) => (
@@ -168,13 +202,13 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             disabled={!connected || busy}
             className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            방 만들기
+            대결방 만들기
           </button>
         </section>
-
+        ) : (
         <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep p-6">
           <h2 className="text-sm font-medium text-dim">
-            방 코드로 들어가기
+            받은 방 코드를 넣으세요
           </h2>
           <div className="flex gap-2">
             <input
@@ -195,6 +229,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             </button>
           </div>
         </section>
+        )}
 
         <p className="font-mono text-sm text-dim" role="status" aria-live="polite">
           {error ?? (connected ? "서버에 연결되었습니다" : "서버에 연결하는 중…")}

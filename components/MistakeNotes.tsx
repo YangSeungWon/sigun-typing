@@ -57,11 +57,12 @@ export function MistakeNotes() {
         <p className="text-dim">
 아직 헷갈리는 곳이 없습니다. 틀리거나 힌트를 본 지역이 여기 모입니다.
         </p>
+        {/* 약속한 것이 "지도 고르기"이므로 목록으로 보낸다. 첫 화면에는 이제 없다. */}
         <Link
-          href="/"
+          href="/courses"
           className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          지도 타이핑 하러 가기
+          코스 고르기
         </Link>
       </div>
     );

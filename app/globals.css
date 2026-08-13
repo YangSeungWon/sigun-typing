@@ -223,6 +223,161 @@ body {
 }
 
 /*
+ * 첫 화면의 배치.
+ *
+ * 넓은 화면과 좁은 화면이 **같은 DOM**을 쓴다. 화면마다 컴포넌트를 따로 만들면
+ * 숫자를 세는 코드가 두 벌이 되고, 둘 중 하나만 고치는 날이 온다.
+ *
+ * Tailwind 임의값(`[grid-template-areas:…]`)이 아니라 여기 이름을 붙여 둔다.
+ * 세 브레이크포인트에 걸친 배치 규칙은 근거를 한 문단 달아야 하는데 클래스
+ * 문자열 안에는 주석을 쓸 수 없다. 블록 *안쪽*은 그대로 유틸리티다.
+ *
+ * ── 빈 자리 함정 ─────────────────────────────────────────────
+ * 자식이 없는 행은 높이 0으로 접히지만 `gap`은 남아서 간격이 두 배가 된다.
+ * 선택 블록 둘(헷갈리는 곳·정복도)의 유무는 하이드레이션 뒤에야 알 수 있으므로
+ * React가 data 속성으로 알려 주고, 넓은 화면에서만 areas를 바꿔 끼운다.
+ * 좁은 화면은 한 줄로 흐르므로 고칠 것이 없다.
+ */
+.home-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-areas:
+    "copy"
+    "map"
+    "actions"
+    "today"
+    "confuse"
+    "conquest"
+    "friends";
+}
+
+.home-copy { grid-area: copy; }
+.home-map-slot { grid-area: map; }
+.home-actions { grid-area: actions; }
+.home-today { grid-area: today; }
+.home-confuse { grid-area: confuse; }
+.home-conquest { grid-area: conquest; }
+.home-friends { grid-area: friends; }
+
+/*
+ * 좁은 화면에서 `copy`가 맨 위인 것은 카피를 앞세우려는 것이 아니다. 그 자리에
+ * 다시 온 사람에게는 `82 / 245`가, 처음 온 사람에게는 제목이 들어간다 —
+ * 둘 다 화면을 열자마자 첫 줄에 있어야 하는 것이라 자리를 나눌 이유가 없다.
+ * 그 아래 지도와 이어하기까지가 첫 판이고, 카드들은 스크롤 아래로 내려간다.
+ */
+
+@media (min-width: 768px) {
+  .home-grid {
+    gap: 1.25rem;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "copy    map"
+      "actions map"
+      "today   confuse"
+      "conquest conquest"
+      "friends friends";
+  }
+
+  /* 카드가 빠지면 남은 하나가 그 줄을 다 쓴다. 반쪽짜리 빈칸을 남기지 않는다. */
+  .home-grid[data-confuse="off"] {
+    grid-template-areas:
+      "copy    map"
+      "actions map"
+      "today   today"
+      "conquest conquest"
+      "friends friends";
+  }
+
+  .home-grid[data-conquest="off"] {
+    grid-template-areas:
+      "copy    map"
+      "actions map"
+      "today   confuse"
+      "friends friends";
+  }
+
+  .home-grid[data-confuse="off"][data-conquest="off"] {
+    grid-template-areas:
+      "copy    map"
+      "actions map"
+      "today   today"
+      "friends friends";
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-grid {
+    gap: 1.5rem;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+      "copy     map map"
+      "actions  map map"
+      "today    confuse conquest"
+      "friends  friends friends";
+  }
+
+  .home-grid[data-confuse="off"] {
+    grid-template-areas:
+      "copy     map map"
+      "actions  map map"
+      "today    conquest conquest"
+      "friends  friends friends";
+  }
+
+  .home-grid[data-conquest="off"] {
+    grid-template-areas:
+      "copy     map map"
+      "actions  map map"
+      "today    confuse confuse"
+      "friends  friends friends";
+  }
+
+  .home-grid[data-confuse="off"][data-conquest="off"] {
+    grid-template-areas:
+      "copy     map map"
+      "actions  map map"
+      "today    today today"
+      "friends  friends friends";
+  }
+}
+
+/*
+ * 판이 도는 동안에는 셸을 걷는다.
+ *
+ * `/play`와 `/review`는 애초에 셸 밖에 있지만(app/(site) 참조), 대결은 다르다 —
+ * 방을 만들고 들어가는 화면이 셸 안에 있고 거기서 전체 화면 경주가 시작된다.
+ * 라우트가 그대로인 채로 화면의 성격만 바뀌는 유일한 자리라, 여기서만
+ * 자바스크립트가 표시를 켠다(lib/useImmersive.ts).
+ */
+:root[data-immersive] .app-shell {
+  padding-bottom: 0;
+}
+
+:root[data-immersive] .app-bottom-nav,
+:root[data-immersive] .app-shell > header,
+:root[data-immersive] .app-shell > footer {
+  display: none;
+}
+
+/*
+ * 짧은 가로 화면에서는 탭 바를 접는다.
+ *
+ * 세로 380px에서 탭 바가 56px이면 화면의 15%가 메뉴다. 그 자리에서는 넓은
+ * 화면용 헤더도 아직 안 뜨므로(md는 폭 기준이다) 위쪽 헤더의 이름만 남는데,
+ * 그건 의도한 것이다 — 눕힌 화면은 무언가를 보려고 눕힌 것이지 메뉴를 고르려고
+ * 눕힌 것이 아니다.
+ */
+@media (orientation: landscape) and (max-height: 480px) {
+  .app-shell {
+    padding-bottom: 0;
+  }
+
+  .app-bottom-nav {
+    display: none;
+  }
+}
+
+/*
  * 가로로 눕힌 화면.
  *
  * 세로가 짧아지면 지도와 입력판을 위아래로 쌓을 수 없다 — 키보드까지 올라오면

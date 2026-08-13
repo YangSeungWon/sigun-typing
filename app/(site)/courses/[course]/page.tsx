@@ -40,7 +40,8 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
       <header className="flex flex-col gap-3">
-        <BackLink href="/">시군 타이핑</BackLink>
+        {/* 이 화면의 부모는 이제 첫 화면이 아니라 목록이다. */}
+        <BackLink href="/courses">코스</BackLink>
         <h1 className="text-4xl font-bold tracking-tight">{course.name}</h1>
         <p className="text-lg text-dim">{course.description}</p>
       </header>
@@ -142,14 +143,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
         </section>
       )}
 
-      <footer className="mt-auto flex gap-4 border-t border-concrete-deep pt-6 font-mono text-xs text-dim">
-        <Link href="/guide" className="transition-colors hover:text-ink">
-          이용안내
-        </Link>
-        <Link href="/ranking" className="transition-colors hover:text-ink">
-          랭킹
-        </Link>
-      </footer>
+      {/* 이용안내와 랭킹은 헤더에 있다. 같은 링크를 위아래로 두 번 두지 않는다. */}
     </main>
   );
 }

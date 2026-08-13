@@ -536,8 +536,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
           geo={geo}
           passedCodes={passedCodes}
           missed={missedItems}
-          // 코스 고르기는 첫 화면이다.
-          coursesHref="/"
+          coursesHref="/courses"
           nextSlot={
             practice ? null : (
               <NextChallenge courseId={course.id} mode={mode} score={score} />

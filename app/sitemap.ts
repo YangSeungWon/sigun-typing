@@ -30,6 +30,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: at("/"), changeFrequency: "weekly", priority: 1 },
+    // 코스 목록. 첫 화면이 상태판이 된 뒤로 열일곱 코스로 들어가는 문은 여기다.
+    { url: at("/courses"), changeFrequency: "weekly", priority: 0.9 },
     ...courses,
     ...games,
     { url: at("/guide"), changeFrequency: "monthly", priority: 0.6 },

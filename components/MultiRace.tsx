@@ -6,6 +6,7 @@ import type { CourseGeo } from "@/data/geo/types";
 import type { Course } from "@/data/types";
 import { MODES } from "@/lib/game/modes";
 import { useGame } from "@/lib/game/useGame";
+import { useImmersive } from "@/lib/useImmersive";
 import type { RaceStart, RoomState } from "@/lib/multiplayer/types";
 import { KeyHint } from "./Keycap";
 import { Odometer } from "./Odometer";
@@ -54,6 +55,14 @@ export function MultiRace({
 
   const { state, current, score, advancedAt, rejectedAt, begin, type, submitAnswer, hint } =
     useGame(items, MODES.multi, room.seed);
+
+  /*
+   * 이 화면이 떠 있는 동안 사이트의 헤더와 탭 바를 걷는다.
+   *
+   * /play와 달리 대결은 셸 안쪽 라우트에서 시작한다 — 방을 만드는 화면과
+   * 경주하는 화면이 같은 주소다. 라우트 구조로는 가를 수 없어 여기서 표시한다.
+   */
+  useImmersive();
 
   /**
    * 세는 중.

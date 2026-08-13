@@ -119,7 +119,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
           type="button"
           onClick={() => doJoinCode(initialCode)}
           disabled={!connected || busy}
-          className="rounded-lg bg-sign px-5 py-4 text-lg font-medium text-paint transition-colors hover:bg-sign-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-lg bg-sign px-5 py-4 text-lg font-medium text-on-sign transition-colors hover:bg-sign-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           들어가기
         </button>
@@ -165,7 +165,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
               aria-pressed={tab === id}
               className={`flex-1 rounded-lg px-4 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 tab === id
-                  ? "bg-sign text-paint"
+                  ? "bg-sign text-on-sign"
                   : "border border-concrete-deep text-ink hover:bg-concrete-deep"
               }`}
             >
@@ -188,7 +188,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
                 aria-pressed={c.id === courseId}
                 className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                   c.id === courseId
-                    ? "bg-sign text-paint"
+                    ? "bg-sign text-on-sign"
                     : "border border-concrete-deep text-ink hover:bg-concrete-deep"
                 }`}
               >
@@ -200,7 +200,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             type="button"
             onClick={doCreate}
             disabled={!connected || busy}
-            className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             대결방 만들기
           </button>
@@ -295,7 +295,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             className={`flex-1 rounded-lg px-5 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               me?.ready
                 ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
-                : "bg-expressway text-paint hover:brightness-110"
+                : "bg-expressway text-on-sign hover:brightness-110"
             }`}
           >
             {me?.ready ? "준비 취소" : "준비"}
@@ -304,7 +304,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             <button
               type="button"
               onClick={start}
-              className="flex-1 rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="flex-1 rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               출발
             </button>

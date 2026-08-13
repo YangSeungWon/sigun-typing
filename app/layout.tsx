@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { siteUrl } from "@/lib/site";
+import { THEME_SCRIPT } from "@/lib/theme";
 
 /**
  * 폰트는 자체 호스팅한다. 구글 폰트 CDN에 런타임 의존성을 만들지 않고,
@@ -62,12 +63,40 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
+/**
+ * 브라우저 UI 색은 **미디어 없는 태그 하나**로 둔다.
+ *
+ * `light`/`dark` 두 개를 미디어로 나눠 붙이는 방법이 흔하지만, 그러면 시스템이
+ * 어두운데 밝게 쓰겠다고 고른 사람에게 주소창만 검게 남는다 — 미디어로 갈린
+ * 태그는 사용자의 선택을 따라올 수 없다. 태그는 하나만 두고 THEME_SCRIPT와
+ * setThemeChoice가 그 content를 고쳐 쓴다.
+ *
+ * viewportFit은 아래쪽 탭 바가 iOS 홈 인디케이터 밑까지 깔리기 위한 전제다.
+ * 이게 없으면 env(safe-area-inset-*)가 전부 0이다.
+ */
+export const viewport: Viewport = {
+  viewportFit: "cover",
+  themeColor: "#dee0db",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    /*
+     * suppressHydrationWarning은 <html>에만 붙는다.
+     *
+     * 아래 스크립트가 React보다 먼저 이 노드에 data-theme을 붙이므로 서버가
+     * 보낸 HTML과 실제 DOM이 달라지고, React는 그것을 불일치로 신고한다.
+     * 이 속성은 한 단계에만 적용되므로 body 아래의 진짜 불일치는 그대로 잡힌다.
+     */
     <html
       lang="ko"
+      suppressHydrationWarning
       className={`${pretendard.variable} ${plexMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* 파서를 막고 도는 자리. 여기서 붙여야 첫 페인트가 이미 고른 판이다. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="bg-concrete text-ink flex min-h-full flex-col">
         {children}
       </body>

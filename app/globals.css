@@ -6,25 +6,162 @@
  * 코스는 은유가 아니라 실제 경로다. 그래서 화면의 언어도 한국 도로 안내표지에서
  * 가져왔다. 일반도로 녹색 표지판, 고속도로 파란 표지판, 중앙선 노랑, 콘크리트 회색.
  * 숫자는 계기판처럼 읽혀야 하므로 전부 모노스페이스로 둔다.
+ *
+ * ── 두 층으로 나눈 이유 ──────────────────────────────────────────
+ *
+ * 아래 `--sig-*`가 실제 색이고, `@theme inline`은 유틸리티에 그 **변수를** 박아
+ * 넣기만 한다. 평범한 `@theme`이면 Tailwind가 값을 :root에 굳혀 두고
+ * `.bg-sign`은 그 굳은 값을 가리키므로, 나중에 색을 갈아 끼워도 이미 치환된
+ * 쪽이 이긴다. inline이어야 치환이 **쓰이는 자리에서** 일어난다.
+ *
+ * SVG와 keyframes가 `var(--color-sign)`을 직접 부르는 자리가 스무 곳쯤 있는데,
+ * 그 이름도 그대로 나온다 — Tailwind가 소스에서 쓰인 토큰만 내보내고 그 참조도
+ * 쓰임으로 세기 때문이다. 뒤집어 말하면 **아무도 안 부르는 토큰은 사라진다.**
+ * 토큰을 새로 넣었는데 SVG에서만 쓴다면 빌드 결과에 남았는지 확인할 것.
  */
-@theme {
-  --color-concrete: #dee0db;
-  --color-concrete-deep: #c7cac3;
-  /* 지도 비활성 지역. 배경(#dee0db)과 확실히 갈리되 현재 지역을 덮지 않을 만큼만. */
-  --color-map-idle: #bfc3bb;
-  --color-map-line: #e8eae5;
-  --color-sign: #0a6b3d;
-  --color-sign-deep: #06522e;
-  --color-sign-hi: #0f8b4f;
-  --color-expressway: #10417e;
-  --color-centerline: #f0c420;
-  --color-paint: #f7f9f5;
-  --color-ink: #101410;
-  --color-dim: #6f7b6c;
-  --color-alert: #c7452b;
+@theme inline {
+  --color-concrete: var(--sig-concrete);
+  --color-concrete-deep: var(--sig-concrete-deep);
+  --color-map-idle: var(--sig-map-idle);
+  --color-map-line: var(--sig-map-line);
+  --color-sign: var(--sig-sign);
+  --color-sign-deep: var(--sig-sign-deep);
+  --color-sign-hi: var(--sig-sign-hi);
+  --color-expressway: var(--sig-expressway);
+  --color-centerline: var(--sig-centerline);
+  --color-paint: var(--sig-paint);
+  --color-on-sign: var(--sig-on-sign);
+  --color-ink: var(--sig-ink);
+  --color-dim: var(--sig-dim);
+  --color-alert: var(--sig-alert);
+}
 
+/* 글꼴은 테마를 타지 않는다. 갈아 끼울 값이 아니므로 평범한 @theme에 둔다. */
+@theme {
   --font-sans: var(--font-plex-kr);
   --font-mono: var(--font-plex-mono);
+}
+
+/**
+ * 밝은 판 — 지금까지의 도로표지판. 값은 한 자리도 바뀌지 않았다.
+ *
+ * `paint`가 둘로 갈라진 것만 다르다. 이 색은 여태 **카드 판면**이자 **초록
+ * 표지판 위 글자**로 동시에 쓰였는데, 밝은 화면에서는 둘 다 흰색이라 그래도
+ * 됐다. 어두운 화면에서는 화해할 수 없다 — 카드는 어두워야 하고 민트색 판
+ * 위 글자는 검어야 한다. 그래서 역할로 쪼갠다.
+ */
+:root {
+  --sig-concrete: #dee0db;
+  --sig-concrete-deep: #c7cac3;
+  /* 지도 비활성 지역. 배경(#dee0db)과 확실히 갈리되 현재 지역을 덮지 않을 만큼만. */
+  --sig-map-idle: #bfc3bb;
+  --sig-map-line: #e8eae5;
+  --sig-sign: #0a6b3d;
+  --sig-sign-deep: #06522e;
+  --sig-sign-hi: #0f8b4f;
+  --sig-expressway: #10417e;
+  --sig-centerline: #f0c420;
+  /** 떠 있는 판면 — 카드·입력칸. */
+  --sig-paint: #f7f9f5;
+  /** 강한 색 위에 얹는 글자. 판을 따라 밝기가 뒤집힌다. */
+  --sig-on-sign: #f7f9f5;
+  --sig-ink: #101410;
+  --sig-dim: #6f7b6c;
+  --sig-alert: #c7452b;
+
+  /* 스크롤바와 입력 위젯도 함께 따라오게 한다. */
+  color-scheme: light;
+}
+
+/**
+ * 어두운 판.
+ *
+ * 밝은 판을 계산으로 뒤집지 않았다. 도로표지의 규격 녹색은 흰 바탕에서
+ * 성립하는 색이고, 그것을 그대로 어둡게 깎으면 이끼색이 된다. 어두운 화면에서
+ * 같은 일을 하는 색을 새로 고른다 — 낮에 빛을 되쏘는 반사시트가 아니라 밤에
+ * 스스로 빛나는 표지, 곧 민트-청록이다.
+ *
+ * 이름의 뜻이 뒤집히는 토큰이 둘 있다. `concrete-deep`은 "더 어두운"이 아니라
+ * **바탕에서 한 칸 떨어진**이고(테두리 쉰 곳이 여기 걸려 있다), `map-line`은
+ * 면보다 밝은 선이 아니라 면 사이에 파인 홈이다. 둘 다 밝은 판에서의 명도차
+ * (1.25 / 1.48)보다 벌려 둔다(1.73 / 1.81) — 어두운 화면에서는 같은 비율이
+ * 덜 보인다.
+ *
+ * `sign`은 표면으로도 글자로도 서야 한다. #23c08f는 바탕 대비 8.39,
+ * 그 위에 얹는 on-sign 대비 7.92다.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sig-concrete: #060d12;
+    --sig-concrete-deep: #2b3d47;
+    --sig-map-idle: #2f4350;
+    --sig-map-line: #0a141b;
+    --sig-sign: #23c08f;
+    --sig-sign-deep: #169b72;
+    --sig-sign-hi: #5cf2c0;
+    --sig-expressway: #4b9dff;
+    --sig-centerline: #ffd84d;
+    --sig-paint: #16242e;
+    --sig-on-sign: #05161c;
+    --sig-ink: #e6f0ec;
+    --sig-dim: #93a7ab;
+    --sig-alert: #ff6b57;
+
+    color-scheme: dark;
+  }
+}
+
+/**
+ * 고른 값이 시스템 설정을 이긴다 — 양쪽 다.
+ *
+ * 선택자 특이도가 (0,1,1)이라 미디어쿼리 안의 :root (0,0,1)보다 항상 세다.
+ * 순서에 기대지 않는다는 뜻이고, 그래서 "시스템은 어두운데 밝게 쓰겠다"와
+ * 그 반대가 똑같이 동작한다.
+ *
+ * `시스템 설정`이라는 값은 여기 없다. 그건 속성이 **없는** 상태이고, 그래야
+ * 기본 경로가 자바스크립트 없이 CSS만으로 돈다.
+ *
+ * 어두운 값 열넷이 위와 여기 두 벌 있다. 순수 CSS에는 이걸 합칠 방법이 없다
+ * (미디어쿼리를 가로지르는 선택자 목록을 쓸 수 없다). 색 하나를 고칠 때
+ * 두 곳을 고쳐야 한다는 것만 알아 두면 되고, 그걸 피하려고 빌드 장치를
+ * 들이지는 않는다.
+ */
+:root[data-theme="light"] {
+  --sig-concrete: #dee0db;
+  --sig-concrete-deep: #c7cac3;
+  --sig-map-idle: #bfc3bb;
+  --sig-map-line: #e8eae5;
+  --sig-sign: #0a6b3d;
+  --sig-sign-deep: #06522e;
+  --sig-sign-hi: #0f8b4f;
+  --sig-expressway: #10417e;
+  --sig-centerline: #f0c420;
+  --sig-paint: #f7f9f5;
+  --sig-on-sign: #f7f9f5;
+  --sig-ink: #101410;
+  --sig-dim: #6f7b6c;
+  --sig-alert: #c7452b;
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --sig-concrete: #060d12;
+  --sig-concrete-deep: #2b3d47;
+  --sig-map-idle: #2f4350;
+  --sig-map-line: #0a141b;
+  --sig-sign: #23c08f;
+  --sig-sign-deep: #169b72;
+  --sig-sign-hi: #5cf2c0;
+  --sig-expressway: #4b9dff;
+  --sig-centerline: #ffd84d;
+  --sig-paint: #16242e;
+  --sig-on-sign: #05161c;
+  --sig-ink: #e6f0ec;
+  --sig-dim: #93a7ab;
+  --sig-alert: #ff6b57;
+
+  color-scheme: dark;
 }
 
 html {

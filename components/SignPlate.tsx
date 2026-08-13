@@ -5,10 +5,10 @@ import { matchProgress, type CharStatus } from "@/lib/hangul/match";
 
 const CHAR_TONE: Record<CharStatus, string> = {
   // 아직 안 친 글자는 판면에 옅게 새겨져 있다 — 다음에 뭘 쳐야 하는지 보여준다.
-  untyped: "text-paint/35",
+  untyped: "text-on-sign/35",
   // 조합 중. 중앙선 노랑 — 오타가 아니라 지나가는 중이라는 신호.
   pending: "text-centerline",
-  correct: "text-paint",
+  correct: "text-on-sign",
   wrong: "text-alert",
 };
 
@@ -227,7 +227,7 @@ export function SignPlate({
       */}
       <div
         className={`pointer-events-none absolute inset-2 rounded-xl border-2 transition-colors duration-150 sm:inset-2.5 ${
-          rejecting ? "border-alert" : "border-paint"
+          rejecting ? "border-alert" : "border-on-sign"
         }`}
       />
 
@@ -270,7 +270,7 @@ export function SignPlate({
              * 것"이 아니라 판에 인쇄된 장식으로 읽힌다. 그렇다고 늘 하얗게
              * 두면 정작 읽어야 할 글자보다 튄다.
              */
-            typedChars.length > 0 ? "text-paint" : "text-paint/45"
+            typedChars.length > 0 ? "text-on-sign" : "text-on-sign/45"
           }`}
         >
           {/* 좁은 화면에는 판 아래 제출 버튼이 따로 있다. 여기서는 기호만. */}
@@ -318,7 +318,7 @@ export function SignPlate({
                 <span className="mt-1 h-1 w-full rounded-full" />
               </span>
             </div>
-            <p className="absolute inset-0 flex items-center justify-center gap-3 whitespace-nowrap text-lg text-paint/70 sm:text-2xl">
+            <p className="absolute inset-0 flex items-center justify-center gap-3 whitespace-nowrap text-lg text-on-sign/70 sm:text-2xl">
               지역명을 입력하세요
               <span
                 className={`inline-block h-6 w-0.5 sm:h-8 ${
@@ -349,7 +349,7 @@ export function SignPlate({
                   // 자체가 안 읽힌다.
                   className={`mb-1 font-mono text-xl leading-none transition-opacity duration-200 sm:text-3xl ${
                     statuses[i] === "correct"
-                      ? "text-paint/25"
+                      ? "text-on-sign/25"
                       : // 힌트의 주인공은 초성이다. 빈 자리를 나타내는 ○보다
                         // 먼저 읽혀야 한다.
                         "text-centerline"
@@ -369,7 +369,7 @@ export function SignPlate({
                    * 할 것은 칸이 아니라 그 위의 초성과 안에 들어갈 글자다.
                    */
                   boxed
-                    ? "flex size-[1.2em] items-center justify-center rounded-[0.08em] border border-paint/20 "
+                    ? "flex size-[1.2em] items-center justify-center rounded-[0.08em] border border-on-sign/20 "
                     : ""
                 }${
                   /*
@@ -393,7 +393,7 @@ export function SignPlate({
                          *   흐린 노랑  아직 안 쓴 글자
                          */
                         statuses[i] === "correct"
-                        ? "text-paint"
+                        ? "text-on-sign"
                         : statuses[i] === "wrong"
                           ? "text-alert"
                           : statuses[i] === "pending"
@@ -402,7 +402,7 @@ export function SignPlate({
                       : blind
                         ? typedChars[i] === undefined
                           ? CHAR_TONE.untyped
-                          : "text-paint"
+                          : "text-on-sign"
                         : CHAR_TONE[statuses[i]]
                 } transition-colors duration-100`}
               >
@@ -430,9 +430,9 @@ export function SignPlate({
               <span
                 className={`${
                   boxed
-                    ? "flex size-[1.2em] items-center justify-center rounded-[0.08em] border border-paint/20 "
+                    ? "flex size-[1.2em] items-center justify-center rounded-[0.08em] border border-on-sign/20 "
                     : ""
-                }${blind ? "text-paint" : "text-alert"}`}
+                }${blind ? "text-on-sign" : "text-alert"}`}
               >
                 {ch}
               </span>
@@ -456,7 +456,7 @@ export function SignPlate({
         {roman && (!masked || revealed) && (
           <span
             className={`font-mono text-sm tracking-[0.12em] whitespace-nowrap sm:text-base ${
-              revealed ? "text-centerline/80" : "text-paint/75"
+              revealed ? "text-centerline/80" : "text-on-sign/75"
             }`}
           >
             {roman}

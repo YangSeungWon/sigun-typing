@@ -3,6 +3,7 @@ import { CourseProgress } from "@/components/CourseProgress";
 import { NotesLink } from "@/components/NotesLink";
 import { CourseCardThumb } from "@/components/CourseCardThumb";
 import { HomeView } from "@/components/HomeView";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { COURSES } from "@/data/courses";
 import { getScoreRepository } from "@/lib/db/client";
 import { SCORING_VERSION } from "@/lib/score/version";
@@ -149,6 +150,11 @@ export default async function Home() {
         <Link href="/guide" className="transition-colors hover:text-ink">
           이용안내
         </Link>
+        {/*
+          당장은 여기 말고 둘 자리가 없다. 전역 헤더가 생기면 그리로 옮긴다 —
+          화면 밝기는 첫 화면의 기능이 아니라 사이트 전체의 설정이다.
+        */}
+        <ThemeToggle className="-my-1" />
       </nav>
 
       <footer className="mt-auto flex flex-col gap-2 border-t border-concrete-deep pt-6 font-mono text-xs text-dim">

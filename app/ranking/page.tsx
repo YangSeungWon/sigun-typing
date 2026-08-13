@@ -82,7 +82,7 @@ export default async function RankingPage({
               aria-current={c.id === course.id ? "page" : undefined}
               className={`rounded-lg px-4 py-2 text-base font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 c.id === course.id
-                  ? "bg-sign text-paint"
+                  ? "bg-sign text-on-sign"
                   : "border border-concrete-deep text-ink hover:bg-concrete-deep"
               }`}
             >
@@ -102,7 +102,7 @@ export default async function RankingPage({
               aria-current={p === period ? "page" : undefined}
               className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 p === period
-                  ? "bg-ink text-paint"
+                  ? "bg-ink text-on-sign"
                   : "border border-concrete-deep text-dim hover:bg-concrete-deep hover:text-ink"
               }`}
             >
@@ -133,7 +133,7 @@ export default async function RankingPage({
           </p>
           <Link
             href={`/play/${mode}/${course.id}`}
-            className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             1등으로 이름 올리기
           </Link>

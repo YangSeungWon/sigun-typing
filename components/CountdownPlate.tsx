@@ -20,11 +20,11 @@ import { useEffect, useState } from "react";
 export function CountdownPlate({ seconds }: { seconds: number }) {
   return (
     <div className="sign-face relative mx-auto flex w-full max-w-2xl items-center justify-center rounded-2xl px-4 py-6 shadow-[0_3px_0_0_var(--color-sign-deep)] sm:px-10 sm:py-8">
-      <span className="pointer-events-none absolute inset-2 rounded-xl border-2 border-paint sm:inset-2.5" />
+      <span className="pointer-events-none absolute inset-2 rounded-xl border-2 border-on-sign sm:inset-2.5" />
       <span
         // key로 매 초 요소를 다시 붙여 숫자마다 애니메이션이 새로 돈다.
         key={seconds}
-        className="count-in relative font-mono text-6xl font-bold tabular-nums text-paint sm:text-7xl"
+        className="count-in relative font-mono text-6xl font-bold tabular-nums text-on-sign sm:text-7xl"
         aria-hidden="true"
       >
         {seconds}

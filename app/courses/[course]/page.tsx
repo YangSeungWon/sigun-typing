@@ -68,7 +68,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
             시작하는 문이 아니라 웹 폼의 제출 바처럼 읽힌다. 위의 지도와
             비슷한 폭으로 세워 두면 둘이 한 덩어리로 묶인다.
           */
-          className="mx-auto w-full max-w-md rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="mx-auto w-full max-w-md rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           지도 보고 맞히기
         </Link>

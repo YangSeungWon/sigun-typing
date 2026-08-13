@@ -160,7 +160,7 @@ export default function GuidePage() {
       <nav className="flex flex-wrap gap-3 border-t border-concrete-deep pt-8">
         <Link
           href="/play/map/sido?from=guide"
-          className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           전국 17 시도부터 해 보기
         </Link>

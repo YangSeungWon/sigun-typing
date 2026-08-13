@@ -177,16 +177,16 @@ export function ResultCard({
         줄인다 — 판면이 주인공인 곳은 플레이 화면이다.
       */}
       <div className="result-card sign-face relative order-1 rounded-2xl px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)] md:order-none md:col-start-2 md:row-start-1">
-        <div className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-paint/80" />
+        <div className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-on-sign/80" />
         {/*
           "완주"를 키웠다. 숫자만 크면 기록은 읽히는데 **끝냈다는 감정**이
           남지 않는다. 이 화면이 먼저 해야 할 말은 몇 초가 아니라 해냈다는
           것이다.
         */}
-        <p className="relative text-2xl font-bold tracking-[0.1em] text-paint">
+        <p className="relative text-2xl font-bold tracking-[0.1em] text-on-sign">
           {perfect ? "완주" : "도착"}
         </p>
-        <p className="relative mt-1 font-mono text-sm text-paint/60">
+        <p className="relative mt-1 font-mono text-sm text-on-sign/60">
           {courseName} · {modeLabel}
         </p>
         {/*
@@ -196,13 +196,13 @@ export function ResultCard({
           않는다 — 성취를 무효로 만들면 다시 할 이유도 함께 사라진다.
         */}
         {emphasis === "time" && perfect ? (
-          <p className="relative mt-4 font-mono text-5xl font-bold tabular-nums text-paint">
+          <p className="relative mt-4 font-mono text-5xl font-bold tabular-nums text-on-sign">
             {formatPrecise(shown)}
           </p>
         ) : (
-          <p className="relative mt-4 text-5xl font-bold text-paint">
+          <p className="relative mt-4 text-5xl font-bold text-on-sign">
             {score.completed}
-            <span className="ml-1 text-2xl font-medium text-paint/70">
+            <span className="ml-1 text-2xl font-medium text-on-sign/70">
               / {score.total}
             </span>
           </p>
@@ -217,7 +217,7 @@ export function ResultCard({
           `정확도 91.3%`보다 정확하고 빨리 읽힌다 — 분모(끝낸 곳)는 바로 위의
           큰 숫자가 이미 말하고 있다.
         */}
-        <p className="relative mt-3 font-mono text-sm text-paint/70">
+        <p className="relative mt-3 font-mono text-sm text-on-sign/70">
           {perfect
             ? `한 번에 ${score.firstTry}곳`
             : `${formatPrecise(score.elapsedMs)} · 한 번에 ${score.firstTry}곳`}
@@ -252,7 +252,7 @@ export function ResultCard({
           className={`rounded-lg px-5 py-4 text-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
             reviewSlot
               ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
-              : "bg-sign text-paint hover:bg-sign-deep"
+              : "bg-sign text-on-sign hover:bg-sign-deep"
           }`}
         >
           {reviewSlot ? "전체 다시 하기" : "한 번 더"}

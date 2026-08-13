@@ -559,7 +559,7 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
               <Link
                 href={`/review/${course.id}`}
                 onClick={() => track({ name: "mode_switch", courseId: course.id, mode, toMode: "review" })}
-                className="rounded-lg bg-sign px-5 py-4 text-center text-lg font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="rounded-lg bg-sign px-5 py-4 text-center text-lg font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
                 틀린 {missedItems.length}곳 다시 하기
               </Link>

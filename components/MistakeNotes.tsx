@@ -59,7 +59,7 @@ export function MistakeNotes() {
         </p>
         <Link
           href="/"
-          className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           지도 타이핑 하러 가기
         </Link>
@@ -109,7 +109,7 @@ export function MistakeNotes() {
           <div className="flex gap-3">
             <Link
               href={`/review/${entry.courseId}`}
-              className="rounded-lg bg-sign px-5 py-3 font-medium text-paint transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               헷갈리는 곳만 연습
             </Link>

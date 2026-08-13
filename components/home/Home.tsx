@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import { formatClock } from "@/components/Odometer";
 import { NationalMap } from "./NationalMap";
+import { SidoPicker } from "./SidoPicker";
 import { useHomeData } from "@/lib/home/useHomeData";
 import type { HomeSeed } from "@/lib/home/summary";
 
@@ -118,6 +119,12 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
     known: target.known,
     total: target.total,
   };
+  /** 목록에 세우는 것들. 고를 수 없는 세종은 빠진다 — 눌러도 갈 데가 없다. */
+  const pickableRegions = useMemo(
+    () => [...mapRegions.values()].filter((r) => r.courseId),
+    [mapRegions],
+  );
+
   const primary = pickedCourse ? scoped : nationwide;
   const secondary = pickedCourse ? nationwide : scoped;
 
@@ -162,16 +169,24 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           `9 / 245`가 부산에서 9곳 맞혔다는 뜻으로도 읽힌다. 줄을 따로 쓰지
           않고 숫자 뒤에 붙여 한 줄을 아낀다.
         */}
-        <h1
-          className="flex items-baseline gap-3 font-mono text-5xl font-bold tabular-nums sm:text-6xl"
-          aria-label={`${primary.label} ${primary.total}곳 중 ${primary.known}곳`}
-        >
-          <span aria-hidden>
+        {/*
+          라벨은 숫자 옆이 아니라 위에 둔다.
+
+          옆에 붙였더니 `0 / 245 대한민국`이 좁은 칸(넓은 화면에서 세 칸 중
+          하나)을 넘겨 큰 숫자가 줄바꿈됐다. 라벨 길이는 고른 곳에 따라 두
+          글자에서 네 글자까지 오가므로, 옆자리는 애초에 폭을 장담할 수 없는
+          자리다. 위는 몇 글자가 오든 흔들리지 않는다.
+        */}
+        <h1 aria-label={`${primary.label} ${primary.total}곳 중 ${primary.known}곳`}>
+          <span aria-hidden className="block font-mono text-sm text-dim">
+            {primary.label}
+          </span>
+          <span
+            aria-hidden
+            className="block font-mono text-5xl font-bold tabular-nums sm:text-6xl"
+          >
             {primary.known}
             <span className="text-dim"> / {primary.total}</span>
-          </span>
-          <span aria-hidden className="text-base font-normal text-dim">
-            {primary.label}
           </span>
         </h1>
 
@@ -193,17 +208,19 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       </section>
 
       {/*
-        지도는 넓은 화면에서만 줄인다. 히어로 높이는 거의 지도가 정하는데,
-        데스크톱은 첫 화면 아래에 다음 카드가 조금이라도 보여야 스크롤할 것이
-        있다는 신호가 생긴다.
+        지도 크기.
 
-        좁은 화면은 그대로 둔다. 여기서 지도를 줄이면 광주·대전·울산처럼 작은
-        시도가 손가락으로 누를 수 없는 크기가 된다 — 누를 수 있게 만들어 놓고
-        누를 수 없게 만드는 셈이다.
+        한때 좁은 화면에서는 줄이지 못했다. 줄이면 광주·대전·울산처럼 작은
+        시도를 손가락으로 누를 수 없게 되기 때문이었다. 옆에 목록이 생기면서
+        그 제약이 풀렸다 — 작은 곳은 이름으로 고르면 되므로 지도가 정밀한
+        과녁일 필요가 없다. 여기서 지도가 하는 일은 다시 "어디가 비었나"
+        하나로 돌아간다.
+
+        그만큼 세로를 돌려받아 첫 화면 아래에 다음 카드가 보인다.
       */}
-      <div className="home-map-slot flex items-center justify-center">
+      <div className="home-map-slot flex flex-col items-center justify-center gap-3 lg:flex-row lg:items-center lg:gap-5">
         {geo && (
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-[17rem] sm:max-w-sm lg:min-w-0 lg:flex-1">
             <NationalMap
               geo={geo}
               regions={mapRegions}
@@ -212,6 +229,15 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
             />
           </div>
         )}
+        {/*
+          지도로는 고를 수 없는 곳이 있다(대전·광주·울산은 몇 픽셀이다).
+          같은 선택을 이름으로도 고를 수 있게 둔다.
+        */}
+        <SidoPicker
+          regions={pickableRegions}
+          selectedCode={picked}
+          onSelect={setPicked}
+        />
       </div>
 
       <section className="home-actions flex flex-col justify-center gap-3 md:justify-start">

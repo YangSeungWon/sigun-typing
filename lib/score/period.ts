@@ -11,7 +11,7 @@ export const PERIOD_LABELS: Record<RankingPeriod, string> = {
 /**
  * 한국 표준시 고정 오프셋. 한국은 서머타임을 쓰지 않아 연중 +9로 일정하다.
  */
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+export const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 /**
  * 기간의 시작 시각. 전체 기간이면 null.

@@ -512,7 +512,12 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-16">
         {/* 붙었다는 것 자체가 판이 끝났다는 뜻이다. */}
-        <RunRecorder courseId={course.id} results={state.results} />
+        <RunRecorder
+          courseId={course.id}
+          mode={mode}
+          results={state.results}
+          peers={course.regions}
+        />
         <RunLifecycle
           courseId={course.id}
           mode={mode}

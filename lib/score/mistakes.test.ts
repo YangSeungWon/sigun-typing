@@ -114,6 +114,74 @@ describe("오답노트 갱신", () => {
   });
 });
 
+describe("무엇으로 착각했는지", () => {
+  const PEERS = [{ name: "수원" }, { name: "성남" }, { name: "안양" }];
+
+  it("같은 코스의 다른 지역을 냈으면 상대를 세어 둔다", () => {
+    const next = applyRun(
+      [],
+      [result({ errors: 1, wrongAnswers: ["성남"] })],
+      5_000,
+      PEERS,
+    );
+    expect(next[0].confusedWith).toEqual({ 성남: 1 });
+  });
+
+  it("같은 상대를 또 틀리면 는다", () => {
+    let notebook = applyRun([], [result({ errors: 1, wrongAnswers: ["성남"] })], 1_000, PEERS);
+    notebook = applyRun(notebook, [result({ errors: 1, wrongAnswers: ["성남"] })], 2_000, PEERS);
+    expect(notebook[0].confusedWith).toEqual({ 성남: 2 });
+  });
+
+  it("코스에 없는 답은 쌓지 않는다", () => {
+    const next = applyRun(
+      [],
+      [result({ errors: 1, wrongAnswers: ["춘천"] })],
+      5_000,
+      PEERS,
+    );
+    expect(next[0].confusedWith).toBeUndefined();
+  });
+
+  it("목표에서 자모 한 개 미끄러진 것은 오타라 쌓지 않는다", () => {
+    const next = applyRun(
+      [],
+      [result({ errors: 1, wrongAnswers: ["수언"] })],
+      5_000,
+      PEERS,
+    );
+    expect(next[0].confusedWith).toBeUndefined();
+  });
+
+  it("상대 목록 없이 부르면 아무것도 쌓지 않는다", () => {
+    // 기본값이 그렇다 — 모르면 안 적는 쪽이 기본이어야 한다.
+    const next = applyRun([], [result({ errors: 1, wrongAnswers: ["성남"] })], 5_000);
+    expect(next[0].confusedWith).toBeUndefined();
+  });
+
+  it("혼동 기록이 없던 옛 오답을 갱신해도 깨지지 않는다", () => {
+    const old = record({ misses: 3 });
+    expect(old.confusedWith).toBeUndefined();
+
+    const next = applyRun([old], [result({ errors: 1, wrongAnswers: ["안양"] })], 9_000, PEERS);
+    expect(next[0]).toMatchObject({ misses: 4, confusedWith: { 안양: 1 } });
+  });
+
+  it("맞힌 항목의 오답 이력은 세지 않는다", () => {
+    /*
+     * 한 판에서 두 번 틀리고 세 번째에 맞혔다면 그건 이미 `errors`가 세고 있다.
+     * 여기서 또 세면 한 항목에서 같은 착각이 여러 번 쌓인다.
+     */
+    const next = applyRun(
+      [record({ misses: 1, confusedWith: { 성남: 1 } })],
+      [result({ wrongAnswers: ["성남"] })],
+      9_000,
+      PEERS,
+    );
+    expect(next[0].confusedWith).toEqual({ 성남: 1 });
+  });
+});
+
 describe("우선순위", () => {
   it("자주 틀린 것이 먼저 온다", () => {
     const sorted = sortByPriority([

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { jamoDistance } from "./distance";
 import { decomposeChar, initials, joinSyllable, splitSyllable } from "./jamo";
 import { cpm, isKeystrokePrefix, keystrokeCount } from "./keystrokes";
 import { isOnTrack, matchProgress } from "./match";
@@ -191,5 +192,28 @@ describe("initials — 초성 힌트", () => {
 
   it("한글이 아니면 그대로 둔다", () => {
     expect(initials("A가")).toBe("Aㄱ");
+  });
+});
+
+describe("자모 거리", () => {
+  it("같으면 0", () => {
+    expect(jamoDistance("수원", "수원")).toBe(0);
+  });
+
+  it("글자가 아니라 자모로 센다", () => {
+    /*
+     * 글자 단위로 세면 오타와 착각이 구별되지 않는다 —
+     * `수언`과 `성남`이 똑같이 한 글자 차이가 된다.
+     */
+    expect(jamoDistance("수언", "수원")).toBe(1);
+    expect(jamoDistance("성남", "수원")).toBeGreaterThan(1);
+  });
+
+  it("접미사가 붙고 빠지는 것도 거리다", () => {
+    expect(jamoDistance("강북", "강북구")).toBe(2);
+  });
+
+  it("빈 문자열은 상대의 자모 수만큼 멀다", () => {
+    expect(jamoDistance("", "구")).toBe(2);
   });
 });

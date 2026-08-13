@@ -7,6 +7,9 @@ interface SidoPickerProps {
   regions: MapRegion[];
   selectedCode: string | null;
   onSelect: (code: string | null) => void;
+  /** 지금 손이 얹힌 곳. 지도에서 올 수도 있다. */
+  hoveredCode: string | null;
+  onHover: (code: string | null) => void;
 }
 
 /**
@@ -24,7 +27,13 @@ interface SidoPickerProps {
  * 이름만 남은 조각으로 흩어진다. 같은 DOM에 CSS만 다르다 — 화면마다 컴포넌트를
  * 따로 만들면 고르는 규칙이 두 벌이 된다.
  */
-export function SidoPicker({ regions, selectedCode, onSelect }: SidoPickerProps) {
+export function SidoPicker({
+  regions,
+  selectedCode,
+  onSelect,
+  hoveredCode,
+  onHover,
+}: SidoPickerProps) {
   return (
     <ul
       className="flex flex-wrap gap-1.5 lg:w-32 lg:flex-none lg:flex-col lg:flex-nowrap lg:gap-1"
@@ -32,11 +41,14 @@ export function SidoPicker({ regions, selectedCode, onSelect }: SidoPickerProps)
     >
       {regions.map((region) => {
         const selected = region.code === selectedCode;
+        const hovered = region.code === hoveredCode;
         return (
           <li key={region.code}>
             <button
               type="button"
               onClick={() => onSelect(selected ? null : region.code)}
+              onMouseEnter={() => onHover(region.code)}
+              onMouseLeave={() => onHover(null)}
               aria-pressed={selected}
               /*
                 테두리를 두른다.
@@ -46,10 +58,17 @@ export function SidoPicker({ regions, selectedCode, onSelect }: SidoPickerProps)
                 사람에게는 없는 기능이다. 화면 전체가 낮은 채도라 색만으로는
                 모자라고, 칸으로 두르는 것이 가장 확실하다.
               */
+              /*
+                손 얹힘을 CSS :hover가 아니라 상태로 그린다. 지도에서 짚어도
+                여기가 함께 켜져야 하는데, :hover는 이 요소 위에 실제로 손이
+                있을 때만 걸린다.
+              */
               className={`flex w-full cursor-pointer items-baseline justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:py-1 ${
                 selected
                   ? "border-sign bg-sign text-on-sign"
-                  : "border-concrete-deep bg-paint/50 text-ink hover:border-dim hover:bg-paint"
+                  : hovered
+                    ? "border-dim bg-paint text-ink"
+                    : "border-concrete-deep bg-paint/50 text-ink"
               }`}
             >
               <span>{region.name}</span>

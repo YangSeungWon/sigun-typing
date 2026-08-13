@@ -27,6 +27,15 @@ interface NationalMapProps {
   selectedCode: string | null;
   /** 같은 곳을 다시 누르면 null이 온다. */
   onSelect: (code: string | null) => void;
+  /**
+   * 지금 손이 얹힌 곳. 지도 밖(옆 목록)에서 올 수도 있다.
+   *
+   * 손이 얹혔다는 것을 CSS :hover로만 두지 않는 이유: 목록과 지도가 같은
+   * 선택을 가리키는데 손 얹힘은 각자만 알면, 목록에서 `전북`을 짚어도 지도는
+   * 아무 말이 없다. 지리 게임에서 그건 공짜로 가르칠 수 있는 것을 버리는 것이다.
+   */
+  hoveredCode: string | null;
+  onHover: (code: string | null) => void;
   className?: string;
 }
 
@@ -55,6 +64,8 @@ export const NationalMap = memo(function NationalMap({
   regions,
   selectedCode,
   onSelect,
+  hoveredCode,
+  onHover,
   className,
 }: NationalMapProps) {
   return (
@@ -73,6 +84,7 @@ export const NationalMap = memo(function NationalMap({
         const region = regions.get(shape.code);
         const ratio = (region?.percent ?? 0) / 100;
         const selected = shape.code === selectedCode;
+        const hovered = shape.code === hoveredCode;
         const selectable = Boolean(region?.courseId);
 
         /*
@@ -84,6 +96,11 @@ export const NationalMap = memo(function NationalMap({
          *
          * 바탕 쪽으로 한 단계 물려 "여기는 칠할 수 있는 칸이 아니다"를
          * 보이게 한다. 지우지는 않는다 — 없으면 지도에 구멍이 뚫린다.
+         *
+         * 왜인지를 <title>로 덧붙였다가 걷었다. React 19는 <title>을 문서
+         * 제목으로 다뤄 서버 렌더에서 걷어내는데 클라이언트에서는 그리므로,
+         * 그 한 줄 때문에 첫 화면 전체가 하이드레이션 불일치로 다시 그려졌다.
+         * 도구 설명 하나와 바꿀 값이 아니다 — 옅게 그린 것만으로 충분하다.
          */
         const fill = !selectable
           ? { fill: "var(--color-map-idle)", fillOpacity: 0.3 }
@@ -100,8 +117,16 @@ export const NationalMap = memo(function NationalMap({
              * 고른 곳은 테두리로 표시한다. 채우기로 표시하면 "얼마나 아는가"를
              * 말하던 색이 "지금 고른 곳"까지 겸하게 되어 둘 다 안 읽힌다.
              */
-            stroke={selected ? "var(--color-ink)" : "var(--color-map-line)"}
-            strokeWidth={selected ? 3 : 1.5}
+            /*
+             * 고른 곳과 손 얹힌 곳은 굵기로 갈린다.
+             *
+             * 손 얹힘을 선택과 똑같이 그리면, 부산을 골라 둔 채 경기에 손을
+             * 올렸을 때 둘 다 골라진 것처럼 보인다. 지금 무엇이 골라져 있는지가
+             * 사라지는 셈이다. 손 얹힘은 "여기를 가리키는 중"이고 선택은
+             * "이걸 골랐다"라, 같은 색이되 무게가 달라야 한다.
+             */
+            stroke={selected || hovered ? "var(--color-ink)" : "var(--color-map-line)"}
+            strokeWidth={selected ? 3 : hovered ? 2 : 1.5}
             vectorEffect="non-scaling-stroke"
             {...(selectable
               ? {
@@ -115,6 +140,8 @@ export const NationalMap = memo(function NationalMap({
                   "aria-pressed": selected,
                   "aria-label": `${region!.courseName}, ${region!.known} / ${region!.total}`,
                   onClick: () => onSelect(selected ? null : shape.code),
+                  onMouseEnter: () => onHover(shape.code),
+                  onMouseLeave: () => onHover(null),
                   onKeyDown: (e: React.KeyboardEvent) => {
                     if (e.key !== "Enter" && e.key !== " ") return;
                     e.preventDefault(); // 스페이스가 화면을 굴리지 않게
@@ -132,16 +159,13 @@ export const NationalMap = memo(function NationalMap({
                    * 지나가는 상태라 구별되어야 한다.
                    */
                   className:
-                    "cursor-pointer transition-[fill-opacity,stroke-width] duration-200 hover:brightness-110 focus:outline-none focus-visible:[stroke-dasharray:6_4] focus-visible:[stroke-width:3] focus-visible:[stroke:var(--color-ink)]",
+                    "cursor-pointer transition-[fill-opacity,stroke-width] duration-200 focus:outline-none focus-visible:[stroke-dasharray:6_4] focus-visible:[stroke-width:3] focus-visible:[stroke:var(--color-ink)]",
                 }
               : {
                   // 세종. 그릴 것은 있고 고를 것은 없다.
                   className: "transition-[fill-opacity] duration-500",
                 })}
-          >
-            {/* 왜 눌러지지 않는지, 손을 올린 사람에게만 한 줄로 답한다. */}
-            {!selectable && region && <title>{region.name} — 시군 코스가 없습니다</title>}
-          </path>
+          />
         );
       })}
 

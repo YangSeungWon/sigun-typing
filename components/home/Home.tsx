@@ -41,6 +41,15 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
    */
   const [picked, setPicked] = useState<string | null>(null);
 
+  /**
+   * 지금 손이 얹힌 시도. 지도와 목록이 함께 본다.
+   *
+   * 둘은 같은 선택을 가리키는 두 창인데 손 얹힘까지 각자 알면, 목록에서
+   * `전북`을 짚어도 지도는 아무 말이 없다. 이름은 아는데 어디인지 모르는
+   * 사람에게 그 순간이 이 게임이 가르칠 수 있는 자리다.
+   */
+  const [hovered, setHovered] = useState<string | null>(null);
+
   const byId = useMemo(
     () => new Map(seed.courses.map((c) => [c.id, c])),
     [seed.courses],
@@ -226,6 +235,8 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
               regions={mapRegions}
               selectedCode={picked}
               onSelect={setPicked}
+              hoveredCode={hovered}
+              onHover={setHovered}
             />
           </div>
         )}
@@ -237,6 +248,8 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           regions={pickableRegions}
           selectedCode={picked}
           onSelect={setPicked}
+          hoveredCode={hovered}
+          onHover={setHovered}
         />
       </div>
 

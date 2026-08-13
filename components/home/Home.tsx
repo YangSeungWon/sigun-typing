@@ -99,7 +99,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
 
   return (
     <main
-      className="home-grid mx-auto w-full max-w-5xl flex-1 px-5 py-6 md:px-6 md:py-10"
+      className="home-grid mx-auto w-full max-w-5xl flex-1 px-5 py-5 md:px-6 md:py-8"
       data-confuse={hasConfusion ? "on" : "off"}
       data-conquest={hasConquest ? "on" : "off"}
     >
@@ -122,25 +122,31 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           줄이어야 하므로 숫자를 말로 옮겨 붙인다 — `63 / 245`를 그대로 읽으면
           분수처럼 들린다.
         */}
+        {/*
+          퍼센트를 뺐다.
+
+          `9 / 245`와 `정복도 4%`는 같은 것을 두 번 말한다. 게다가 245분의 1은
+          0.4%라 반올림하면 `0%`가 되는데, 한 곳을 맞힌 사람에게 0을 보여 주는
+          것은 사실도 아니고 기분도 나쁘다. 분수 쪽이 더 정확하고 더 빨리
+          읽힌다. 퍼센트가 필요한 자리는 아래 정복도 카드다.
+
+          `전국`은 남긴다. 바로 아래 줄이 코스 하나의 진행(`부산 · 9 / 16`)이라
+          두 숫자가 세로로 붙는데, 위가 무엇의 분모인지 말해 주지 않으면
+          `9 / 245`가 부산에서 9곳 맞혔다는 뜻으로도 읽힌다. 줄을 따로 쓰지
+          않고 숫자 뒤에 붙여 한 줄을 아낀다.
+        */}
         <h1
-          className="font-mono text-5xl font-bold tabular-nums sm:text-6xl"
-          aria-label={`${data.conquest.total}곳 중 ${data.conquest.known}곳, 정복도 ${data.conquest.percent}퍼센트`}
+          className="flex items-baseline gap-3 font-mono text-5xl font-bold tabular-nums sm:text-6xl"
+          aria-label={`전국 ${data.conquest.total}곳 중 ${data.conquest.known}곳`}
         >
           <span aria-hidden>
             {data.conquest.known}
             <span className="text-dim"> / {data.conquest.total}</span>
           </span>
+          <span aria-hidden className="text-base font-normal text-dim">
+            전국
+          </span>
         </h1>
-        {/*
-          `전국`을 붙인다.
-
-          바로 아래 줄이 코스 하나의 진행(`부산 · 1 / 16`)이라 두 숫자가 세로로
-          붙어 있는데, 위가 무엇의 분모인지 말해 주지 않으면 `1 / 245`가
-          부산에서 1곳 맞혔다는 뜻으로도 읽힌다. 한 단어로 갈린다.
-        */}
-        <p className="font-mono text-lg text-sign" aria-hidden>
-          전국 정복도 {data.conquest.percent}%
-        </p>
 
         {/*
           규칙 한 줄. 아직 한 곳도 모르는 사람에게만 나온다.
@@ -159,9 +165,18 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         )}
       </section>
 
+      {/*
+        지도는 넓은 화면에서만 줄인다. 히어로 높이는 거의 지도가 정하는데,
+        데스크톱은 첫 화면 아래에 다음 카드가 조금이라도 보여야 스크롤할 것이
+        있다는 신호가 생긴다.
+
+        좁은 화면은 그대로 둔다. 여기서 지도를 줄이면 광주·대전·울산처럼 작은
+        시도가 손가락으로 누를 수 없는 크기가 된다 — 누를 수 있게 만들어 놓고
+        누를 수 없게 만드는 셈이다.
+      */}
       <div className="home-map-slot flex items-center justify-center">
         {geo && (
-          <div className="w-full max-w-sm md:max-w-md">
+          <div className="w-full max-w-sm">
             <NationalMap
               geo={geo}
               regions={mapRegions}
@@ -220,24 +235,30 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         </div>
       </section>
 
-      <section className="home-today flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+      {/*
+        메타와 버튼을 한 줄에 둔다. 세로로 쌓으면 내용에 비해 카드가 길어져
+        빈 칸이 남는데, 이 카드가 말하는 것은 코스 이름 하나와 기록 하나뿐이다.
+      */}
+      <section className="home-today flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-4">
         <h2 className="font-mono text-sm text-dim">오늘의 도전</h2>
-        <p className="text-2xl font-semibold">{data.today.courseName}</p>
-        <p className="font-mono text-sm text-dim tabular-nums">
-          {data.today.total}곳
-          {data.today.bestMs !== undefined && ` · 최고 ${formatClock(data.today.bestMs)}`}
-        </p>
+        <p className="text-xl font-semibold">{data.today.courseName}</p>
+        <div className="mt-auto flex items-center justify-between gap-3 pt-1">
+          <p className="font-mono text-sm text-dim tabular-nums">
+            {data.today.total}곳
+            {data.today.bestMs !== undefined && ` · 최고 ${formatClock(data.today.bestMs)}`}
+          </p>
         {/*
           카드가 줄을 통째로 쓸 때가 있다(헷갈리는 곳과 정복도가 아직 없는
           첫 방문). 그때 버튼까지 늘어나면 화면을 가로지르는 초록 띠가 된다.
           좁은 화면에서는 카드 자체가 한 칸이므로 채우는 것이 맞다.
         */}
-        <Link
-          href={`/play/map/${data.today.courseId}?from=home_challenge`}
-          className="mt-auto rounded-lg bg-sign px-5 py-3 text-center font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink md:self-start md:px-10"
-        >
-          시작
-        </Link>
+          <Link
+            href={`/play/map/${data.today.courseId}?from=home_challenge`}
+            className="shrink-0 rounded-lg bg-sign px-6 py-2.5 text-center font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            시작
+          </Link>
+        </div>
       </section>
 
       {/*
@@ -247,7 +268,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         그럴듯하게 지어내느니 아는 것만 적는다.
       */}
       {data.confusion && (
-        <section className="home-confuse flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+        <section className="home-confuse flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-4">
           <h2 className="font-mono text-sm text-dim">자꾸 헷갈리는 곳</h2>
           <p className="text-2xl font-semibold">
             {data.confusion.a} <span className="text-dim">↔</span> {data.confusion.b}
@@ -265,7 +286,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       )}
 
       {hasConquest && (
-        <section className="home-conquest flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+        <section className="home-conquest flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-4">
           <h2 className="font-mono text-sm text-dim">대한민국 정복도</h2>
           <ul className="flex flex-col gap-2">
             {/*
@@ -303,8 +324,21 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         대결은 한 줄로 둔다. 혼자 하는 흐름이 이 서비스의 본체라, 카드로 키우면
         그 흐름을 가로막는다.
       */}
-      <section className="home-friends flex items-center justify-between gap-4 rounded-xl border border-concrete-deep px-5 py-4">
-        <span className="font-medium">친구 대결</span>
+      <section className="home-friends flex items-center justify-between gap-4 rounded-xl border border-concrete-deep px-5 py-3">
+        {/*
+          여기는 설명이 한 줄 있어야 하는 자리다. 위 카드들은 무엇인지 이름만
+          봐도 알지만(`오늘의 도전`, `대한민국 정복도`) 대결은 처음 보는
+          사람에게 무엇이 벌어지는지가 이름만으로 안 그려진다.
+
+          그래도 문장은 아니다. 명사와 숫자로 적고, 좁은 화면에서는 감춘다 —
+          거기서는 줄바꿈이 생겨 한 줄짜리가 두 줄이 된다.
+        */}
+        <span className="flex items-baseline gap-3">
+          <span className="font-medium">친구 대결</span>
+          <span className="hidden font-mono text-sm text-dim sm:inline">
+            같은 코스 · 최대 8명
+          </span>
+        </span>
         <Link
           href="/rooms"
           className="rounded-lg border border-concrete-deep px-5 py-2 font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"

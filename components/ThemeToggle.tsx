@@ -17,10 +17,18 @@ const LABEL: Record<ThemeChoice, string> = {
   light: "밝은 화면",
 };
 
+/**
+ * 무엇을 뜻하는 표시인지 보이게.
+ *
+ * ○ ● ◐ 세 개를 썼는데 셋 다 그냥 동그라미라, 화면 밝기와 이어지지 않았다.
+ * 해와 달은 설명 없이 읽힌다. U+FE0E를 붙여 그림문자가 아니라 **글자**로
+ * 그리게 한다 — 안 붙이면 플랫폼에 따라 알록달록한 이모지가 나와서
+ * 이 헤더에서 혼자 튄다. 시스템 설정은 둘의 가운데라 반달로 둔다.
+ */
 const GLYPH: Record<ThemeChoice, string> = {
   system: "◐",
-  dark: "●",
-  light: "○",
+  dark: "\u263E\uFE0E",
+  light: "\u2600\uFE0E",
 };
 
 /**
@@ -60,7 +68,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         setChoice(next);
       }}
       aria-label={`화면 밝기 — 지금 ${LABEL[choice]}. 누르면 ${LABEL[next]}`}
-      className={`inline-flex size-8 items-center justify-center rounded text-base leading-none text-dim transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${className}`}
+      className={`inline-flex size-8 items-center justify-center rounded text-base leading-none text-ink/75 transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${className}`}
     >
       <span aria-hidden>{GLYPH[choice]}</span>
     </button>

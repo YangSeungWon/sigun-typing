@@ -33,8 +33,15 @@ export function DesktopHeader() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                  active ? "text-ink" : "text-dim"
+                /*
+                  누를 수 있는 것으로 보여야 한다.
+                  화면 전체가 낮은 채도라 링크까지 흐리게 두면 그냥 설명글로
+                  읽힌다. 쉬는 상태를 한 단계 올리고, 지금 있는 곳은 색만이
+                  아니라 밑줄로도 표시한다 — 색 하나에만 기대면 색을 구별하기
+                  어려운 사람에게는 아무 표시도 없는 것과 같다.
+                */
+                className={`underline-offset-8 transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                  active ? "text-ink underline decoration-sign decoration-2" : "text-ink/75"
                 }`}
               >
                 {item.label}

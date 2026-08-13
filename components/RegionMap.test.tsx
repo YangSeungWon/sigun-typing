@@ -13,8 +13,13 @@ const geo = gangwon as CourseGeo;
 describe("RegionMap", () => {
   it("모든 지역을 path로 그린다", () => {
     const html = renderToStaticMarkup(<RegionMap geo={geo} variant="route" />);
-    // 지역 수 + 맨 아래 실루엣 한 장.
-    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length + 1);
+    /*
+     * 지역 수 + 맨 아래 실루엣 한 장 + 현재 지역 테두리 한 장.
+     *
+     * 테두리는 그릴 것이 없어도 자리를 지킨다. 조건을 걸면 카운트다운이
+     * 끝나는 순간 새로 태어나면서 트랜지션을 못 타고 지도와 따로 논다.
+     */
+    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length + 2);
     expect(html).toContain(`viewBox="0 0 ${geo.width} ${geo.height}"`);
   });
 

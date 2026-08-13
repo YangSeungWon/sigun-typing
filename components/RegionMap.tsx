@@ -261,15 +261,20 @@ export const RegionMap = memo(function RegionMap({
         포인터는 통과시킨다. 장식인데 클릭을 먹고 있어서, 못 맞힌 곳(빨강)만
         짚어도 이름이 뜨지 않고 눌리지도 않았다.
       */}
-      {missedCodes.length > 0 && (
-        <g aria-hidden="true" pointerEvents="none" style={{ ...PAN, transform }}>
-          {geo.regions
-            .filter((r) => missed.has(r.code))
-            .map((r) => (
-              <path key={r.code} d={r.d} fill="url(#missed-hatch)" />
-            ))}
-        </g>
-      )}
+      {/*
+        비어 있어도 자리를 지운다.
+
+        조건을 걸어 두면 첫 오답이 났을 때 이 층이 **새로 태어난다.** CSS
+        트랜지션은 갓 붙은 요소를 움직여 주지 않으므로, 그 순간 빗금만 목적지에
+        뚝 나타나고 지도는 뒤따라 미끄러진다 — 두 겹이 따로 논다.
+      */}
+      <g aria-hidden="true" pointerEvents="none" style={{ ...PAN, transform }}>
+        {geo.regions
+          .filter((r) => missed.has(r.code))
+          .map((r) => (
+            <path key={r.code} d={r.d} fill="url(#missed-hatch)" />
+          ))}
+      </g>
 
       {/*
         짚은 곳을 한 번 감싼다. 이름만 띄우면 판이 어느 도형의 것인지 눈으로
@@ -343,18 +348,27 @@ export const RegionMap = memo(function RegionMap({
         </g>
       )}
 
-      {currentCode && (
-        <path
-          // 테두리도 함께 움직여야 한다.
-          style={{ ...PAN, transform }}
-          d={current?.d}
-          fill="none"
-          stroke="var(--color-ink)"
-          strokeWidth={4}
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      )}
+      {/*
+        테두리도 함께 움직여야 한다.
+
+        `currentCode`가 있을 때만 그리게 두었더니, 카운트다운이 끝나는 순간
+        지도와 따로 놀았다. 그때 한 렌더에서 두 가지가 동시에 뒤집힌다 —
+        지도는 `focus`가 켜지며 320ms를 미끄러지는데, 테두리는 바로 그 렌더에
+        처음 붙으므로 트랜지션할 이전 상태가 없어 목적지에 즉시 나타난다.
+
+        그래서 지울 것은 요소가 아니라 **선**이다. 자리는 처음부터 지키고
+        그릴 것이 없을 때는 `d`를 비운다. 그러면 카운트다운 동안에도 첫 지역이
+        미리 드러나지 않으면서, 시작하는 순간 지도와 같은 곡선을 탄다.
+      */}
+      <path
+        style={{ ...PAN, transform }}
+        d={current?.d}
+        fill="none"
+        stroke="var(--color-ink)"
+        strokeWidth={4}
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 });

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CourseProgress } from "@/components/CourseProgress";
 import { CourseThumb } from "@/components/CourseThumb";
 import { HomeView } from "@/components/HomeView";
 import { COURSES } from "@/data/courses";
@@ -72,6 +73,16 @@ export default function Home() {
                       읽게 만든다. 데이터 나열로 바꾸지 않는다.
                     */}
                     <span className="text-base text-dim">{course.description}</span>
+                    {/*
+                      해 본 코스에만 붙는다. 목록을 메뉴가 아니라 진행판으로
+                      만드는 한 줄이다 — 다시 온 사람이 어디를 이어서 할지
+                      여기서 정한다.
+                    */}
+                    <CourseProgress
+                      courseId={course.id}
+                      courseVersion={course.version}
+                      total={course.regions.length}
+                    />
                   </span>
                 </Link>
               </li>

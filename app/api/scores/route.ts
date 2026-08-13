@@ -76,7 +76,21 @@ export async function POST(request: Request) {
 
   const result = validateSubmission(body, now);
   if (!result.ok) {
-    // 어떤 검사에 걸렸는지는 알려 준다. 버그로 정상 기록이 막히는 경우를 찾아야 한다.
+    /*
+     * 서버 로그에도 남긴다.
+     *
+     * 여태 응답에만 담았는데, 화면은 그것을 펼치지 않고 로그에는 아무것도
+     * 남지 않았다. 그래서 힌트를 쓴 정직한 기록이 전부 거부되던 것을 사용자가
+     * 직접 말해 줄 때까지 몰랐다 — "버그로 정상 기록이 막히는 경우를 찾아야
+     * 한다"고 적어 두고 찾을 방법을 두지 않았던 셈이다.
+     *
+     * 제출물 자체는 찍지 않는다. 사유와 코스만으로 충분하고, 타건 기록은
+     * 로그에 쌓을 값이 아니다.
+     */
+    console.warn(
+      `[score] 검증 거부 ${body.courseId}/${body.mode}:`,
+      result.rejections.map((r) => `${r.code}(${r.detail})`).join(" · "),
+    );
     return NextResponse.json(
       { error: "기록을 검증하지 못했습니다", rejections: result.rejections },
       { status: 400 },

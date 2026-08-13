@@ -151,18 +151,28 @@ export function validateSubmission(
   );
   const hintPenaltyMs = hintsUsed * (config.hintPenaltyMs ?? 0);
 
-  const elapsedMs =
-    Math.max(
-      results.reduce((a, r) => a + Math.max(0, r.elapsedMs), 0),
-      timeline.span,
-    ) + hintPenaltyMs;
+  /*
+   * 두 개의 시간을 구분한다.
+   *
+   *   playedMs  — 실제로 흐른 시간. 벽시계와 견줄 수 있는 유일한 값이다.
+   *   elapsedMs — 기록에 남는 시간. 여기에는 힌트 페널티가 얹힌다.
+   *
+   * 하나로 뭉쳐 두었다가 힌트를 쓴 정직한 기록이 전부 거부됐다. 페널티는
+   * **흐른 적이 없는 시간**인데 그것을 더한 값을 벽시계와 비교했기 때문이다.
+   * 힌트 한 번이 30초이므로 두 번만 봐도 기록이 실제 경과를 1분 넘어선다.
+   */
+  const playedMs = Math.max(
+    results.reduce((a, r) => a + Math.max(0, r.elapsedMs), 0),
+    timeline.span,
+  );
+  const elapsedMs = playedMs + hintPenaltyMs;
 
   // 서버가 토큰을 발급한 뒤 실제로 흐른 시간보다 오래 플레이할 수는 없다.
   const wallclock = now - claims.issuedAt;
-  if (elapsedMs > wallclock + CLOCK_TOLERANCE_MS) {
+  if (playedMs > wallclock + CLOCK_TOLERANCE_MS) {
     reject(
       "elapsed_exceeds_wallclock",
-      `주장한 경과 ${elapsedMs}ms가 실제 경과 ${wallclock}ms보다 깁니다`,
+      `주장한 경과 ${playedMs}ms가 실제 경과 ${wallclock}ms보다 깁니다`,
     );
   }
 

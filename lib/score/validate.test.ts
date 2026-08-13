@@ -336,8 +336,17 @@ describe("초성 힌트 페널티", () => {
         hintsUsed,
       },
     };
-    // 힌트 시간까지 실제로 흐른 것으로 본다.
-    return { submission, arrivedAt: ISSUED_AT + t + hintsUsed * HINT_MS + 500 };
+    /*
+     * 기본 도착 시각은 넉넉하게 잡는다(페널티만큼 더 기다린 셈).
+     * 판을 끝내자마자 낸 경우는 아래 `바로 제출해도` 판이 따로 본다 —
+     * 그게 실제로 깨졌던 자리다.
+     */
+    return {
+      submission,
+      arrivedAt: ISSUED_AT + t + hintsUsed * HINT_MS + 500,
+      /** 판이 끝나고 곧바로 제출한 시각. 페널티는 흐르지 않았다. */
+      promptlyAt: ISSUED_AT + t + 500,
+    };
   }
 
   it("힌트를 쓰면 서버가 기록에 시간을 더한다", () => {
@@ -347,6 +356,31 @@ describe("초성 힌트 페널티", () => {
     expect(three.score.elapsedMs - none.score.elapsedMs).toBe(3 * HINT_MS);
     expect(three.score.cpm).toBeLessThan(none.score.cpm);
     expect(three.score.hintsUsed).toBe(3);
+  });
+
+  it("힌트를 쓰고 바로 제출해도 통과한다", () => {
+    /*
+     * 실제로 깨졌던 자리다. 페널티를 더한 기록을 **벽시계와 비교**하는 바람에
+     * 힌트를 쓴 정직한 판이 전부 elapsed_exceeds_wallclock으로 막혔다.
+     * 힌트 한 번이 30초이므로 두 번만 봐도 기록이 실제 경과를 1분 넘어선다.
+     *
+     * 벽시계와 견줄 수 있는 것은 실제로 흐른 시간뿐이고, 페널티는 그 뒤에
+     * 기록에만 얹히는 값이다.
+     */
+    const { submission, promptlyAt } = makeQuizRun(7);
+    const result = validateSubmission(submission, promptlyAt);
+    expect(codesOf(result)).not.toContain("elapsed_exceeds_wallclock");
+    if (!result.ok) throw new Error(JSON.stringify(result.rejections));
+    expect(result.score.hintsUsed).toBe(7);
+  });
+
+  it("힌트를 핑계로 실제보다 오래 친 것은 여전히 막는다", () => {
+    // 페널티를 뺀 나머지는 벽시계 안에 들어와야 한다.
+    const { submission } = makeQuizRun(2);
+    const tooEarly = ISSUED_AT + 1_000;
+    expect(codesOf(validateSubmission(submission, tooEarly))).toContain(
+      "elapsed_exceeds_wallclock",
+    );
   });
 
   it("항목 수보다 많은 힌트는 잘라 낸다", () => {

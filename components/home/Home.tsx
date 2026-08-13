@@ -94,6 +94,33 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
   /** 처음 여는 코스면 `시작`, 하다 만 코스면 `이어하기`. */
   const verb = target.known > 0 && target.known < target.total ? "이어하기" : "시작";
 
+  /*
+   * 계기판에 무엇을 올릴 것인가.
+   *
+   * 지도에서 고른 것이 있으면 그게 올라간다. 방금 누른 결과가 화면에서 가장
+   * 작은 글씨로 뜨는 것은 앞뒤가 맞지 않는다 — 누른 곳의 상태를 보려고 누른
+   * 것이므로, 그 답이 제일 크게 나와야 한다.
+   *
+   * 없앤 쪽을 버리지는 않는다. 둘의 자리가 바뀔 뿐이라 화면에는 늘 두 숫자가
+   * 함께 있고, 각자 라벨을 달고 있어서 무엇의 분모인지 헷갈리지 않는다.
+   *
+   * `대한민국`이라고 부르는 이유: 전국 코스(`전국 17 시도`)의 짧은 이름이
+   * `전국`이라, 245 쪽도 `전국`이면 그 코스를 골랐을 때 같은 라벨이 다른
+   * 분모를 달고 위아래로 붙는다. 아래 정복도 카드가 이미 `대한민국`을 쓴다.
+   */
+  const nationwide = {
+    label: "대한민국",
+    known: data.conquest.known,
+    total: data.conquest.total,
+  };
+  const scoped = {
+    label: target.shortName,
+    known: target.known,
+    total: target.total,
+  };
+  const primary = pickedCourse ? scoped : nationwide;
+  const secondary = pickedCourse ? nationwide : scoped;
+
   const hasConfusion = data.confusion !== null;
   const hasConquest = data.sidoProgress.length > 0;
 
@@ -130,21 +157,21 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           것은 사실도 아니고 기분도 나쁘다. 분수 쪽이 더 정확하고 더 빨리
           읽힌다. 퍼센트가 필요한 자리는 아래 정복도 카드다.
 
-          `전국`은 남긴다. 바로 아래 줄이 코스 하나의 진행(`부산 · 9 / 16`)이라
+          `전국`은 남긴다. 바로 아래 줄이 코스 하나의 진행(`9 / 16 부산`)이라
           두 숫자가 세로로 붙는데, 위가 무엇의 분모인지 말해 주지 않으면
           `9 / 245`가 부산에서 9곳 맞혔다는 뜻으로도 읽힌다. 줄을 따로 쓰지
           않고 숫자 뒤에 붙여 한 줄을 아낀다.
         */}
         <h1
           className="flex items-baseline gap-3 font-mono text-5xl font-bold tabular-nums sm:text-6xl"
-          aria-label={`전국 ${data.conquest.total}곳 중 ${data.conquest.known}곳`}
+          aria-label={`${primary.label} ${primary.total}곳 중 ${primary.known}곳`}
         >
           <span aria-hidden>
-            {data.conquest.known}
-            <span className="text-dim"> / {data.conquest.total}</span>
+            {primary.known}
+            <span className="text-dim"> / {primary.total}</span>
           </span>
           <span aria-hidden className="text-base font-normal text-dim">
-            전국
+            {primary.label}
           </span>
         </h1>
 
@@ -197,11 +224,22 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           그리고 이어하기 버튼 옆에서 궁금한 것은 얼마나 왔나가 아니라 얼마나
           남았나다.
         */}
-        <p className="flex h-6 items-center font-mono text-sm text-dim tabular-nums">
-          {target.shortName && (
-            <span>
-              {target.shortName} · {target.known} / {target.total}
-            </span>
+        {/*
+          큰 줄과 **같은 모양**으로 적는다 — 숫자 먼저, 라벨 뒤.
+          둘이 자리를 바꿔 가며 뜨는 값이라 모양까지 같아야 바뀐 것이 값이지
+          종류가 아니라는 게 읽힌다.
+
+          가운데점을 뺐다. `부산 · 9 / 16`은 점 하나가 이름과 숫자 사이에
+          끼어들어 눈이 한 번 멈추는데, 여백이 같은 일을 소리 없이 한다.
+        */}
+        <p className="flex h-6 items-baseline gap-2 font-mono text-sm text-dim tabular-nums">
+          {secondary.label && (
+            <>
+              <span>
+                {secondary.known} / {secondary.total}
+              </span>
+              <span>{secondary.label}</span>
+            </>
           )}
         </p>
 
@@ -243,9 +281,9 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         <h2 className="font-mono text-sm text-dim">오늘의 도전</h2>
         <p className="text-xl font-semibold">{data.today.courseName}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-1">
-          <p className="font-mono text-sm text-dim tabular-nums">
-            {data.today.total}곳
-            {data.today.bestMs !== undefined && ` · 최고 ${formatClock(data.today.bestMs)}`}
+          <p className="flex items-baseline gap-3 font-mono text-sm text-dim tabular-nums">
+            <span>{data.today.total}곳</span>
+            {data.today.bestMs !== undefined && <span>최고 {formatClock(data.today.bestMs)}</span>}
           </p>
         {/*
           카드가 줄을 통째로 쓸 때가 있다(헷갈리는 곳과 정복도가 아직 없는
@@ -335,8 +373,9 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         */}
         <span className="flex items-baseline gap-3">
           <span className="font-medium">친구 대결</span>
-          <span className="hidden font-mono text-sm text-dim sm:inline">
-            같은 코스 · 최대 8명
+          <span className="hidden items-baseline gap-3 font-mono text-sm text-dim sm:flex">
+            <span>같은 코스</span>
+            <span>최대 8명</span>
           </span>
         </span>
         <Link

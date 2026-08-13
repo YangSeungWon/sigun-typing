@@ -9,6 +9,13 @@ interface CourseProgressProps {
   courseVersion: number;
   /** 코스에 든 지역 수. 기록이 없을 때도 이 값은 안다. */
   total: number;
+  /**
+   * 이 코스의 1위 기록(밀리초). 아무도 올리지 않았으면 없다.
+   *
+   * 처음 온 사람에게는 "이 코스는 이 정도 걸린다"는 감이 되고, 해 본 사람에게는
+   * 목표가 된다. 서버에서 읽어 넘긴다 — 남의 기록이라 이 브라우저에는 없다.
+   */
+  topMs?: number;
 }
 
 /** 00:00 — 카드에서는 100분의 1초까지 읽을 이유가 없다. */
@@ -30,13 +37,17 @@ function clock(ms: number): string {
  * 기록은 이 브라우저에만 있다(개인 기록·오답노트). 서버에서 그릴 수 없으므로
  * 하이드레이션이 끝난 뒤에 붙는다 — 첫 렌더에 그리면 서버 HTML과 어긋난다.
  */
-export function CourseProgress({ courseId, courseVersion, total }: CourseProgressProps) {
+export function CourseProgress({
+  courseId,
+  courseVersion,
+  total,
+  topMs,
+}: CourseProgressProps) {
   const hydrated = useIsHydrated();
-  if (!hydrated) return null;
-
-  const best = loadPersonalBest(courseId, "map", courseVersion);
-  const stuck = loadMistakes(courseId).length;
-  if (!best && stuck === 0) return null;
+  // 내 기록은 이 브라우저에만 있다. 1위는 서버에서 왔으므로 먼저 그려도 된다.
+  const best = hydrated ? loadPersonalBest(courseId, "map", courseVersion) : null;
+  const stuck = hydrated ? loadMistakes(courseId).length : 0;
+  if (!best && stuck === 0 && topMs === undefined) return null;
 
   return (
     <span className="flex flex-wrap items-baseline gap-x-3 font-mono text-sm text-dim">
@@ -57,6 +68,13 @@ export function CourseProgress({ courseId, courseVersion, total }: CourseProgres
       {stuck > 0 && (
         // 다시 볼 곳이 남아 있다는 것은 다음에 뭘 할지 알려 주는 말이다.
         <span className="text-alert">헷갈리는 곳 {stuck}</span>
+      )}
+      {topMs !== undefined && (
+        /*
+          `최고`가 아니라 `1위`라고 적는다. 옆에 내 기록이 있으므로 둘 다
+          "최고"라고 부르면 어느 것이 내 것인지 알 수 없다.
+        */
+        <span className="tabular-nums">1위 {clock(topMs)}</span>
       )}
     </span>
   );

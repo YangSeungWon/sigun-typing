@@ -70,6 +70,18 @@ export interface ScoreRepository {
     courseVersion: number,
     key: RankKey,
   ): Promise<{ better: number; total: number }>;
+  /**
+   * 코스마다 1위 기록 하나씩.
+   *
+   * 첫 화면의 카드에 붙는다. 처음 온 사람에게는 "이 코스는 이 정도 걸린다"는
+   * 감이 되고, 해 본 사람에게는 목표가 된다. 열일곱 번 물어보지 않도록 한
+   * 번에 가져온다.
+   */
+  bests(
+    courses: { courseId: string; courseVersion: number }[],
+    mode: ModeId,
+    scoringVersion: number,
+  ): Promise<Map<string, LeaderboardEntry>>;
   /** 최근 `windowMs` 안에 이 기기가 제출한 횟수 */
   recentCount(deviceId: string, windowMs: number, now: number): Promise<number>;
   /** 익명 이용 흐름 기록 */
@@ -186,6 +198,27 @@ export class MemoryScoreRepository implements ScoreRepository {
       above: pool.filter((r) => outranks(r, key)).slice(-span).map(toEntry),
       below: pool.filter((r) => !outranks(r, key)).slice(0, span).map(toEntry),
     };
+  }
+
+  async bests(
+    courses: { courseId: string; courseVersion: number }[],
+    mode: ModeId,
+    scoringVersion: number,
+  ) {
+    const best = new Map<string, LeaderboardEntry>();
+    for (const { courseId, courseVersion } of courses) {
+      const top = this.rows
+        .filter(
+          (r) =>
+            r.courseId === courseId &&
+            r.mode === mode &&
+            r.scoringVersion === scoringVersion &&
+            r.courseVersion === courseVersion,
+        )
+        .sort((a, b) => (outranks(a, b) ? -1 : outranks(b, a) ? 1 : 0))[0];
+      if (top) best.set(courseId, toEntry(top));
+    }
+    return best;
   }
 
   async recentCount(deviceId: string, windowMs: number, now: number) {
@@ -334,6 +367,45 @@ export class PostgresScoreRepository implements ScoreRepository {
         .orderBy(desc(scores.completed), asc(scores.elapsedMs)).limit(span),
     ]);
     return { above: above.reverse().map(toEntry), below: below.map(toEntry) };
+  }
+
+  async bests(
+    courses: { courseId: string; courseVersion: number }[],
+    mode: ModeId,
+    scoringVersion: number,
+  ) {
+    const best = new Map<string, LeaderboardEntry>();
+    if (courses.length === 0) return best;
+
+    /*
+     * 코스마다 한 줄씩. DISTINCT ON은 정렬의 첫 줄만 남기므로, 순위 기준
+     * 그대로 정렬해 두면 그게 곧 1위다.
+     *
+     * 코스별 판번호가 다르므로 (코스, 판번호) 짝으로 걸러야 한다 — 코스 하나가
+     * 바뀌었을 때 옛 판의 기록이 새 판의 1위로 올라오면 안 된다.
+     */
+    const pairs = sql.join(
+      courses.map(
+        (c) => sql`(${scores.courseId} = ${c.courseId} and ${scores.courseVersion} = ${c.courseVersion})`,
+      ),
+      sql` or `,
+    );
+    const rows = await this.db
+      .select()
+      .from(scores)
+      .where(
+        and(
+          eq(scores.mode, mode),
+          eq(scores.scoringVersion, scoringVersion),
+          sql`(${pairs})`,
+        ),
+      )
+      .orderBy(desc(scores.completed), asc(scores.elapsedMs));
+
+    for (const row of rows) {
+      if (!best.has(row.courseId)) best.set(row.courseId, toEntry(row));
+    }
+    return best;
   }
 
   async recordError(row: NewErrorRow) {

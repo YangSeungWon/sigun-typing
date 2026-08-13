@@ -2,6 +2,15 @@ import thumbs from "@/data/thumbs.json";
 
 interface CourseThumbProps {
   courseId: string;
+  /**
+   * 다 돈 코스인지.
+   *
+   * 이 사이트에서 초록은 지나온 땅을 뜻한다 — 플레이 지도에서 맞힌 지역이,
+   * 코스 지도에서 아는 지역이 초록이다. 목록에서도 같은 말을 쓴다. 글자로만
+   * `완주`라고 적으면 훑을 때 안 보이지만, 실루엣이 칠해져 있으면 스크롤하는
+   * 눈에 바로 걸린다.
+   */
+  done?: boolean;
   className?: string;
 }
 
@@ -82,7 +91,7 @@ function drawSeconds(points: number[][]): number {
  * 원본 경계 대신 빌드 때 만든 실루엣을 쓴다(`npm run build:thumbs`).
  * 코스 하나가 40~76KB인데 목록에 열일곱 개를 실을 수는 없다.
  */
-export function CourseThumb({ courseId, className }: CourseThumbProps) {
+export function CourseThumb({ courseId, done = false, className }: CourseThumbProps) {
   const thumb = (thumbs as Record<string, Thumb>)[courseId];
   if (!thumb || thumb.route.length < 2) return null;
   const start = thumb.route[0];
@@ -97,8 +106,12 @@ export function CourseThumb({ courseId, className }: CourseThumbProps) {
       */}
       <path
         d={thumb.d}
-        fill="var(--color-dim)"
-        className="opacity-50 transition-opacity group-hover:opacity-70"
+        fill={done ? "var(--color-sign)" : "var(--color-dim)"}
+        className={
+          done
+            ? "opacity-70 transition-opacity group-hover:opacity-85"
+            : "opacity-50 transition-opacity group-hover:opacity-70"
+        }
       />
 
       {/*

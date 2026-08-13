@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CourseProgress } from "@/components/CourseProgress";
+import { NotesLink } from "@/components/NotesLink";
 import { CourseThumb } from "@/components/CourseThumb";
 import { HomeView } from "@/components/HomeView";
 import { COURSES } from "@/data/courses";
@@ -100,6 +101,11 @@ export default function Home() {
         className="flex flex-wrap gap-x-5 gap-y-2 font-mono text-sm text-dim"
         aria-label="더 보기"
       >
+        {/*
+          헷갈린 곳이 있는 사람에게만 열리는 문. 여러 코스에 흩어진 것을
+          한자리에서 보려면 여기밖에 없다 — 코스를 열면 그 코스 것만 보인다.
+        */}
+        <NotesLink />
         <Link href="/rooms" className="transition-colors hover:text-ink">
           친구와 대결
         </Link>

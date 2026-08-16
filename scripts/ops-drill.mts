@@ -10,11 +10,19 @@
  *
  *   TARGET=https://sigun-typing.ysw.kr npm run drill:ops
  */
-import { keystrokeCount } from "../lib/hangul/keystrokes";
+import { keystrokeCount } from "../lib/hangul/keystrokes.ts";
 const B = process.env.TARGET ?? "http://localhost:18730";
 let pass = 0, fail = 0;
-const check = (l, c, x = "") => { c ? (pass++, console.log("  ok   " + l)) : (fail++, console.log("  FAIL " + l + " " + x)); };
-const post = (path, body, headers = {}) =>
+const check = (label: string, passed: boolean, detail = "") => {
+  if (passed) {
+    pass++;
+    console.log("  ok   " + label);
+  } else {
+    fail++;
+    console.log("  FAIL " + label + " " + detail);
+  }
+};
+const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
   fetch(`${B}${path}`, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
 
 console.log(`대상 ${B}\n\n[이벤트 레이트리밋]`);
@@ -45,7 +53,7 @@ const REGIONS = (await import("node:fs")).readFileSync(
 );
 // 지도 타이핑은 시드로 순서를 섞는다. 서버도 같은 순서를 기대하므로
 // 엔진과 똑같은 mulberry32를 여기서도 돌린다.
-function seededShuffle(items, seed) {
+function seededShuffle<T>(items: T[], seed: number): T[] {
   const out = [...items];
   let s = seed >>> 0;
   const next = () => {
@@ -61,7 +69,10 @@ function seededShuffle(items, seed) {
   }
   return out;
 }
-const sido = seededShuffle(JSON.parse(REGIONS).regions, 1);
+const sido: { code: string; name: string }[] = seededShuffle(
+  JSON.parse(REGIONS).regions,
+  1,
+);
 
 /** 사람처럼 생긴 타임라인을 만든다. 여기에 한 군데씩만 손을 댄다. */
 function run({ inflate = 0, robotic = false, tooFast = false } = {}) {
@@ -109,8 +120,15 @@ for (const [name, payload] of [
  * 위의 검사를 모두 통과한다 — 방어선이 아니라 벽이 되어 있어도 모른다.
  */
 const fresh = await (await post("/api/session", { courseId: "sido", mode: "map", seed: 1 })).json();
-const honest = run();
-honest.token = fresh.token;
+/*
+ * 토큰과 기기 번호는 여기서 한 번에 얹는다. 만들어 둔 판에 나중에 필드를
+ * 덧붙이면 run()이 내놓기로 한 모양과 실제로 보내는 모양이 달라진다.
+ */
+const honest = {
+  ...run(),
+  token: fresh.token,
+  deviceId: `drill-${Math.random().toString(36).slice(2, 12)}`,
+};
 /*
  * 실제로 그 시간만큼 기다린다. 서버는 토큰 발급 시각과 제출 시각의 간격보다
  * 긴 판을 받지 않는데(그게 시간 위조를 막는 축이다), 여기서 기다리지 않으면
@@ -119,8 +137,6 @@ honest.token = fresh.token;
 const wait = honest.claimed.elapsedMs + 700;
 console.log(`  (정직한 판 ${Math.round(honest.claimed.elapsedMs / 1000)}초 — 그만큼 기다립니다)`);
 await new Promise((r) => setTimeout(r, wait));
-honest.nickname = "예행연습";
-honest.deviceId = `drill-${Math.random().toString(36).slice(2, 12)}`;
 const good = await post("/api/scores", honest);
 const goodBody = await good.json().catch(() => ({}));
 check("정직한 기록은 받아 준다", good.status === 200, `${good.status} ${JSON.stringify(goodBody).slice(0, 120)}`);

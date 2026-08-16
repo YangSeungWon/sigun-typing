@@ -600,7 +600,7 @@ describe("엔터 제출", () => {
  */
 describe("정답 베껴 쓰기", () => {
   const stuck = () => {
-    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
+    const g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     return giveUp(g, 100);
   };
 

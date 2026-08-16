@@ -93,7 +93,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
   const {
     state,
     current,
-    now,
     remaining,
     score,
     advancedAt,

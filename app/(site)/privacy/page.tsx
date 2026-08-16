@@ -1,7 +1,7 @@
 import { LegalDoc, List, Section } from "@/components/LegalDoc";
 
 export const metadata = {
-  title: "개인정보 처리방침 — 시군 타이핑",
+  title: "개인정보 처리방침",
   description: "시군 타이핑이 무엇을 수집하고 무엇을 수집하지 않는지.",
 };
 

@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: PageProps<"/review/[course]">
   const course = getCourse(courseId);
   if (!course) return {};
   return {
-    title: `${course.name} 오답 연습 — 시군 타이핑`,
+    title: `${course.name} 오답 연습`,
     description: "자주 틀린 곳만 모아서 다시 풉니다.",
   };
 }

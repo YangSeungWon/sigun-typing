@@ -2,7 +2,7 @@ import { LegalDoc, List, Section } from "@/components/LegalDoc";
 import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
 
 export const metadata = {
-  title: "이용약관 — 시군 타이핑",
+  title: "이용약관",
   description: "시군 타이핑 이용 조건.",
 };
 

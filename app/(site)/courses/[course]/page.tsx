@@ -154,7 +154,12 @@ export async function generateMetadata({ params }: PageProps<"/courses/[course]"
   if (!course) return {};
 
   const names = course.regions.map((r) => r.name).join(", ");
-  const title = `${course.name} 외우기 — 시군 타이핑`;
+  /*
+   * "외우기"만으로는 검색어 하나에 걸린다. "지도 게임"을 함께 두어 지역
+   * 이름을 외우려는 사람과 지도 게임을 찾는 사람이 같은 페이지에 닿게 한다.
+   * 뒤의 "— 시군 타이핑"은 루트 layout의 template이 붙인다.
+   */
+  const title = `${course.name} 외우기 · 지도 게임`;
   const description = `${course.name} ${course.regions.length}곳을 지도로 익히고 타이핑으로 맞혀 보세요. ${names}`;
 
   return {
@@ -162,7 +167,8 @@ export async function generateMetadata({ params }: PageProps<"/courses/[course]"
     // 지명이 다 들어간 설명이 검색에서 이 페이지를 찾게 해 준다.
     description: description.slice(0, 300),
     openGraph: {
-      title,
+      // 공유 카드에는 template이 닿지 않으므로 이름을 직접 붙인다.
+      title: `${title} — 시군 타이핑`,
       description: course.description,
       url: `/courses/${course.id}`,
       images: ["/og.png"],

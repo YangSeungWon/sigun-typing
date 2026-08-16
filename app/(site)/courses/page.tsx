@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CourseProgress } from "@/components/CourseProgress";
 import { CourseCardThumb } from "@/components/CourseCardThumb";
-import { COURSES } from "@/data/courses";
+import { COURSES, nationwide } from "@/data/courses";
 import { getScoreRepository } from "@/lib/db/client";
 import { SCORING_VERSION } from "@/lib/score/version";
 import { COURSE_GROUPS } from "@/data/groups";
@@ -18,8 +18,28 @@ import { COURSE_GROUPS } from "@/data/groups";
  * 없앤 것이 아니라, 늘 첫 장이던 것을 필요할 때 펴는 자리로 옮겼다.
  * 아래 탭에서는 `도전`이다.
  */
+/*
+ * 검색에서 이 서비스 전체를 찾는 사람이 닿는 자리다.
+ *
+ * 첫 화면은 계기판이 되면서 색인할 글이 거의 없어졌다 — 제목이 `63 / 245`라는
+ * 숫자고, 그건 제품으로서 옳은 선택이지만 "지도 타이핑"을 검색한 사람에게
+ * 보여 줄 문장이 아니다. 개별 코스 페이지는 반대로 너무 좁다. `경기도
+ * 외우기`를 찾는 사람은 받지만 이게 무엇인지 묻는 사람은 받지 못한다.
+ *
+ * 그 사이가 이 페이지다. 권역으로 묶인 목록 자체가 서비스가 무엇인지
+ * 설명한다는 말은 처음부터 맞았고, 그렇다면 그 설명을 사람이 읽는 문장으로도
+ * 한 줄 적어 두는 것이 맞다.
+ *
+ * 숫자는 세어서 쓴다. 코스가 늘거나 줄 때 문장만 옛말이 되는 것을 막는다.
+ */
+const COURSE_COUNT = COURSES.length;
+const REGION_COUNT = nationwide.regions.length;
+
+const LEAD = `지도에 표시된 지역이 어디인지 떠올려 이름을 입력하는 타자 연습입니다. 시·도부터 전국 ${REGION_COUNT}개 시군구까지, 외우고 싶은 범위를 골라 시작하세요.`;
+
 export const metadata = {
-  title: "코스 고르기",
+  title: `지도 타이핑 코스 ${COURSE_COUNT}개`,
+  description: LEAD,
   alternates: { canonical: "/courses" },
 };
 
@@ -55,7 +75,19 @@ export default async function CoursesPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-10">
-      <h1 className="text-3xl font-bold tracking-tight">코스</h1>
+      {/*
+        제목과 설명은 한 덩어리다. 사이를 카드 간격만큼 벌리면 설명이 첫
+        권역에 딸린 것처럼 읽힌다.
+
+        제목은 `코스`에서 늘렸다. 한 글자짜리 제목은 이미 안에 들어와 있는
+        사람에게는 충분하지만, 이 페이지를 처음 여는 경로가 검색이라면 그
+        사람이 본 것은 아직 아무것도 없다. 설명 한 줄은 그 사람 몫이다 —
+        코스를 고를 줄 아는 사람의 눈은 어차피 아래 지도들로 먼저 간다.
+      */}
+      <header className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">지도 타이핑 코스</h1>
+        <p className="text-base text-dim break-keep">{LEAD}</p>
+      </header>
 
       {/* 제목은 자기 아래 카드와 가깝게, 앞 묶음과는 멀게. 그래야 구조가 읽힌다. */}
       {groups.map((group) => (

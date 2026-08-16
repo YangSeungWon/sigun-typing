@@ -40,17 +40,19 @@ export async function generateMetadata({ params }: PageProps<"/play/[mode]/[cour
   const { mode, course: courseId } = await params;
   const course = getCourse(courseId);
   if (!course || !isModeId(mode)) return {};
-  const title = `${course.name} · ${MODE_LABELS[mode]} — 시군 타이핑`;
+  // 뒤의 "— 시군 타이핑"은 루트 layout의 template이 붙인다.
+  const title = `${course.name} · ${MODE_LABELS[mode]}`;
   /*
    * 공유 카드의 제목도 함께 바꾼다. openGraph를 아예 안 적으면 루트의 것을
    * 그대로 물려받아, 어떤 코스를 공유하든 카드에는 "시군 타이핑"만 뜬다.
+   * template은 공유 카드까지 닿지 않으므로 여기서는 이름을 직접 붙인다.
    * 이미지는 루트와 같은 한 장을 쓴다 — 코스마다 뜨는 건 그만한 값이 없다.
    */
   return {
     title,
     description: course.description,
     openGraph: {
-      title,
+      title: `${title} — 시군 타이핑`,
       description: course.description,
       url: `/play/${mode}/${course.id}`,
       images: ["/og.png"],

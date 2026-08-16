@@ -1,7 +1,7 @@
 import { MultiRoom } from "@/components/MultiRoom";
 
 export const metadata = {
-  title: "친구와 대결 — 시군 타이핑",
+  title: "친구와 대결",
   description: "방을 만들고 코드를 알려 주면 최대 8명이 같은 코스를 함께 달립니다.",
 };
 

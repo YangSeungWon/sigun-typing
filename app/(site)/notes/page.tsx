@@ -2,7 +2,7 @@ import { BackLink } from "@/components/BackLink";
 import { MistakeNotes } from "@/components/MistakeNotes";
 
 export const metadata = {
-  title: "헷갈리는 지역 — 시군 타이핑",
+  title: "헷갈리는 지역",
   description: "자주 틀린 지역을 모아 그것만 다시 풉니다.",
 };
 

@@ -6,7 +6,7 @@ import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
 import { MODES, MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
 
 export const metadata = {
-  title: "이용안내 — 시군 타이핑",
+  title: "이용안내",
   description:
     "지도에 표시된 지역의 이름을 입력하는 게임입니다. 규칙, 모드, 기록 계산 방법을 설명합니다.",
 };

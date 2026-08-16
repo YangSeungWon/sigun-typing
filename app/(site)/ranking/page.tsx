@@ -18,7 +18,7 @@ import type { ModeId } from "@/lib/game/types";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "랭킹 — 시군 타이핑",
+  title: "랭킹",
   description: "코스별 기록 순위. 서버에서 검증한 기록만 오릅니다.",
 };
 

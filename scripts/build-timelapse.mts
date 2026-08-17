@@ -23,7 +23,7 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import changes from "../data/reference/boundary-changes.json" with { type: "json" };
-import { SIDO_EVENT_BY_YEAR } from "../data/reference/sido-events.ts";
+import { SIDO_EVENT_BY_YEAR } from "../data/reference/admin-events.ts";
 
 const run = promisify(execFile);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");

@@ -22,6 +22,7 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import changes from "../data/reference/boundary-changes.json" with { type: "json" };
+import { SIDO_EVENT_BY_YEAR, SIGUNGU_EVENT_BY_YEAR } from "../data/reference/admin-events.ts";
 
 const run = promisify(execFile);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -54,7 +55,18 @@ interface Side {
 }
 
 interface Event {
+  /** 자료에 처음 나타난 해. 주소가 되므로 바뀌면 안 된다. */
   year: string;
+  /**
+   * 크게 뜨는 해 — 실제로 그 일이 있었던 해다.
+   *
+   * 자료의 해가 아니다. 1년 단위인 2001년 이후에도 자료가 개편을 곧바로
+   * 따라가지 않는다(제주는 2006년 출범인데 2007년 판에서야 바뀐다).
+   * 손으로 적어 둔 것이 있으면 그것을, 없으면 자료의 해를 쓴다.
+   */
+  at: string;
+  /** 실제 날짜를 아는가. 모르면 화면이 "자료에 처음 나타난 해"라고 밝힌다. */
+  dated: boolean;
   /** 이 해에 무슨 일이 있었는지. 시도와 시군구를 합쳐 적는다. */
   headline: string;
   before: Side;
@@ -204,7 +216,18 @@ for (const [year, group] of [...byYear].sort()) {
     d: path(f) ?? "",
   });
 
-  const headline = [
+  /*
+   * 손으로 적은 날짜가 있으면 그것이 이 사건의 문장이다.
+   *
+   * 도형에서 뽑은 문장은 무엇이 달라졌는지는 정확하지만(`창원시 사라짐`)
+   * 그것이 통합인지 분리인지, 승격인지 편입인지 말해 주지 못한다.
+   */
+  const known = [
+    ...(SIDO_EVENT_BY_YEAR.get(year)?.dates ?? []),
+    ...(SIGUNGU_EVENT_BY_YEAR.get(year)?.dates ?? []),
+  ].sort((a, b) => a.on.localeCompare(b.on));
+
+  const derived = [
     ...(group.sido
       ? [...group.sido.born.map((n) => `${n} 신설`), ...group.sido.renamed]
       : []),
@@ -216,8 +239,15 @@ for (const [year, group] of [...byYear].sort()) {
       : []),
   ].join(" · ");
 
+  const headline = known.length
+    ? known.map((d) => `${d.on.replace(/-/g, ".")} ${d.what}`).join(" · ")
+    : derived;
+  const atYears = [...new Set(known.map((d) => d.on.slice(0, 4)))];
+
   events.push({
     year,
+    at: atYears.length === 0 ? year : atYears.length === 1 ? atYears[0] : `${atYears[0]}–${atYears.at(-1)}`,
+    dated: known.length > 0,
     headline,
     before: {
       year: prevYear,
@@ -232,6 +262,29 @@ for (const [year, group] of [...byYear].sort()) {
   });
   process.stdout.write(`  ${prevYear}→${year} · ${level} · ${nowIn.length}곳\n`);
 }
+
+/*
+ * 실제 날짜가 같은 사건은 하나로 합친다.
+ *
+ * 제주는 자료에서 둘로 갈라져 기록됐다 — 시군구(북제주군·남제주군 폐지)는
+ * 2006년 판에, 시도(제주특별자치도)는 2007년 판에. 실제로는 2006년 7월 1일
+ * 하루에 일어난 한 사건이라, 그대로 두면 화면에 `2006`이 두 번 뜬다.
+ *
+ * 지도는 시군구 쪽을 남긴다. 같은 사건을 더 잘게 보여 주는 그림이다.
+ */
+const merged: Event[] = [];
+for (const e of events) {
+  const twin = e.dated ? merged.find((m) => m.dated && m.at === e.at) : undefined;
+  if (!twin) {
+    merged.push(e);
+    continue;
+  }
+  const parts = [...new Set([...twin.headline.split(" · "), ...e.headline.split(" · ")])];
+  twin.headline = parts.sort().join(" · ");
+  process.stdout.write(`  ${e.at} 두 기록을 합침 (/${twin.year}에 남김)\n`);
+}
+events.length = 0;
+events.push(...merged);
 
 await mkdir(dirname(OUT), { recursive: true });
 await writeFile(

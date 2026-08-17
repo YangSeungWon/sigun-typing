@@ -37,11 +37,23 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
       {/* 연도와 사건이 제목이다. 그 위에 설명을 얹지 않는다. */}
       <header className="flex items-end justify-between gap-5">
         <h1 className="shrink-0 font-mono text-6xl leading-none font-bold tabular-nums sm:text-7xl">
-          {event.year}
+          {event.at}
         </h1>
-        <p className="text-right text-lg leading-snug font-medium break-keep">
-          {event.headline}
-        </p>
+        <div className="flex flex-col items-end gap-1">
+          <p className="text-right text-lg leading-snug font-medium break-keep">
+            {event.headline}
+          </p>
+          {/*
+            실제 날짜를 모르면 그렇다고 밝힌다. 자료의 해는 시행일보다 늦을 수
+            있다 — 제주특별자치도는 2006년 출범인데 2007년 판에서야 바뀐다.
+            아는 척하느니 어디까지 아는지를 적는다.
+          */}
+          {!event.dated && (
+            <p className="font-mono text-xs tabular-nums text-dim">
+              자료에 처음 나타난 해
+            </p>
+          )}
+        </div>
       </header>
 
       <EventMaps event={event} width={data.width} height={data.height} />
@@ -84,10 +96,10 @@ export async function generateMetadata({ params }: PageProps<"/history/[year]">)
   const event = find(year);
   if (!event) return {};
 
-  const title = `${year}년 행정구역 개편 — ${event.headline}`;
+  const title = `${event.at}년 행정구역 개편 — ${event.headline}`;
   return {
     title: title.slice(0, 90),
-    description: `${event.before.year}년과 ${year}년 지도를 나란히 놓고 봅니다. ${event.headline}`.slice(
+    description: `${event.before.year}년과 ${event.after.year}년 지도를 나란히 놓고 봅니다. ${event.headline}`.slice(
       0,
       300,
     ),

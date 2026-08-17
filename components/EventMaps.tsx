@@ -5,7 +5,12 @@ export interface EventSide {
 }
 
 export interface HistoryEvent {
+  /** 자료에 처음 나타난 해. 주소가 된다. */
   year: string;
+  /** 크게 뜨는 해 — 실제로 그 일이 있었던 해. */
+  at: string;
+  /** 실제 날짜를 아는가. */
+  dated: boolean;
   headline: string;
   before: EventSide;
   after: EventSide;

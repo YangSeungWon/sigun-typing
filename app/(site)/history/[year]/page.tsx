@@ -58,21 +58,6 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
 
       <EventMaps event={event} width={data.width} height={data.height} />
 
-      {/*
-        색이 무슨 뜻인지는 적어 둔다. 지도에서 빨강과 초록이 각각 사라진 곳과
-        생긴 곳인데, 그건 보고 알 수 있는 종류가 아니다.
-      */}
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-dim">
-        <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-sm bg-[var(--color-alert)]" />
-          사라진 곳
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-sm bg-sign" />
-          생긴 곳
-        </span>
-      </div>
-
       <nav className="flex justify-between gap-4 border-t border-concrete-deep pt-4 text-base">
         {prev ? (
           <Link href={`/history/${prev.year}`} className="text-dim hover:text-ink">

@@ -14,12 +14,19 @@ export interface NavItem {
   label: string;
 }
 
-/** 넓은 화면 헤더 오른쪽. */
+/**
+ * 넓은 화면 헤더 오른쪽.
+ *
+ * `변천사`는 게임이 아니라 읽을거리다 — 이용안내와 같은 무게로 뒤쪽에 둔다.
+ * 넣지 않으면 주소를 아는 사람만 갈 수 있는 화면이 되는데, 게임에서 만난
+ * 이름이 왜 그 이름인지는 거기에만 있다.
+ */
 export const HEADER_LINKS: readonly NavItem[] = [
   { href: "/courses", label: "코스" },
   { href: "/notes", label: "기록" },
   { href: "/rooms", label: "대결" },
   { href: "/ranking", label: "랭킹" },
+  { href: "/history", label: "변천사" },
   { href: "/guide", label: "이용안내" },
 ];
 

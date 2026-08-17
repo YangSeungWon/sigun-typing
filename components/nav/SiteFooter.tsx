@@ -15,9 +15,21 @@ import { DATA_VINTAGE } from "@/data/vintage";
 export function SiteFooter() {
   return (
     <footer className="mx-auto mt-auto flex w-full max-w-5xl flex-col gap-2 border-t border-concrete-deep px-6 py-6 font-mono text-xs text-dim">
-      <span>
+      {/*
+        기준 연도가 변천사로 가는 문이다.
+        메뉴를 하나 더 다는 대신 이미 있는 줄을 쓴다 — 이 줄이 하는 말이
+        "이 자료는 몇 년 것인가"이고, 거기서 자연히 이어지는 물음이
+        "그럼 전에는 어땠나"다.
+
+        좁은 화면에는 헤더 링크가 없어서(갈 곳은 전부 아래 탭 바인데 그건
+        넷으로 고정이다) 이 줄이 유일한 길이기도 하다.
+      */}
+      <Link
+        href="/history"
+        className="w-fit underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
         행정구역 데이터 기준 {DATA_VINTAGE.year} · {DATA_VINTAGE.boundarySource}
-      </span>
+      </Link>
       <span className="flex gap-4 pt-1">
         <Link href="/privacy" className="transition-colors hover:text-ink">
           개인정보 처리방침

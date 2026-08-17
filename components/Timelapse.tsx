@@ -53,104 +53,36 @@ export function Timelapse({ data }: { data: TimelapseData }) {
     setIndex(i);
   }, []);
 
-  const years = data.frames.map((f) => Number(f.year));
-  const span = years[last] - years[0];
-  const at = (i: number) => ((years[i] - years[0]) / span) * 100;
-
-  /*
-   * 눈금 라벨은 겹치면 지운다.
-   *
-   * 실제 연도 자리에 찍으므로 최근처럼 개편이 몰린 구간에서는 점이 붙는다 —
-   * 2023과 2024는 50년 축에서 2% 거리라 `2324`로 읽혔다. 점은 다 두고 글자만
-   * 솎는다. 고른 해는 언제나 보여야 하므로 그것만 예외다.
-   */
-  const MIN_GAP = 7;
-  const labelled = new Set<number>();
-  let lastAt = -Infinity;
-  for (let i = 0; i < data.frames.length; i++) {
-    if (at(i) - lastAt < MIN_GAP) continue;
-    labelled.add(i);
-    lastAt = at(i);
-  }
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="relative">
-        <svg
-          viewBox={`0 0 ${data.width} ${data.height}`}
-          className="h-auto w-full"
-          role="img"
-          aria-label={`${frame.year}년 대한민국 시도 경계. ${frame.regions.length}개.`}
+    <div className="flex flex-col gap-5">
+      {/*
+        연도와 사건이 이 화면의 제목이다.
+        페이지 제목은 따로 두지 않는다 — 첫 화면이 카피 대신 숫자를 h1으로
+        둔 것과 같다. 여기서 읽을 것은 "몇 년에 무슨 일이 있었나"뿐이다.
+      */}
+      <header className="flex flex-col gap-1">
+        <h1
+          className="font-mono text-6xl leading-none font-bold tabular-nums sm:text-7xl"
+          aria-label={`${frame.year}년. ${frame.label || `시도 ${frame.regions.length}곳`}`}
         >
-          {frame.regions.map((r) => (
-            /*
-             * key를 코드로 준다. 프레임이 바뀌어도 같은 시도는 같은 엘리먼트라
-             * path만 갈리고, 새로 생긴 시도만 새로 그려진다.
-             */
-            <path
-              key={r.code}
-              d={r.d}
-              className="fill-[var(--color-map-idle)] stroke-[var(--color-map-line)] transition-[d] duration-500"
-              strokeWidth={1}
-            >
-              <title>{r.name}</title>
-            </path>
-          ))}
-        </svg>
-
-        {/* 연도는 지도 위에 크게. 이 화면에서 가장 먼저 읽혀야 하는 값이다. */}
-        <div className="pointer-events-none absolute top-0 left-0 font-mono text-5xl font-bold tabular-nums sm:text-6xl">
           {frame.year}
-        </div>
-      </div>
-
-      <div className="flex min-h-12 items-start justify-between gap-4">
-        <p className="text-base break-keep text-dim">
-          {frame.label || `시도 ${frame.regions.length}곳에서 시작한다.`}
+        </h1>
+        {/*
+          높이를 고정한다. 사건 문장의 길이가 프레임마다 달라서(한 줄에서 세
+          줄까지) 그대로 두면 아래 타임라인과 지도가 위아래로 튄다.
+        */}
+        <p className="flex min-h-14 items-start text-lg font-medium break-keep sm:min-h-8">
+          {frame.label || `시도 ${frame.regions.length}곳`}
         </p>
-        <span className="shrink-0 font-mono text-sm tabular-nums text-dim">
-          {frame.regions.length}곳
-        </span>
-      </div>
+      </header>
 
       {/*
-        눈금은 실제 연도 자리에 찍는다. 균등 간격으로 두면 1975→1985의 십 년과
-        2023→2024의 한 해가 같은 폭이 되어, 최근에 개편이 몰렸다는 사실이
-        사라진다.
+        연도는 눌러서 고른다.
+        점을 실제 연도 자리에 찍어 봤는데, 개편이 몰린 최근 구간에서 점과
+        글자가 서로 밟았다. 아홉 개뿐이라 균등하게 늘어놓는 편이 읽기 쉽다 —
+        어느 시기에 몰렸는지는 위의 사건 문장이 이미 말해 준다.
       */}
-      <div className="relative h-10">
-        <div className="absolute top-4 right-0 left-0 h-px bg-concrete-deep" />
-        {data.frames.map((f, i) => (
-          <button
-            key={f.year}
-            type="button"
-            onClick={() => pick(i)}
-            aria-current={i === index}
-            aria-label={`${f.year}년`}
-            className="absolute -translate-x-1/2 cursor-pointer p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            style={{ left: `${at(i)}%` }}
-          >
-            <span
-              className={`block h-3 w-3 rounded-full transition-colors ${
-                i === index ? "bg-sign" : "bg-concrete-deep hover:bg-dim"
-              }`}
-            />
-            {/* 고른 해가 이긴다 — 그 옆에 붙는 글자는 활성 여부와 무관하게 물러난다. */}
-            {(i === index ||
-              (labelled.has(i) && Math.abs(at(i) - at(index)) >= MIN_GAP)) && (
-              <span
-                className={`mt-1 block font-mono text-[10px] tabular-nums ${
-                  i === index ? "text-ink" : "text-dim"
-                }`}
-              >
-                {f.year.slice(2)}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
           onClick={() => {
@@ -158,27 +90,48 @@ export function Timelapse({ data }: { data: TimelapseData }) {
             if (!playing && index >= last) setIndex(0);
             setPlaying((p) => !p);
           }}
-          className="rounded-lg bg-sign px-5 py-2 text-base font-bold text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="mr-1 rounded-lg bg-sign px-4 py-1.5 text-sm font-bold text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           {playing ? "멈춤" : "재생"}
         </button>
-        <button
-          type="button"
-          onClick={() => pick(Math.max(0, index - 1))}
-          disabled={index === 0}
-          className="rounded-lg border border-concrete-deep px-4 py-2 text-base transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          이전
-        </button>
-        <button
-          type="button"
-          onClick={() => pick(Math.min(last, index + 1))}
-          disabled={index === last}
-          className="rounded-lg border border-concrete-deep px-4 py-2 text-base transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          다음
-        </button>
+        {data.frames.map((f, i) => (
+          <button
+            key={f.year}
+            type="button"
+            onClick={() => pick(i)}
+            aria-current={i === index}
+            className={`rounded-lg border px-2.5 py-1.5 font-mono text-sm tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+              i === index
+                ? "border-ink bg-ink text-paint"
+                : "border-concrete-deep text-dim hover:bg-concrete-deep hover:text-ink"
+            }`}
+          >
+            {f.year}
+          </button>
+        ))}
       </div>
+
+      <svg
+        viewBox={`0 0 ${data.width} ${data.height}`}
+        className="h-auto w-full"
+        role="img"
+        aria-label={`${frame.year}년 대한민국 시도 경계 ${frame.regions.length}개`}
+      >
+        {frame.regions.map((r) => (
+          /*
+           * key를 코드로 준다. 프레임이 바뀌어도 같은 시도는 같은 엘리먼트라
+           * path만 갈리고, 새로 생긴 시도만 새로 그려진다.
+           */
+          <path
+            key={r.code}
+            d={r.d}
+            className="fill-[var(--color-map-idle)] stroke-[var(--color-map-line)] transition-[d] duration-500"
+            strokeWidth={1}
+          >
+            <title>{r.name}</title>
+          </path>
+        ))}
+      </svg>
     </div>
   );
 }

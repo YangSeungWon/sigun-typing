@@ -30,17 +30,8 @@ export default function HistoryPage() {
   const sigungu = changes.sigungu.filter((e) => Number(e.from) >= 2000);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
-      <header className="flex flex-col gap-3">
-        <BackLink href="/">시군 타이핑</BackLink>
-        <h1 className="text-4xl font-bold tracking-tight">
-          행정구역은 이렇게 바뀌었다
-        </h1>
-        <p className="text-lg break-keep text-dim">
-          {FIRST.year}년에는 시도가 {FIRST.regions.length}개였습니다. 지금은{" "}
-          {LAST.regions.length}개입니다. 그사이 무슨 일이 있었는지 지도로 봅니다.
-        </p>
-      </header>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
+      <BackLink href="/">시군 타이핑</BackLink>
 
       <Timelapse data={DATA} />
 
@@ -50,12 +41,8 @@ export default function HistoryPage() {
         적어 두면 그 자체로 읽을거리이고, 나중에 사건마다 지도를 붙일 자리가
         여기 그대로 남는다.
       */}
-      <section className="flex flex-col gap-4">
-        <h2 className="text-2xl font-semibold">시군구는 이렇게</h2>
-        <p className="text-base break-keep text-dim">
-          시군구 개편은 전국 지도에서는 몇 픽셀이라 위 지도에 담기지 않습니다.
-          2000년 이후 {sigungu.length}번 바뀌었습니다.
-        </p>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">시군구</h2>
         <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
           {sigungu.map((e) => (
             <li key={`${e.from}-${e.to}`} className="flex gap-4 py-2.5">

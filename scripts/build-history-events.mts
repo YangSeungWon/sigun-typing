@@ -17,7 +17,7 @@ import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { geoMercator, geoPath } from "d3-geo";
+import { geoCentroid, geoContains, geoMercator, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
@@ -29,8 +29,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE_DIR = join(ROOT, "data/geo/source/sgis");
 const OUT = join(ROOT, "data/timelapse/events.json");
 
-const WIDTH = 460;
-const HEIGHT = 460;
+/**
+ * 그리는 판.
+ *
+ * 보통은 사건이 일어난 시도 하나를 담으므로 정사각이면 된다. 도농통합처럼
+ * 전국에 걸친 사건은 나라 전체를 담아야 해서 세로로 길다.
+ */
+const LOCAL = { width: 460, height: 460 };
+const NATIONWIDE = { width: 520, height: 660 };
 
 /** 잘라 낸 시도 하나를 이 판에 담으므로 전국 타임랩스보다 곱게 남긴다. */
 const RESOLUTION = "900x900";
@@ -40,6 +46,19 @@ const MIN_ISLAND_AREA = 20_000_000;
 const SOURCE_ERRORS = new Set(["2009", "2010"]);
 
 type Level = "sido" | "sigungu";
+
+/**
+ * 시도 접두사 → 이름.
+ *
+ * 시군구를 그릴 때는 시도 도형이 손에 없는데, 이름이 같아 헷갈리는 자리에서만
+ * 어느 시도인지 밝히면 된다. 원본의 옛 코드 체계다(부산은 26이 아니라 21).
+ */
+const SIDO_LABEL: Record<string, string> = {
+  "11": "서울", "21": "부산", "22": "대구", "23": "인천", "24": "광주",
+  "25": "대전", "26": "울산", "29": "세종", "31": "경기", "32": "강원",
+  "33": "충북", "34": "충남", "35": "전북", "36": "전남", "37": "경북",
+  "38": "경남", "39": "제주",
+};
 
 interface Shape {
   code: string;
@@ -73,6 +92,11 @@ interface Change {
 interface Event {
   /** 자료에 처음 나타난 해. 주소가 되므로 바뀌면 안 된다. */
   year: string;
+  /** 이 사건의 판 크기. 전국에 걸친 사건은 더 길다. */
+  width: number;
+  height: number;
+  /** 전국에 걸친 사건인가. 화면이 문구를 달리한다. */
+  nationwide: boolean;
   /**
    * 크게 뜨는 해 — 실제로 그 일이 있었던 해다.
    *
@@ -213,18 +237,18 @@ for (const [year, group] of [...byYear].sort()) {
   if (touched.size === 0) continue;
 
   /*
-   * 시도 셋 이상에 걸치면 확대해도 안 보인다.
+   * 시도 셋 이상에 걸치면 **전국을 그린다.**
    *
-   * 5년 단위인 1975~2000 구간이 그렇다. 그건 사건 하나가 아니라 다섯 해치
-   * 변화가 뭉친 것이라(1988년 서울 5구 신설과 시 승격이 한 칸에 들어 있다)
-   * 애초에 "이 일이 여기서 일어났다"고 가리킬 자리가 없다.
+   * 확대할 자리가 없어서 건너뛰었는데, 그건 그릴 수 없는 사건이 아니라
+   * 다른 그림이 필요한 사건이었다. 도농통합처럼 온 나라에서 동시에 일어난
+   * 일은 하나를 자세히 보는 게 아니라 **얼마나 많이 바뀌었나**를 보는
+   * 사건이라, 전국에 색이 드는 것 자체가 그 이야기다.
    */
-  if (touched.size > 2) {
-    process.stdout.write(`  ${prevYear}→${year} 시도 ${touched.size}곳에 걸침 — 건너뜀\n`);
-    continue;
-  }
+  const nationwide = touched.size > 2;
+  const { width: WIDTH, height: HEIGHT } = nationwide ? NATIONWIDE : LOCAL;
 
-  const inScope = (f: Feature<Geometry>) => touched.has(codeOf(f).slice(0, 2));
+  const inScope = (f: Feature<Geometry>) =>
+    nationwide || touched.has(codeOf(f).slice(0, 2));
   const nowIn = now.filter(inScope);
   const prevIn = prev.filter(inScope);
 
@@ -282,9 +306,15 @@ for (const [year, group] of [...byYear].sort()) {
    * 짝이 없는 것은 한쪽만 채운 줄로 남는다. 통합처럼 여럿이 하나가 되는
    * 사건은 이 규칙으로 못 잡으므로, 그런 것이야말로 손으로 적을 자리다.
    */
-  const stem = (n: string) => n.replace(/(특별자치시|특별자치도|특별시|광역시|시|군|구)$/, "");
   const goneList = prev.filter((f) => goneSet.has(codeOf(f)));
   const bornList = now.filter((f) => bornSet.has(codeOf(f)));
+
+  /** 그 도형이 속한 시도의 이름. 사건 층이 시군구일 때만 쓸모가 있다. */
+  const sidoName = (pool: Feature<Geometry>[], code: string): string => {
+    const head = code.slice(0, 2);
+    const hit = pool.find((f) => codeOf(f).slice(0, 2) === head && codeOf(f).length <= 2);
+    return hit ? nameOf(hit) : SIDO_LABEL[head] ?? "";
+  };
 
   /** 손으로 적은 이름을 도형에 붙인다. 붙지 않으면 지도에서 못 짚을 뿐이다. */
   const locate = (name: string, pool: Feature<Geometry>[]): Named => {
@@ -292,42 +322,84 @@ for (const [year, group] of [...byYear].sort()) {
     return hit ? { name, code: codeOf(hit) } : { name };
   };
 
+  /*
+   * 손으로 적은 것과 도형에서 뽑은 것을 **함께** 쓴다.
+   *
+   * 손으로 적은 것이 있으면 그것만 쓰고 있었는데, 1995년이 그 때문에 한
+   * 줄이 됐다 — 직할시가 광역시로 바뀐 것만 적어 두었고 정작 그해의 큰
+   * 사건인 도농통합(시군구 쉰여덟 곳이 합쳐졌다)이 통째로 빠졌다.
+   *
+   * 손으로 적은 줄이 이미 짚은 도형은 도형 쪽에서 다시 뽑지 않는다.
+   */
+  const curated: Change[] = known.map((d) => ({
+    on: d.on.replace(/-/g, "."),
+    from: (d.from ?? []).map((n) => locate(n, prevIn)),
+    to: (d.to ?? []).map((n) => locate(n, nowIn)),
+  }));
+  const spoken = new Set(
+    curated.flatMap((c) => [...c.from, ...c.to].map((x) => x.code).filter(Boolean) as string[]),
+  );
+
   let changes: Change[];
-  if (known.length) {
-    changes = known.map((d) => ({
-      on: d.on.replace(/-/g, "."),
-      from: (d.from ?? []).map((n) => locate(n, prevIn)),
-      to: (d.to ?? []).map((n) => locate(n, nowIn)),
-    }));
-  } else {
-    const leftGone = [...goneList];
-    const leftBorn = [...bornList];
-    const paired: Change[] = [];
-    for (const g of [...leftGone]) {
-      const twin = leftBorn.find(
-        (b) =>
-          codeOf(b).slice(0, 2) === codeOf(g).slice(0, 2) &&
-          stem(nameOf(b)) === stem(nameOf(g)) &&
-          nameOf(b) !== nameOf(g),
-      );
-      if (!twin) continue;
-      paired.push({
-        from: [{ name: nameOf(g), code: codeOf(g) }],
-        to: [{ name: nameOf(twin), code: codeOf(twin) }],
-      });
-      leftGone.splice(leftGone.indexOf(g), 1);
-      leftBorn.splice(leftBorn.indexOf(twin), 1);
+  {
+    /*
+     * 사라진 곳이 **어디로 들어갔는지**를 도형으로 찾는다.
+     *
+     * 이름으로는 못 잡는다 — 명주군은 강릉시로 들어갔는데 이름이 하나도
+     * 안 겹친다. 사라진 곳의 한가운데가 그 뒤 어느 도형 안에 있는지를 보면
+     * 그것이 흡수한 곳이다. 도농통합처럼 이름이 남지 않는 사건은 이 방법이
+     * 아니면 `사라짐`으로만 적힌다.
+     */
+    const absorbed = new Map<string, Feature<Geometry>[]>();
+    const orphans: Feature<Geometry>[] = [];
+    for (const g of goneList) {
+      const at = geoCentroid(g as Parameters<typeof geoCentroid>[0]);
+      const host = now.find((f) => geoContains(f as Parameters<typeof geoContains>[0], at));
+      if (!host) {
+        orphans.push(g);
+        continue;
+      }
+      const key = codeOf(host);
+      absorbed.set(key, [...(absorbed.get(key) ?? []), g]);
     }
+
+    const swallowed = new Set([...absorbed.values()].flat());
+    const leftBorn = bornList.filter((b) => !absorbed.has(codeOf(b)));
+
+    /*
+     * 흡수한 쪽이 그 해에 새로 생긴 곳이면 통합이고(청원군 → 통합 청주시),
+     * 원래 있던 곳이면 편입이다(명주군 → 강릉시). 표에서는 둘 다 같은
+     * `A → B` 한 줄이라 가르지 않는다.
+     */
+    const merges: Change[] = [...absorbed].map(([hostCode, eaten]) => {
+      const host = now.find((f) => codeOf(f) === hostCode)!;
+      /*
+       * 이름이 그대로면 무엇이 달라졌는지 안 보인다.
+       *
+       * 강화군은 1995년에 경기도에서 인천으로 옮겼는데, 이름이 같아서
+       * `강화군 → 강화군`으로 적힌다. 그럴 때만 어느 시도의 것인지를 붙인다.
+       */
+      const same = eaten.length === 1 && nameOf(eaten[0]) === nameOf(host);
+      const label = (f: Feature<Geometry>, side: Feature<Geometry>[]) =>
+        same ? `${sidoName(side, codeOf(f))} ${nameOf(f)}`.trim() : nameOf(f);
+      return {
+        from: eaten.map((f) => ({ name: label(f, prev), code: codeOf(f) })),
+        to: [{ name: label(host, now), code: hostCode }],
+      };
+    });
+
+    const untold = (c: Change) =>
+      ![...c.from, ...c.to].every((x) => x.code && spoken.has(x.code));
+
     changes = [
-      ...(group.sido
-        ? group.sido.renamed.map((r) => {
-            const [a, b] = r.split(" → ");
-            return { from: [{ name: a }], to: [{ name: b }] };
-          })
-        : []),
-      ...paired,
-      ...leftBorn.map((f) => ({ from: [], to: [{ name: nameOf(f), code: codeOf(f) }] })),
-      ...leftGone.map((f) => ({ from: [{ name: nameOf(f), code: codeOf(f) }], to: [] })),
+      ...curated,
+      ...merges.filter(untold),
+      ...leftBorn
+        .filter((f) => !spoken.has(codeOf(f)))
+        .map((f) => ({ from: [], to: [{ name: nameOf(f), code: codeOf(f) }] })),
+      ...orphans
+        .filter((f) => !swallowed.has(f) && !spoken.has(codeOf(f)))
+        .map((f) => ({ from: [{ name: nameOf(f), code: codeOf(f) }], to: [] })),
     ];
   }
 
@@ -392,6 +464,9 @@ for (const [year, group] of [...byYear].sort()) {
   events.push({
     year,
     at: atYears.length === 0 ? year : atYears.length === 1 ? atYears[0] : `${atYears[0]}–${atYears.at(-1)}`,
+    width: WIDTH,
+    height: HEIGHT,
+    nationwide,
     dated: known.length > 0,
     changes,
     headline,
@@ -428,11 +503,21 @@ await writeFile(
   OUT,
   `${JSON.stringify({
     _source: "통계청 SGIS 센서스용 행정구역경계",
-    _note: "개편 사건마다 그 일이 일어난 시도를 잘라 전후를 나란히 굽는다. npm run build:events.",
-    width: WIDTH,
-    height: HEIGHT,
+    _note:
+      "개편 사건마다 전후를 굽는다. 판 크기는 사건마다 다르다 — 전국에 걸친 것은 나라 전체를 담는다. npm run build:events.",
     events,
   })}\n`,
+);
+
+/*
+ * 어느 해에 지도가 있는지만 따로 낸다.
+ *
+ * `/history`는 목록에 링크를 걸지 말지만 알면 되는데, 그것 때문에 사건
+ * 전체(수 MB)를 가져오면 그 페이지가 통째로 무거워진다.
+ */
+await writeFile(
+  join(dirname(OUT), "event-years.json"),
+  `${JSON.stringify(events.map((e) => e.year))}\n`,
 );
 
 process.stdout.write(

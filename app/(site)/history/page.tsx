@@ -3,14 +3,14 @@ import { BackLink } from "@/components/BackLink";
 import { Timelapse, type TimelapseData } from "@/components/Timelapse";
 import timelapse from "@/data/timelapse/sido.json";
 import changes from "@/data/reference/boundary-changes.json";
-import events from "@/data/timelapse/events.json";
+import eventYears from "@/data/timelapse/event-years.json";
 
 const DATA = timelapse as TimelapseData;
 const FIRST = DATA.frames[0];
 const LAST = DATA.frames[DATA.frames.length - 1];
 
 /** 전후 지도를 구워 둔 해. 나머지는 목록에만 남는다. */
-const DRAWN = new Set(events.events.map((e) => e.year));
+const DRAWN = new Set(eventYears);
 
 export const metadata = {
   title: `대한민국 행정구역 변천사 ${FIRST.year}~${LAST.year}`,

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { COURSES } from "@/data/courses";
 import { MODE_LADDER } from "@/lib/game/modes";
-import events from "@/data/timelapse/events.json";
+import eventYears from "@/data/timelapse/event-years.json";
 import { siteUrl } from "@/lib/site";
 
 /**
@@ -51,8 +51,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
      * 개편 한 건씩. `창원 통합`, `군위군 대구 편입`처럼 실제로 찾는 말이라
      * 변천사 첫 화면보다 오히려 구체적인 유입이 걸린다.
      */
-    ...events.events.map((e) => ({
-      url: at(`/history/${e.year}`),
+    ...eventYears.map((year) => ({
+      url: at(`/history/${year}`),
       changeFrequency: "yearly" as const,
       priority: 0.6,
     })),

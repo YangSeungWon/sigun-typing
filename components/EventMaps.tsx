@@ -30,6 +30,11 @@ export interface HistoryEvent {
   dated: boolean;
   changes: EventChange[];
   headline: string;
+  /** 이 사건의 판 크기. 전국에 걸친 사건은 더 길다. */
+  width: number;
+  height: number;
+  /** 전국에 걸친 사건인가. */
+  nationwide: boolean;
   /** 앞에서 뒤로 가는 상태들. 보통 둘, 한 판에 사건이 둘이면 셋. */
   states: EventSide[];
 }
@@ -47,15 +52,8 @@ export interface HistoryEvent {
  * 표의 한 줄에 손을 얹으면 지도에서 그 곳만 짚는다. 이름과 도형을 잇는 일이
  * 이 화면에서 제일 어려운데, 그걸 읽는 사람이 하지 않아도 된다.
  */
-export function EventMaps({
-  event,
-  width,
-  height,
-}: {
-  event: HistoryEvent;
-  width: number;
-  height: number;
-}) {
+export function EventMaps({ event }: { event: HistoryEvent }) {
+  const { width, height } = event;
   /*
    * 처음에는 **바뀌기 전**을 보여 준다.
    *

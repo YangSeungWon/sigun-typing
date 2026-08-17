@@ -53,7 +53,7 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
         </div>
       </header>
 
-      <EventMaps event={event} width={data.width} height={data.height} />
+      <EventMaps event={event} />
 
       <nav className="flex justify-between gap-4 border-t border-concrete-deep pt-4 text-base">
         {prev ? (

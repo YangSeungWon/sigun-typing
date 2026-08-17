@@ -35,17 +35,40 @@ const OUT_DIR = join(ROOT, "data/geo");
 const SOURCES = {
   provinces: "korea-sido.json",
   municipalities: "korea-sigungu.json",
+  dong: "korea-dong.json",
 } as const;
 
 const BASE_URL =
   "https://raw.githubusercontent.com/YangSeungWon/quiz-korea/main/public/data";
 
-/** SGIS 원본 필드명. 시도 파일과 시군구 파일이 서로 다른 이름을 쓴다. */
+/**
+ * SGIS 원본에서 직접 만들어야 하는 층.
+ *
+ * 시도·시군구는 미리 TopoJSON으로 다듬어 둔 것을 BASE_URL에서 받는다.
+ * 읍면동은 그런 것이 없어 통계청 자료를 신청해 받은 SHP에서 만든다 —
+ * `data/geo/source/sgis/`에 zip을 두면 아래에서 꺼내 쓴다.
+ */
+const SGIS_LEVELS: Partial<Record<keyof typeof SOURCES, string>> = {
+  dong: "bnd_dong",
+};
+
+/** SGIS 원본이 사는 곳. 신청이 필요해 자동으로 받지 못한다. */
+const SGIS_DIR = join(ROOT, "data/geo/source/sgis");
+
+/**
+ * 원본 필드명. **출처마다, 그리고 해마다 다르다.**
+ *
+ * 시도·시군구는 대문자 `CTPRVN_CD`/`SIG_CD`를 쓰고, SGIS 읍면동은
+ * `ADM_CD`/`ADM_NM`이다. 같은 SGIS 안에서도 1975년판은 소문자
+ * (`adm_dr_cd`)라, 여기 적힌 것은 지금 쓰는 2025년판 기준이다.
+ */
 interface RegionProps {
   CTPRVN_CD?: string;
   CTP_KOR_NM?: string;
   SIG_CD?: string;
   SIG_KOR_NM?: string;
+  ADM_CD?: string;
+  ADM_NM?: string;
 }
 
 type Area = Polygon<RegionProps> | MultiPolygon<RegionProps>;
@@ -53,8 +76,8 @@ type Area = Polygon<RegionProps> | MultiPolygon<RegionProps>;
 /** 원본의 제각각인 필드명을 여기서 한 번만 정규화한다. */
 function propsOf(g: Area): { code: string; name: string } {
   const p = g.properties!;
-  const code = p.SIG_CD ?? p.CTPRVN_CD;
-  const name = p.SIG_KOR_NM ?? p.CTP_KOR_NM;
+  const code = p.SIG_CD ?? p.CTPRVN_CD ?? p.ADM_CD;
+  const name = p.SIG_KOR_NM ?? p.CTP_KOR_NM ?? p.ADM_NM;
   if (!code || !name) {
     throw new Error(`코드나 이름이 없는 경계: ${JSON.stringify(p)}`);
   }
@@ -143,7 +166,7 @@ async function simplify(
   const mapshaper = (await import("mapshaper")).default;
   // 접두사로 먼저 걸러 코스 안에서만 중요도를 겨룬다.
   const filter = prefix
-    ? `-filter "(SIG_CD || CTPRVN_CD || '').indexOf('${prefix}') === 0" `
+    ? `-filter "(this.properties.SIG_CD || this.properties.CTPRVN_CD || this.properties.ADM_CD || '').indexOf('${prefix}') === 0" `
     : "";
   /*
    * 축약 전에 한 번 씻는다(`-clean`).
@@ -183,7 +206,7 @@ async function extractInnerLines(
 ) {
   const mapshaper = (await import("mapshaper")).default;
   const filter = prefix
-    ? `-filter "(SIG_CD || CTPRVN_CD || '').indexOf('${prefix}') === 0" `
+    ? `-filter "(this.properties.SIG_CD || this.properties.CTPRVN_CD || this.properties.ADM_CD || '').indexOf('${prefix}') === 0" `
     : "";
   const result = await mapshaper.applyCommands(
     `-i input.json ${filter}-clean ` +
@@ -192,6 +215,64 @@ async function extractInnerLines(
     { "input.json": await readFile(file) },
   );
   await writeFile(out, Buffer.from(result["output.json"]));
+}
+
+/**
+ * SGIS SHP에서 원본 TopoJSON을 만든다.
+ *
+ * 두 가지를 여기서 흡수한다.
+ *
+ * **좌표계.** SGIS는 UTM-K(EPSG:5179) 미터 좌표다. 그대로 두면 지도가 아니라
+ * 백만 단위 숫자 덩어리라 d3가 못 그린다. `.prj`가 든 해도 있고 안 든 해도
+ * 있어서 원본을 믿지 않고 `from=`으로 못 박는다.
+ *
+ * **zip 속의 zip.** 한 해치 파일 안에 시도·시군구·읍면동 세 겹이 또 zip으로
+ * 들어 있다. 필요한 하나만 꺼낸다.
+ */
+async function buildFromSgis(level: string, out: string): Promise<void> {
+  const zips = (await readdir(SGIS_DIR).catch(() => []))
+    .filter((f) => f.startsWith("bnd_all") && f.endsWith(".zip"))
+    .sort();
+  if (zips.length === 0) {
+    throw new Error(
+      `${SGIS_DIR}에 원본이 없다.\n` +
+        "SGIS(sgis.mods.go.kr) 자료제공에서 센서스용 행정구역경계를 신청해 받은 뒤\n" +
+        "bnd_all_00_<연도>_<분기>Q.zip 을 그 폴더에 둔다.",
+    );
+  }
+  // 가장 최신 시점을 쓴다. 이름이 연도순이라 마지막이 그것이다.
+  const newest = zips[zips.length - 1];
+  process.stdout.write(`SGIS에서 만드는 중 ${newest} → ${level}\n`);
+
+  const { execFile } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const run = promisify(execFile);
+
+  const dir = await mkdtemp(join(tmpdir(), "sgis-geo-"));
+  try {
+    await run("unzip", ["-q", "-o", join(SGIS_DIR, newest), `${level}_*`, "-d", dir]);
+    const inner = (await readdir(dir)).find((f) => f.endsWith(".zip"));
+    if (!inner) throw new Error(`${newest}: ${level} 없음`);
+    await run("unzip", ["-q", "-o", join(dir, inner), "-d", dir]);
+
+    // 파일 이름 규칙이 해마다 다르다(BND_SIDO_PG_2014 / bnd_dong_00_2025_2Q).
+    const base = (await readdir(dir)).find((f) => f.endsWith(".shp"))?.replace(/\.shp$/, "");
+    if (!base) throw new Error(`${newest}: shp 없음`);
+
+    const mapshaper = (await import("mapshaper")).default;
+    const result = await mapshaper.applyCommands(
+      "-i in.shp -proj from=EPSG:5179 wgs84 -o out.json format=topojson",
+      {
+        "in.shp": await readFile(join(dir, `${base}.shp`)),
+        "in.dbf": await readFile(join(dir, `${base}.dbf`)),
+      },
+    );
+    await writeFile(out, Buffer.from(result["out.json"]));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 const topologyCache = new Map<string, Topology>();
@@ -210,11 +291,16 @@ async function loadTopology(
   await mkdir(SOURCE_DIR, { recursive: true });
   const file = join(SOURCE_DIR, SOURCES[key]);
   if (!existsSync(file)) {
-    const url = `${BASE_URL}/${SOURCES[key]}`;
-    process.stdout.write(`내려받는 중 ${url}\n`);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`${url} 내려받기 실패: ${res.status}`);
-    await writeFile(file, Buffer.from(await res.arrayBuffer()));
+    const level = SGIS_LEVELS[key];
+    if (level) {
+      await buildFromSgis(level, file);
+    } else {
+      const url = `${BASE_URL}/${SOURCES[key]}`;
+      process.stdout.write(`내려받는 중 ${url}\n`);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} 내려받기 실패: ${res.status}`);
+      await writeFile(file, Buffer.from(await res.arrayBuffer()));
+    }
   }
 
   const simplified = file.replace(
@@ -284,6 +370,14 @@ interface Report {
   orphans: string[];
   /** 원본 조각을 둘 이상 합친 장소. 시 아래 구가 있을 때만 정상이다. */
   merged: string[];
+  /**
+   * 만들어진 지도의 크기. 리포트에 실어 보낸다.
+   *
+   * buildCourse가 직접 찍던 줄이었는데, 그러면 **자기 PASS 줄보다 앞서** 나온다
+   * (리포트는 돌려받은 뒤에 찍히므로). 로그에서 그 줄이 앞 코스의 것으로
+   * 읽혀 엉뚱한 코스의 지도가 크다고 오해하게 된다.
+   */
+  size?: { width: number; height: number; kb: number };
 }
 
 /**
@@ -519,10 +613,11 @@ async function buildCourse(course: Course, legacy: Map<string, string>): Promise
   await writeFile(join(OUT_DIR, `${course.id}.json`), JSON.stringify(out));
   outlines[course.id] = { outline, borders };
 
-  const kb = (JSON.stringify(out).length / 1024).toFixed(0);
-  process.stdout.write(
-    `  ${width}×${height}  ${kb}KB\n`,
-  );
+  report.size = {
+    width,
+    height,
+    kb: Math.round(JSON.stringify(out).length / 1024),
+  };
   return report;
 }
 
@@ -538,6 +633,9 @@ function printReport(r: Report): boolean {
   if (r.duplicated.length) process.stdout.write(`      중복 매칭: ${r.duplicated.join(", ")}\n`);
   if (r.orphans.length) process.stdout.write(`      코스에 빠짐: ${r.orphans.join(", ")}\n`);
   if (r.merged.length) process.stdout.write(`      합쳐진 장소: ${r.merged.join(", ")}\n`);
+  if (r.size) {
+    process.stdout.write(`      ${r.size.width}×${r.size.height} · ${r.size.kb}KB\n`);
+  }
   return ok;
 }
 

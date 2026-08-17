@@ -27,7 +27,13 @@ export type CourseGroup =
 
 /** 원본 경계 파일과 그 안에서 이 코스가 차지하는 범위. */
 export interface CourseGeoSource {
-  file: "provinces" | "municipalities";
+  /**
+   * 어느 층의 경계인가.
+   *
+   * `dong`은 앞의 둘과 출처가 다르다 — 통계청 SGIS에서 신청해 받은 SHP이고,
+   * 자동으로 내려받지 못한다. `scripts/build-geo.mts`가 그 차이를 흡수한다.
+   */
+  file: "provinces" | "municipalities" | "dong";
   /**
    * 원본 코드 접두사. 이름만으로는 고를 수 없다 —
    * `중구`는 서울·부산·대구·인천·대전·울산에 모두 있다.

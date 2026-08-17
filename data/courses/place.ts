@@ -15,13 +15,14 @@ import type { Region } from "../types.ts";
  *
  * @param name    접미사를 뗀 이름. `중구`처럼 뗄 수 없는 이름은 통째로 준다.
  * @param suffix  붙이면 정식 명칭이 되는 접미사. 이름 자체가 정식이면 생략.
+ *                읍면동도 같은 규칙이다 — `사직` + `동`.
  * @param extra   추가로 인정할 표기. 정답을 흐리므로 이유가 있을 때만 —
  *                원본 경계가 옛 이름을 쓰는 경우(`미추홀구` ← `남구`)가 그렇다.
  */
 export function place(
   code: string,
   name: string,
-  suffix?: "구" | "군" | "시",
+  suffix?: "구" | "군" | "시" | "동",
   extra: string[] = [],
 ): Region {
   const full = suffix ? name + suffix : name;

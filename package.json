@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "build:geo": "node scripts/build-geo.mts",
+    "build:dong": "node scripts/build-dong-courses.mts",
     "build:changes": "node scripts/build-changes.mts",
     "build:timelapse": "node scripts/build-timelapse.mts",
     "build:og": "node scripts/build-og.mts",

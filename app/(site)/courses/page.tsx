@@ -60,9 +60,21 @@ export default async function CoursesPage() {
    * 고르지 못하게 되는 것은 망가진 것이다 — DB가 잠깐 흔들리거나 개발자가
    * DB 없이 띄웠을 때 이 화면이 통째로 죽으면 안 된다.
    */
+  /*
+   * 읍면동은 이 목록에 넣지 않는다.
+   *
+   * 252개를 권역에 쏟으면 이 화면은 고르는 자리가 아니라 뒤지는 자리가 된다.
+   * 그리고 읍면동은 **아는 동네 하나만** 할 물건이라 전국을 훑을 이유가
+   * 애초에 없다 — 자기 구를 아는 사람은 그 구의 코스에서 내려가면 된다.
+   *
+   * 만들어 두는 것과 늘어놓는 것은 다른 결정이다. 252개가 다 있어야 누구의
+   * 동네든 받아 줄 수 있고, 그렇다고 다 보여 줄 이유는 없다.
+   */
+  const listed = COURSES.filter((c) => c.level !== "dong");
+
   const bests = await getScoreRepository()
     .bests(
-      COURSES.map((c) => ({ courseId: c.id, courseVersion: c.version })),
+      listed.map((c) => ({ courseId: c.id, courseVersion: c.version })),
       "map",
       SCORING_VERSION,
     )
@@ -70,7 +82,7 @@ export default async function CoursesPage() {
 
   const groups = COURSE_GROUPS.map((group) => ({
     ...group,
-    courses: COURSES.filter((c) => c.group === group.id),
+    courses: listed.filter((c) => c.group === group.id),
   })).filter((g) => g.courses.length > 0);
 
   return (

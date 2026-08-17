@@ -21,11 +21,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   );
 
-  // 코스 소개는 검색 유입의 착지점이다. 게임 화면보다 우선순위를 높게 둔다.
+  /*
+   * 코스 소개는 검색 유입의 착지점이다. 게임 화면보다 우선순위를 높게 둔다.
+   *
+   * 읍면동도 넣는다. 목록 화면에는 안 보이지만 검색에서는 이쪽이 오히려
+   * 경쟁이 약하다 — `강남구 동 이름`을 찾는 사람에게 보일 곳이 여기뿐이다.
+   * 다만 시군구보다는 낮게 둔다. 아는 사람만 찾는 페이지다.
+   */
   const courses = COURSES.map((course) => ({
     url: at(`/courses/${course.id}`),
     changeFrequency: "monthly" as const,
-    priority: 0.8,
+    priority: course.level === "dong" ? 0.6 : 0.8,
   }));
 
   return [

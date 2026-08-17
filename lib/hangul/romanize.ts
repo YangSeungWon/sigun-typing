@@ -1,4 +1,4 @@
-import { isSyllable, splitSyllable } from "./jamo";
+import { isSyllable, splitSyllable } from "./jamo.ts";
 
 /**
  * 국어의 로마자 표기법(2000년 고시)에 따른 변환.

@@ -1,3 +1,4 @@
+import { DONG_LOADERS } from "./geo.dong";
 import type { CourseGeo } from "@/data/geo/types";
 
 /**
@@ -8,10 +9,16 @@ import type { CourseGeo } from "@/data/geo/types";
  * 알아채기 어려우므로, data/geo/geo.test.ts가 코스 목록과 대조해 잡아 준다.
  */
 const LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
+  /*
+   * 읍면동은 251개라 손으로 적을 수 없다. 그 목록만 생성한다
+   * (`npm run build:dong`). 나머지는 아래처럼 한 줄씩 적는다 — 빠뜨리면
+   * 지도 없이 조용히 돌아가므로, 손으로 적는 쪽이 검사에 걸린다.
+   */
+  ...DONG_LOADERS,
   sido: () => import("@/data/geo/sido.json"),
   nationwide: () => import("@/data/geo/nationwide.json"),
   seoul: () => import("@/data/geo/seoul.json"),
-  jongno: () => import("@/data/geo/jongno.json"),
+  "seoul-jongno": () => import("@/data/geo/seoul-jongno.json"),
   gyeonggi: () => import("@/data/geo/gyeonggi.json"),
   gangwon: () => import("@/data/geo/gangwon.json"),
   incheon: () => import("@/data/geo/incheon.json"),

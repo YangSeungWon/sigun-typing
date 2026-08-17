@@ -92,7 +92,17 @@ function summarize(course: (typeof COURSES)[number]): CourseSummary {
      * 시군 코스의 짧은 이름은 그 시도의 이름이다 — 이미 데이터에 있으므로
      * 코스마다 손으로 적어 두지 않는다. 전국 코스만 자기 시도가 없다.
      */
-    shortName: course.id === sidoCourse.id ? "전국" : (SIDO_NAME.get(sido) ?? course.name),
+    /*
+     * 시군 코스의 짧은 이름은 그 시도의 이름이다. 읍면동은 다르다 — 시도를
+     * 적으면 서울의 스물다섯 코스가 전부 `서울`이 되어 서로 구별되지 않는다.
+     * 자기 시군구 이름(`서울특별시 종로구`의 뒤쪽)이 그 자리다.
+     */
+    shortName:
+      course.id === sidoCourse.id
+        ? "전국"
+        : course.level === "dong"
+          ? (course.parentName?.split(" ").at(-1) ?? course.name)
+          : (SIDO_NAME.get(sido) ?? course.name),
     overlapping: course.overlapping ?? false,
     level: course.level,
     version: course.version,

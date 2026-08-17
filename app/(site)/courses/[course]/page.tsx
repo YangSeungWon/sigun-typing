@@ -30,12 +30,46 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
   const course = getCourse(courseId);
   if (!course) notFound();
 
+  /*
+   * 이 코스의 지역 중 읍면동 코스가 따로 있는 곳.
+   *
+   * 코드로는 못 잇는다 — 우리 지역 코드는 행정표준코드(종로구 11110)이고
+   * 읍면동 코스의 접두사는 원본 경계 파일의 옛 코드(11010)다. 대신 읍면동
+   * 코스가 자기 부모 이름을 통째로 들고 있으므로(`서울특별시 종로구`)
+   * 그것으로 맞춘다.
+   */
+  const deeper = new Map(
+    COURSES.filter((c) => c.level === "dong" && c.parentName)
+      .map((c) => [c.parentName!, c] as const)
+      .flatMap(([parent, c]) => {
+        const region = course.regions.find((r) => `${course.parentName} ${r.name}` === parent);
+        return region ? [[region.code, c] as const] : [];
+      }),
+  );
+
   const geo = await loadCourseGeo(course.id);
+  /*
+   * 옆에 놓을 코스는 **같은 층에서만** 고른다.
+   *
+   * 권역만 보면 종로구 17개 동 옆에 서울 25개 구와 경기도 31 시군이 선다.
+   * 층이 다른 코스는 옆이 아니라 위아래라, 나란히 놓으면 크기를 견주게 된다.
+   *
+   * 읍면동은 한 권역에 수십 개라 이름만으로는 어디 것인지 알 수 없다.
+   * 그래서 같은 시도 안에서만 고른다 — 종로구 옆에는 서울의 다른 구가 온다.
+   */
   const siblings = COURSES.filter(
-    (c) => c.group === course.group && c.id !== course.id,
+    (c) =>
+      c.id !== course.id &&
+      c.level === course.level &&
+      (course.level === "dong"
+        ? c.parentName?.split(" ")[0] === course.parentName?.split(" ")[0]
+        : c.group === course.group),
   ).slice(0, 6);
+
   const groupName =
-    COURSE_GROUPS.find((g) => g.id === course.group)?.name ?? "다른 코스";
+    course.level === "dong"
+      ? (course.parentName?.split(" ")[0] ?? "다른 코스")
+      : (COURSE_GROUPS.find((g) => g.id === course.group)?.name ?? "다른 코스");
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
@@ -114,9 +148,27 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
           지명이 아니라 태그처럼 읽힌다. 지도책의 색인처럼 줄만 세운다.
         */}
         <ol className="grid grid-cols-2 gap-x-6 gap-y-1 pt-3 text-base sm:grid-cols-4">
-          {course.regions.map((region) => (
-            <li key={region.code}>{region.name}</li>
-          ))}
+          {course.regions.map((region) => {
+            /*
+             * 그 지역의 읍면동 코스가 있으면 이름이 링크가 된다.
+             *
+             * 읍면동 252개를 목록으로 늘어놓지 않는 대신 여기서 내려간다.
+             * 자기 동네를 아는 사람은 이미 그 구를 보고 있고, 모르는 사람에게는
+             * 그냥 지명 한 줄로 남는다 — 권하지 않되 막지도 않는다.
+             */
+            const down = deeper.get(region.code);
+            if (!down) return <li key={region.code}>{region.name}</li>;
+            return (
+              <li key={region.code}>
+                <Link
+                  href={`/courses/${down.id}`}
+                  className="underline decoration-concrete-deep underline-offset-4 transition-colors hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                >
+                  {region.name}
+                </Link>
+              </li>
+            );
+          })}
         </ol>
       </details>
 

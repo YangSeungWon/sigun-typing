@@ -145,6 +145,23 @@ function labelPoint(polygons: ProjectedPolygon[]): [number, number] {
  */
 const SIMPLIFY_PERCENT = 20;
 
+/**
+ * SGIS 원본은 **비율이 아니라 해상도로** 깎는다.
+ *
+ * 위의 20%는 이미 다듬어진 원본(korea-sido/sigungu.json)에 맞춘 값이다.
+ * 읍면동은 통계청 SHP에서 직접 만들어 백 배쯤 촘촘하고, 같은 20%를 걸면
+ * 태안군 한 코스가 580KB가 된다 — 그리는 판은 1000px인데.
+ *
+ * 해상도로 걸면 "이 크기의 화면에 필요한 만큼"만 남아, 서울 자치구든 섬이
+ * 흩어진 해안 군이든 고르게 나온다.
+ */
+const SGIS_RESOLUTION = "1400x1400";
+
+/** 이 원본을 어떻게 깎을지. mapshaper의 `-simplify` 인자로 그대로 들어간다. */
+function simplifySpec(key: keyof typeof SOURCES, percent: number): string {
+  return SGIS_LEVELS[key] ? `resolution=${SGIS_RESOLUTION}` : `${percent}%`;
+}
+
 /** 이보다 단순해지면 지역의 모양을 알아볼 수 없다. */
 const MIN_VERTICES = 8;
 
@@ -161,7 +178,7 @@ async function simplify(
   file: string,
   out: string,
   prefix: string | undefined,
-  percent: number,
+  spec: string,
 ) {
   const mapshaper = (await import("mapshaper")).default;
   // 접두사로 먼저 걸러 코스 안에서만 중요도를 겨룬다.
@@ -181,7 +198,7 @@ async function simplify(
    */
   const result = await mapshaper.applyCommands(
     `-i input.json ${filter}-clean ` +
-      `-simplify visvalingam ${percent}% keep-shapes ` +
+      `-simplify visvalingam ${spec} keep-shapes ` +
       `-o output.json format=topojson`,
     { "input.json": await readFile(file) },
   );
@@ -202,7 +219,7 @@ async function extractInnerLines(
   file: string,
   out: string,
   prefix: string | undefined,
-  percent: number,
+  spec: string,
 ) {
   const mapshaper = (await import("mapshaper")).default;
   const filter = prefix
@@ -210,7 +227,7 @@ async function extractInnerLines(
     : "";
   const result = await mapshaper.applyCommands(
     `-i input.json ${filter}-clean ` +
-      `-simplify visvalingam ${percent}% keep-shapes ` +
+      `-simplify visvalingam ${spec} keep-shapes ` +
       `-innerlines -o output.json format=topojson`,
     { "input.json": await readFile(file) },
   );
@@ -275,6 +292,65 @@ async function buildFromSgis(level: string, out: string): Promise<void> {
   }
 }
 
+/**
+ * 큰 원본을 시군구별로 한 번에 쪼갠다.
+ *
+ * 읍면동만 해당한다. 시도·시군구 원본은 작아서 코스마다 걸러도 표가 안 나지만,
+ * 읍면동은 57MB짜리 한 벌에 252개 코스가 달라붙는다.
+ *
+ * mapshaper의 `-split`이 한 번에 다 만들어 준다. 쪼갤 기준(앞 다섯 자리)을
+ * 필드로 하나 붙여 두고 그것으로 가른다.
+ */
+const sliced = new Set<string>();
+async function sliceFor(
+  key: keyof typeof SOURCES,
+  prefix: string,
+  file: string,
+): Promise<string> {
+  if (!SGIS_LEVELS[key]) return file;
+
+  const target = file.replace(/\.json$/, `.slice-${prefix}.json`);
+  if (existsSync(target)) return target;
+  // 한 번 쪼갰는데도 없으면 그 접두사에 해당하는 원본이 없는 것이다.
+  if (sliced.has(key)) return file;
+
+  process.stdout.write(`원본을 시군구별로 쪼개는 중 ${SOURCES[key]}\n`);
+
+  /*
+   * mapshaper의 `-split`에 맡기지 않는다. 출력 파일 이름을 그쪽이 정하는데
+   * 규칙이 짐작과 달라 한 장도 못 건졌다. 여기서 직접 가른다.
+   *
+   * 도형은 GeoJSON으로 펴서 내보낸다. TopoJSON은 조각들이 arc를 공유하므로
+   * 잘라 내면 참조가 깨진다 — 펴 두면 조각마다 독립이고, 위상은 어차피
+   * 코스마다 `-clean`이 다시 세운다.
+   */
+  const topo = JSON.parse(await readFile(file, "utf8")) as Topology;
+  const objectKey = Object.keys(topo.objects)[0];
+  const fc = feature(
+    topo,
+    topo.objects[objectKey] as GeometryCollection<RegionProps>,
+  ) as unknown as { features: { properties: RegionProps }[] };
+
+  const groups = new Map<string, unknown[]>();
+  for (const f of fc.features) {
+    const code = f.properties?.ADM_CD ?? "";
+    if (code.length < 5) continue;
+    const head = code.slice(0, 5);
+    if (!groups.has(head)) groups.set(head, []);
+    groups.get(head)!.push(f);
+  }
+
+  for (const [code, features] of groups) {
+    await writeFile(
+      file.replace(/\.json$/, `.slice-${code}.json`),
+      JSON.stringify({ type: "FeatureCollection", features }),
+    );
+  }
+  sliced.add(key);
+  process.stdout.write(`  ${groups.size}개로 나눔\n`);
+  return existsSync(target) ? target : file;
+}
+
 const topologyCache = new Map<string, Topology>();
 
 async function loadTopology(
@@ -303,12 +379,27 @@ async function loadTopology(
     }
   }
 
+  /*
+   * 읍면동은 코스마다 원본을 다시 훑으면 안 된다.
+   *
+   * 전국 읍면동 원본이 57MB인데 코스가 252개다. 코스마다 이 파일을 걸러
+   * 축약하면 한 코스에 30초씩, 전부 두 시간이 넘는다. 시군구별로 한 번만
+   * 쪼개 두면 그 뒤로는 각자 작은 파일만 만진다.
+   */
+  const source = prefix ? await sliceFor(key, prefix, file) : file;
+
   const simplified = file.replace(
     /\.json$/,
     `.${prefix ?? "all"}-${percent}${lines ? ".lines" : ""}.clean.json`,
   );
   if (!existsSync(simplified)) {
-    await (lines ? extractInnerLines : simplify)(file, simplified, prefix, percent);
+    await (lines ? extractInnerLines : simplify)(
+      source,
+      simplified,
+      // 이미 잘라 둔 조각이면 다시 거를 것이 없다.
+      source === file ? prefix : undefined,
+      simplifySpec(key, percent),
+    );
   }
 
   const topology = JSON.parse(await readFile(simplified, "utf8")) as Topology;
@@ -340,14 +431,16 @@ async function loadCourses(): Promise<Course[]> {
     .filter((f) => f !== "index.ts" && !f.endsWith(".test.ts"))
     .sort();
 
+  const isCourse = (v: unknown): v is Course =>
+    !!v && typeof v === "object" && "id" in v && "regions" in v;
+
   const courses: Course[] = [];
   for (const file of files) {
     const mod = await import(join(COURSE_DIR, file));
     for (const value of Object.values(mod)) {
-      const course = value as Course;
-      if (course && typeof course === "object" && "id" in course && "regions" in course) {
-        courses.push(course);
-      }
+      // 읍면동 파일은 코스를 배열로 내놓는다 — 시군구 하나에 하나씩 252개다.
+      if (Array.isArray(value)) courses.push(...value.filter(isCourse));
+      else if (isCourse(value)) courses.push(value);
     }
   }
   return courses.sort((a, b) => a.id.localeCompare(b.id));

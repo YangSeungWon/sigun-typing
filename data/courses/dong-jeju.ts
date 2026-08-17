@@ -1,0 +1,80 @@
+import type { Course } from "../types";
+
+/*
+ * 자동 생성 — 손대지 마세요. `npm run build:dong`이 다시 씁니다.
+ *
+ * 순서는 맞닿은 읍면동을 잇는 경로다(scripts/build-dong-courses.mts).
+ * 어느 한 곳을 정성껏 손보고 싶으면 이 파일에서 떼어 자기 파일로 옮기세요 —
+ * 생성기는 이미 코스가 있는 시군구를 건너뜁니다.
+ */
+export const dong_jeju: Course[] = [
+  {
+    id: "jeju-jeju",
+    name: "제주시 26개 읍면동",
+    group: "jeju",
+    level: "dong",
+    parentName: "제주특별자치도 제주시",
+    placeUnit: "읍면동",
+    version: 1,
+    description: "한경면에서 추자면까지",
+    geo: { file: "dong", prefix: "39010" },
+    regions: [
+    { code: "39010310", name: "한경면" },
+    { code: "39010110", name: "한림읍" },
+    { code: "39010120", name: "애월읍" },
+    { code: "39010670", name: "외도동" },
+    { code: "39010680", name: "이호동" },
+    { code: "39010660", name: "노형동" },
+    { code: "39010690", name: "도두동" },
+    { code: "39010650", name: "연동" },
+    { code: "39010580", name: "용담2동" },
+    { code: "39010570", name: "용담1동" },
+    { code: "39010640", name: "오라동" },
+    { code: "39010550", name: "삼도1동" },
+    { code: "39010560", name: "삼도2동" },
+    { code: "39010510", name: "일도1동" },
+    { code: "39010530", name: "이도1동" },
+    { code: "39010520", name: "일도2동" },
+    { code: "39010590", name: "건입동" },
+    { code: "39010600", name: "화북동" },
+    { code: "39010540", name: "이도2동" },
+    { code: "39010630", name: "아라동" },
+    { code: "39010610", name: "삼양동" },
+    { code: "39010620", name: "봉개동" },
+    { code: "39010140", name: "조천읍" },
+    { code: "39010130", name: "구좌읍" },
+    { code: "39010330", name: "우도면" },
+    { code: "39010320", name: "추자면" },
+    ],
+  },
+  {
+    id: "jeju-seogwipo",
+    name: "서귀포시 17개 읍면동",
+    group: "jeju",
+    level: "dong",
+    parentName: "제주특별자치도 서귀포시",
+    placeUnit: "읍면동",
+    version: 1,
+    description: "대정읍에서 성산읍까지",
+    geo: { file: "dong", prefix: "39020" },
+    regions: [
+    { code: "39020110", name: "대정읍" },
+    { code: "39020310", name: "안덕면" },
+    { code: "39020620", name: "예래동" },
+    { code: "39020610", name: "중문동" },
+    { code: "39020600", name: "대천동" },
+    { code: "39020590", name: "대륜동" },
+    { code: "39020540", name: "천지동" },
+    { code: "39020520", name: "정방동" },
+    { code: "39020530", name: "중앙동" },
+    { code: "39020580", name: "서홍동" },
+    { code: "39020570", name: "동홍동" },
+    { code: "39020510", name: "송산동" },
+    { code: "39020550", name: "효돈동" },
+    { code: "39020560", name: "영천동" },
+    { code: "39020120", name: "남원읍" },
+    { code: "39020320", name: "표선면" },
+    { code: "39020130", name: "성산읍" },
+    ],
+  },
+];

@@ -1,5 +1,5 @@
-import { decompose, decomposeChar } from "./jamo";
-import { isKeystrokePrefix } from "./keystrokes";
+import { decompose, decomposeChar } from "./jamo.ts";
+import { isKeystrokePrefix } from "./keystrokes.ts";
 
 export type CharStatus =
   /** 목표 글자가 모두 입력됨 */

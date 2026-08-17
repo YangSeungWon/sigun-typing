@@ -58,7 +58,7 @@ import { place } from "./place.ts";
  */
 
 export const jongno: Course = {
-  id: "jongno",
+  id: "seoul-jongno",
   name: "종로구 17개 동",
   group: "capital",
   level: "dong",

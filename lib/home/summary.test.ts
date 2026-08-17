@@ -105,7 +105,14 @@ describe("첫 화면 씨앗", () => {
      */
     for (const c of seed.courses) {
       expect(c.shortName, c.id).not.toMatch(/\d/);
-      expect(c.shortName.length, c.id).toBeLessThanOrEqual(3);
+      /*
+       * 길이는 시도 이름을 쓰는 코스에만 건다(`경기`, `부산`). 읍면동의 짧은
+       * 이름은 자기 시군구라 세 글자로 못 맞춘다 — `부산진구`, `마산합포구`가
+       * 그렇고, 그렇다고 줄이면 어느 구인지 알 수 없다.
+       */
+      if (c.level !== "dong") {
+        expect(c.shortName.length, c.id).toBeLessThanOrEqual(3);
+      }
     }
   });
 

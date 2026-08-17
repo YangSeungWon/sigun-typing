@@ -1,4 +1,4 @@
-import { decompose, decomposeChar } from "./jamo";
+import { decompose, decomposeChar } from "./jamo.ts";
 
 /**
  * 두벌식 기준 타수. 한글 음절은 자모 수(2~5타), 그 외 문자는 1타.

@@ -1,4 +1,4 @@
-import { decompose } from "./jamo";
+import { decompose } from "./jamo.ts";
 
 /**
  * 두 낱말이 자모 몇 개 차이인가.

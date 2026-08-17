@@ -77,10 +77,14 @@ describe("로마자 표기", () => {
    */
   it("모든 코스의 지명이 로마자로 변환된다", () => {
     for (const course of COURSES) {
-      const word = course.level === "dong" ? /^[A-Z][a-z]*( ?\d+)?[a-z]*$/ : /^[A-Z][a-z]+$/;
+      /*
+       * 행정동 이름에는 숫자가 여러 번 든다 — `성수1가2동`이 그렇다.
+       * 표지판은 그 숫자마다 앞을 띄우므로 `Seongsu 1ga 2-dong`이 된다.
+       */
+      const word = course.level === "dong" ? /^[A-Z][a-z]*(\d+[a-z]*)*$/ : /^[A-Z][a-z]+$/;
       const signed =
         course.level === "dong"
-          ? /^[A-Z][a-z]*( ?\d+)?[a-z]*(-dong)?$/
+          ? /^[A-Z][a-z]*( \d+[a-z]*)*(-(dong|eup|myeon))?$/
           : /^[A-Z][a-z]+(-(si|gun|gu|do))?$/;
       for (const region of course.regions) {
         expect(romanize(region.name), region.name).toMatch(word);

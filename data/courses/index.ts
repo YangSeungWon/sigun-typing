@@ -15,6 +15,7 @@ import { ulsan } from "./ulsan";
 import { gangwon } from "./gangwon";
 import { gyeonggi } from "./gyeonggi";
 import { seoul } from "./seoul";
+import { jongno } from "./jongno";
 import { sidoCourse } from "./sido";
 import { nationwide } from "./nationwide";
 
@@ -22,6 +23,7 @@ export const COURSES: Course[] = [
   sidoCourse,
   nationwide,
   seoul,
+  jongno,
   incheon,
   gyeonggi,
   gangwon,
@@ -59,6 +61,7 @@ export {
   jeju,
   jeonbuk,
   jeonnam,
+  jongno,
   seoul,
   sidoCourse,
   ulsan,

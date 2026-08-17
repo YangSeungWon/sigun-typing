@@ -51,6 +51,7 @@ export const nationwide: Course = {
   id: "nationwide",
   name: "전국 229 시군구",
   group: "nationwide",
+  level: "sigungu",
   placeUnit: "시군구",
   /*
    * v1은 228곳이었다. 세종을 넣으면서 총 타수가 달라졌으므로 옛 기록과 같은

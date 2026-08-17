@@ -56,9 +56,23 @@ describe("코스 데이터 무결성", () => {
     },
   );
 
-  it.each(COURSES)("$name — 이름은 한글 음절로만 이루어진다", (course) => {
+  /**
+   * 이름에 쓸 수 있는 글자는 층마다 다르다.
+   *
+   * 시도·시군구는 전부 한글 음절이다. 행정동은 아니다 — 전국 3,559곳 중
+   * 30%가 숫자를 품는다(`창신1동`). 숫자는 이름의 일부가 아니라 같은 이름을
+   * 나눈 번호이고, 자판에 있으므로 그대로 받는다.
+   *
+   * 가운뎃점은 여기서도 막는다. `·`는 한글 자판에 없어서 따라치기와 정답
+   * 베껴 쓰기에서 칠 수가 없다. 공식 표기가 그렇더라도 표준은 숫자꼴로 두고
+   * 공식형은 별칭으로 받는다(`data/courses/jongno.ts`).
+   */
+  it.each(COURSES)("$name — 이름에 쓸 수 있는 글자만 쓴다", (course) => {
+    const allowed = course.level === "dong" ? /^[가-힣0-9]+$/ : /^[가-힣]+$/;
     for (const r of course.regions) {
-      expect([...r.name].every(isSyllable), `${r.name}`).toBe(true);
+      expect(allowed.test(r.name), `${r.name}`).toBe(true);
+      // 한글이 하나도 없는 이름은 지명이 아니다.
+      expect([...r.name].some(isSyllable), `${r.name}`).toBe(true);
     }
   });
 
@@ -116,12 +130,12 @@ describe("코스 데이터 무결성", () => {
 
   it.each(COURSES)("$name — 지도를 선언했으면 원본과 범위가 함께 적혀 있다", (course) => {
     if (!course.geo) return;
-    expect(course.geo.file).toMatch(/^(provinces|municipalities)$/);
+    expect(course.geo.file).toMatch(/^(provinces|municipalities|dong)$/);
     /*
      * 전국 지도 말고는 접두사로 범위를 좁혀야 한다. `중구`는 여섯 도시에 있다.
      * 전국 시군구 코스가 바로 그 예외라 접두사가 없다 — 원본 전체가 그 범위다.
      */
-    if (course.geo.file === "municipalities" && !course.overlapping) {
+    if (course.geo.file !== "provinces" && !course.overlapping) {
       expect(course.geo.prefix, course.name).toBeTruthy();
     }
   });

@@ -7,21 +7,53 @@ const seed = buildHomeSeed();
 describe("첫 화면 씨앗", () => {
   it("245곳이다 — 시도 17 + 시군구 228", () => {
     /*
-     * 코스는 열여덟인데 분모는 245다. 전국 시군구 코스의 228곳은 이미 시도별
-     * 코스로 세고 있는 바로 그 228곳이라, 더하면 같은 곳을 두 번 센다.
+     * 코스 수보다 분모가 작다. 두 가지가 빠지기 때문이다.
+     *
+     * **겹치는 코스.** 전국 시군구 코스의 228곳은 이미 시도별 코스로 세고
+     * 있는 바로 그 228곳이라, 더하면 같은 곳을 두 번 센다.
+     *
+     * **지도를 덮지 않는 층.** 읍면동은 시군구를 더 잘게 나눈 것이다.
      */
     expect(seed.totalRegions).toBe(245);
-    expect(seed.courses).toHaveLength(18);
     expect(seed.courses.filter((c) => c.overlapping).map((c) => c.id)).toEqual([
       "nationwide",
     ]);
+  });
+
+  /**
+   * 분모가 코스 수를 따라 늘지 않는다는 것을 못박는다.
+   *
+   * 읍면동 코스를 더할 때 이 값이 함께 늘면, `245`는 "대한민국 지도를 얼마나
+   * 채웠나"가 아니라 "콘텐츠를 얼마나 소비했나"가 된다. 둘은 다른 질문이고
+   * 첫 화면이 묻는 것은 앞의 것이다.
+   */
+  it("읍면동 코스는 분모에 들어가지 않는다", () => {
+    const dong = seed.courses.filter((c) => c.level === "dong");
+    expect(dong.length, "이 검사가 의미를 가지려면 읽을 코스가 있어야 한다").toBeGreaterThan(0);
+
+    const counted = seed.courses
+      .filter((c) => !c.overlapping && c.level !== "dong")
+      .reduce((sum, c) => sum + c.total, 0);
+    expect(counted).toBe(seed.totalRegions);
+  });
+
+  /**
+   * 시도 줄에는 시군구 코스만 걸린다.
+   *
+   * 같은 시도에 다른 층의 코스가 생기면 시도 코드가 겹친다 — 종로구 17개 동은
+   * 시도가 `11`이라 서울 25개 구를 덮어쓸 수 있다.
+   */
+  it("시도 줄이 다른 층의 코스에 빼앗기지 않는다", () => {
+    const seoul = seed.sido.find((s) => s.code === "11");
+    expect(seoul?.courseId).toBe("seoul");
+    expect(seoul?.total).toBe(25);
   });
 
   it("지역 배열을 들고 가지 않는다", () => {
     // 클라이언트로 내려가는 값이다. 245개 지역 객체가 따라오면 안 된다.
     for (const c of seed.courses) {
       expect(Object.keys(c).sort()).toEqual([
-        "id", "name", "overlapping", "shortName", "sido", "total", "version",
+        "id", "level", "name", "overlapping", "shortName", "sido", "total", "version",
       ]);
     }
   });

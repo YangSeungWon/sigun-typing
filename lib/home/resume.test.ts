@@ -4,9 +4,9 @@ import type { CourseMastery } from "../score/mastery";
 import type { CourseSummary } from "./summary";
 
 const COURSES: CourseSummary[] = [
-  { id: "sido", name: "전국 17 시도", shortName: "전국", overlapping: false, version: 1, total: 17, sido: "11" },
-  { id: "seoul", name: "서울 25개 구", shortName: "서울", overlapping: false, version: 2, total: 25, sido: "11" },
-  { id: "gyeonggi", name: "경기도 31 시군", shortName: "경기", overlapping: false, version: 1, total: 31, sido: "41" },
+  { id: "sido", name: "전국 17 시도", shortName: "전국", overlapping: false, level: "sido", version: 1, total: 17, sido: "11" },
+  { id: "seoul", name: "서울 25개 구", shortName: "서울", overlapping: false, level: "sigungu", version: 2, total: 25, sido: "11" },
+  { id: "gyeonggi", name: "경기도 31 시군", shortName: "경기", overlapping: false, level: "sigungu", version: 1, total: 31, sido: "41" },
 ];
 
 function mastery(entries: Record<string, number>): Map<string, CourseMastery> {

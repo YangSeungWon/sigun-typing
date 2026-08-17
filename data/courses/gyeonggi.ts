@@ -11,6 +11,7 @@ export const gyeonggi: Course = {
   id: "gyeonggi",
   name: "경기도 31 시군",
   group: "capital",
+  level: "sigungu",
   parentName: "경기도",
   placeUnit: "시군",
   version: 2,

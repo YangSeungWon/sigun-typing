@@ -12,6 +12,7 @@ export const incheon: Course = {
   id: "incheon",
   name: "인천 10개 구·군",
   group: "capital",
+  level: "sigungu",
   parentName: "인천광역시",
   placeUnit: "구·군",
   version: 2,

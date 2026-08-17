@@ -20,6 +20,7 @@ export const jeonnam: Course = {
   id: "jeonnam",
   name: "전남 22 시군",
   group: "honam",
+  level: "sigungu",
   parentName: "전라남도",
   placeUnit: "시군",
   version: 2,

@@ -6,6 +6,7 @@ export const gwangju: Course = {
   id: "gwangju",
   name: "광주 5개 구",
   group: "honam",
+  level: "sigungu",
   parentName: "광주광역시",
   placeUnit: "구",
   version: 2,

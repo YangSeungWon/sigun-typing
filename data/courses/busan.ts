@@ -17,6 +17,7 @@ export const busan: Course = {
   id: "busan",
   name: "부산 16개 구·군",
   group: "yeongnam",
+  level: "sigungu",
   parentName: "부산광역시",
   placeUnit: "구·군",
   version: 2,

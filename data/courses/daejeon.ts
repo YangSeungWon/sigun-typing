@@ -6,6 +6,7 @@ export const daejeon: Course = {
   id: "daejeon",
   name: "대전 5개 구",
   group: "chungcheong",
+  level: "sigungu",
   parentName: "대전광역시",
   placeUnit: "구",
   version: 2,

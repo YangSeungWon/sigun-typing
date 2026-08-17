@@ -11,6 +11,7 @@ export const jeonbuk: Course = {
   id: "jeonbuk",
   name: "전북 14 시군",
   group: "honam",
+  level: "sigungu",
   parentName: "전북특별자치도",
   placeUnit: "시군",
   version: 2,

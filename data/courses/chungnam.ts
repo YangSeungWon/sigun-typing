@@ -11,6 +11,7 @@ export const chungnam: Course = {
   id: "chungnam",
   name: "충남 15 시군",
   group: "chungcheong",
+  level: "sigungu",
   parentName: "충청남도",
   placeUnit: "시군",
   version: 2,

@@ -6,6 +6,7 @@ export const ulsan: Course = {
   id: "ulsan",
   name: "울산 5개 구·군",
   group: "yeongnam",
+  level: "sigungu",
   parentName: "울산광역시",
   placeUnit: "구·군",
   version: 2,

@@ -1,4 +1,5 @@
 import { COURSES } from "@/data/courses";
+import { CONQUEST_LEVELS, type CourseLevel } from "@/data/types";
 import { sidoCourse } from "@/data/courses/sido";
 
 /**
@@ -33,6 +34,13 @@ export interface CourseSummary {
    */
   overlapping: boolean;
   /**
+   * 이 코스가 다루는 행정계층(`data/types.ts`의 CourseLevel).
+   *
+   * 정복도는 지도를 덮는 두 층(시도·시군구)만 센다. 읍면동은 같은 지도를
+   * 더 잘게 나눈 것이라 더하면 같은 땅을 두 번 세는 셈이 된다.
+   */
+  level: CourseLevel;
+  /**
    * 이 코스가 속한 시도 코드.
    *
    * `geo.prefix`가 아니다. 그쪽은 원본 경계 파일의 옛 코드(21~39)라 서울만
@@ -60,8 +68,14 @@ export interface HomeSeed {
   /**
    * 245 = 17 시도 + 228 시군·구. 세지 않고 적어 두면 코스가 늘 때 거짓말이 된다.
    *
-   * 겹치는 코스는 빠진다. 전국 시군구 코스를 더하면 473이 되는데, 그 228곳은
+   * 두 가지가 빠진다.
+   *
+   * **겹치는 코스.** 전국 시군구 코스를 더하면 473이 되는데, 그 228곳은
    * 이미 시도별 코스로 세고 있는 바로 그 228곳이다.
+   *
+   * **지도를 덮지 않는 층.** 읍면동은 시군구를 더 잘게 나눈 것이라, 더하면
+   * 같은 땅을 두 번 센다. 이 수가 답하는 질문은 "대한민국 지도를 얼마나
+   * 채웠나"이지 "얼마나 많이 풀었나"가 아니다.
    */
   totalRegions: number;
 }
@@ -80,6 +94,7 @@ function summarize(course: (typeof COURSES)[number]): CourseSummary {
      */
     shortName: course.id === sidoCourse.id ? "전국" : (SIDO_NAME.get(sido) ?? course.name),
     overlapping: course.overlapping ?? false,
+    level: course.level,
     version: course.version,
     total: course.regions.length,
     sido,
@@ -89,12 +104,16 @@ function summarize(course: (typeof COURSES)[number]): CourseSummary {
 export function buildHomeSeed(): HomeSeed {
   const courses = COURSES.map(summarize);
   /*
-   * 시도 → 그 시도의 시군 코스. 전국 코스들(17 시도, 228 시군구)은 자기 시도가
-   * 없거나 온 나라에 걸쳐 있으므로 여기 들어가지 않는다.
+   * 시도 → 그 시도의 시군 코스.
+   *
+   * **시군구 층만 넣는다.** 전에는 "시도 코스가 아니고 겹치지도 않는 것"으로
+   * 걸렀는데, 그러면 같은 시도에 다른 층의 코스가 생기는 순간 부딪친다 —
+   * 종로구 17개 동은 시도가 `11`이라 서울 25개 구를 덮어쓴다. 무엇을 넣을지는
+   * "시도 코스가 아니다"라는 소거법이 아니라 층으로 말해야 한다.
    */
   const byPrefix = new Map(
     courses
-      .filter((c) => c.id !== sidoCourse.id && !c.overlapping)
+      .filter((c) => c.level === "sigungu" && !c.overlapping)
       .map((c) => [c.sido, c]),
   );
 
@@ -118,7 +137,7 @@ export function buildHomeSeed(): HomeSeed {
     courses,
     sido,
     totalRegions: courses
-      .filter((c) => !c.overlapping)
+      .filter((c) => !c.overlapping && CONQUEST_LEVELS.includes(c.level))
       .reduce((sum, c) => sum + c.total, 0),
   };
 }

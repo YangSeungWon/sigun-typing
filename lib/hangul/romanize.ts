@@ -145,7 +145,24 @@ export function romanize(text: string): string {
 }
 
 /** 행정구역 단위. 표기법은 이 앞에 붙임표를 넣도록 한다. */
-const UNIT: Record<string, string> = { 시: "si", 군: "gun", 구: "gu", 도: "do" };
+const UNIT: Record<string, string> = {
+  시: "si",
+  군: "gun",
+  구: "gu",
+  도: "do",
+  동: "dong",
+};
+
+/**
+ * 이름 안의 숫자를 표지판처럼 띄운다.
+ *
+ * 행정동에는 숫자가 흔하다(전국 3,559곳 중 30%). 그대로 이으면
+ * `Changsin1`처럼 붙어 버리는데, 실제 표지판은 `Changsin 1`로 띄운다.
+ * 숫자는 이름의 일부가 아니라 같은 이름을 나눈 번호이기 때문이다.
+ */
+function romanizeBase(name: string): string {
+  return romanize(name).replace(/(?<=[A-Za-z])(?=\d)/g, " ");
+}
 
 /**
  * 지명 하나를 표지판에 적히는 형태로.
@@ -161,9 +178,9 @@ export function romanizeRegion(name: string, placeUnit: string): string {
   // 코스가 세는 단위와 같을 때만 단위로 본다. 전국 코스(시도)에서 대구는
   // 구로 끝나지만 그 코스가 세는 단위가 아니므로 Daegu 그대로다.
   if (unit && placeUnit.includes(last) && [...name].length > 1) {
-    return `${romanize(name.slice(0, -1))}-${unit}`;
+    return `${romanizeBase(name.slice(0, -1))}-${unit}`;
   }
-  return romanize(name);
+  return romanizeBase(name);
 }
 
 /** 한글이 하나도 없으면 로마자를 붙일 이유가 없다. */

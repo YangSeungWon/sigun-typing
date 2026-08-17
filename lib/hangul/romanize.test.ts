@@ -68,15 +68,23 @@ describe("로마자 표기", () => {
     expect(romanizeRegion(name, unit)).toBe(expected);
   });
 
+  /**
+   * 빈 문자열이나 한글이 섞여 남은 결과가 나오면 표지판에 그대로 찍힌다.
+   *
+   * 행정동은 이름에 숫자가 들어서(`창신1동`) 글자만으로는 규칙이 하나로
+   * 서지 않는다. 표지판은 그 숫자를 띄어 적으므로(`Changsin 1-dong`)
+   * 허용하는 모양도 층에 따라 갈린다.
+   */
   it("모든 코스의 지명이 로마자로 변환된다", () => {
-    // 빈 문자열이나 한글이 섞여 남은 결과가 나오면 표지판에 그대로 찍힌다.
     for (const course of COURSES) {
+      const word = course.level === "dong" ? /^[A-Z][a-z]*( ?\d+)?[a-z]*$/ : /^[A-Z][a-z]+$/;
+      const signed =
+        course.level === "dong"
+          ? /^[A-Z][a-z]*( ?\d+)?[a-z]*(-dong)?$/
+          : /^[A-Z][a-z]+(-(si|gun|gu|do))?$/;
       for (const region of course.regions) {
-        const roman = romanize(region.name);
-        expect(roman, region.name).toMatch(/^[A-Z][a-z]+$/);
-        expect(romanizeRegion(region.name, course.placeUnit), region.name).toMatch(
-          /^[A-Z][a-z]+(-(si|gun|gu|do))?$/,
-        );
+        expect(romanize(region.name), region.name).toMatch(word);
+        expect(romanizeRegion(region.name, course.placeUnit), region.name).toMatch(signed);
       }
     }
   });

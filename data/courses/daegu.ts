@@ -11,6 +11,7 @@ export const daegu: Course = {
   id: "daegu",
   name: "대구 9개 구·군",
   group: "yeongnam",
+  level: "sigungu",
   parentName: "대구광역시",
   placeUnit: "구·군",
   version: 2,

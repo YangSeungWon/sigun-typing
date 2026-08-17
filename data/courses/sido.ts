@@ -14,6 +14,7 @@ export const sidoCourse: Course = {
   id: "sido",
   name: "전국 17 시도",
   group: "nationwide",
+  level: "sido",
   placeUnit: "시도",
   version: 1,
   geo: { file: "provinces", simplifyPercent: 4 },

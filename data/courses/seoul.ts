@@ -16,6 +16,7 @@ export const seoul: Course = {
   id: "seoul",
   name: "서울 25개 구",
   group: "capital",
+  level: "sigungu",
   parentName: "서울특별시",
   placeUnit: "구",
   version: 2,

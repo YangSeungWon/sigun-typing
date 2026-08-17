@@ -11,6 +11,7 @@ export const gangwon: Course = {
   id: "gangwon",
   name: "강원 18 시군",
   group: "gangwon",
+  level: "sigungu",
   parentName: "강원특별자치도",
   placeUnit: "시군",
   version: 2,

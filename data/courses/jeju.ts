@@ -11,6 +11,7 @@ export const jeju: Course = {
   id: "jeju",
   name: "제주 2 행정시",
   group: "jeju",
+  level: "sigungu",
   parentName: "제주특별자치도",
   placeUnit: "행정시",
   version: 2,

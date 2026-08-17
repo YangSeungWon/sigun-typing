@@ -184,15 +184,108 @@ process.stdout.write(`프레임 ${milestones.length}개 · ${first} ~ ${mileston
  * 프레임마다 자기 범위에 맞추면 나라 전체가 미세하게 커졌다 작아지며 흔들린다.
  * 바뀐 것은 안쪽 경계인데 지도가 통째로 움직이면 무엇이 달라졌는지 안 보인다.
  */
-const loaded: { year: string; label: string; features: Feature<Geometry>[] }[] = [];
+const raw: { year: string; label: string; features: Feature<Geometry>[] }[] = [];
 for (const m of milestones) {
   const file = fileOf(m.year);
   if (!file) {
     process.stdout.write(`  ${m.year} 원본 없음 — 건너뜀\n`);
     continue;
   }
-  loaded.push({ ...m, features: await readYear(m.year, file) });
-  process.stdout.write(`  ${m.year} ${loaded.at(-1)!.features.length}개\n`);
+  raw.push({ ...m, features: await readYear(m.year, file) });
+  process.stdout.write(`  ${m.year} ${raw.at(-1)!.features.length}개\n`);
+}
+
+/**
+ * 아직 안 생긴 곳을 도로 합친다.
+ *
+ * 한 판에 두 사건이 묶였을 때 앞 사건의 지도를 만들어 내는 방법이다. 1990년
+ * 판에는 광주(1986)와 대전(1989)이 둘 다 있는데, 대전을 충남으로 되돌리면
+ * 그것이 1986년의 지도다.
+ *
+ * 도형을 지어내지 않는다 — 있는 두 조각의 좌표를 이어 붙일 뿐이다. 다각형
+ * 합집합을 제대로 하려면 위상이 필요하지만, 여기 붙는 둘은 맞닿아 있고
+ * 전국 축척에서 그리는 그림이라 조각을 나란히 담는 것으로 족하다.
+ */
+function mergeBack(
+  features: Feature<Geometry>[],
+  back: { code: string; parent: string }[],
+): Feature<Geometry>[] {
+  if (back.length === 0) return features;
+  const byCode = new Map(features.map((f) => [propOf(f.properties, "_cd"), f]));
+  const drop = new Set(back.map((b) => b.code));
+
+  return features
+    .filter((f) => !drop.has(propOf(f.properties, "_cd")))
+    .map((f) => {
+      const mine = back.filter((b) => b.parent === propOf(f.properties, "_cd"));
+      if (mine.length === 0) return f;
+
+      const parts = [f, ...mine.map((b) => byCode.get(b.code)).filter(Boolean)] as Feature<Geometry>[];
+      const polygons = parts.flatMap((p) =>
+        p.geometry.type === "MultiPolygon"
+          ? (p.geometry.coordinates as unknown[])
+          : [(p.geometry as { coordinates: unknown }).coordinates],
+      );
+      return {
+        ...f,
+        geometry: { type: "MultiPolygon", coordinates: polygons },
+      } as Feature<Geometry>;
+    });
+}
+
+/*
+ * 한 판에 사건이 둘이면 프레임도 둘로 나눈다.
+ *
+ * 광주(1986)와 대전(1989)이 1990년 판에 함께 나타나는데, 한 칸에 묶어 두면
+ * `1986–1989`라는 뭉뚱그린 해가 뜨고 두 승격이 한 사건처럼 읽힌다.
+ */
+const loaded: {
+  year: string;
+  tick: string;
+  mapYear: string;
+  label: string;
+  features: Feature<Geometry>[];
+}[] = [];
+
+for (const r of raw) {
+  const known = SIDO_EVENT_BY_YEAR.get(r.year);
+  const dates = known?.dates ?? [];
+
+  if (dates.length <= 1 || !dates.every((d) => d.born)) {
+    const yearsOf = [...new Set(dates.map((d) => d.on.slice(0, 4)))];
+    loaded.push({
+      year:
+        yearsOf.length === 0
+          ? r.year
+          : yearsOf.length === 1
+            ? yearsOf[0]
+            : `${yearsOf[0]}–${yearsOf.at(-1)}`,
+      tick: yearsOf[0] ?? r.year,
+      mapYear: r.year,
+      label: dates.length
+        ? dates.map((d) => `${d.on.slice(0, 4)}년 ${d.what}`).join(" · ")
+        : r.label,
+      features: r.features,
+    });
+    continue;
+  }
+
+  dates.forEach((d, i) => {
+    // 이 날 이후에 생긴 곳들은 아직 없다. 부모에게 되돌린다.
+    const later = dates.slice(i + 1).map((x) => x.born!);
+    loaded.push({
+      year: d.on.slice(0, 4),
+      tick: d.on.slice(0, 4),
+      mapYear: r.year,
+      label: `${d.on.slice(0, 4)}년 ${d.what}`,
+      features: mergeBack(r.features, later),
+    });
+    process.stdout.write(
+      `  ${r.year} 판을 ${d.on.slice(0, 4)}년으로 나눔` +
+        (later.length ? ` (${later.length}곳 되돌림)` : "") +
+        "\n",
+    );
+  });
 }
 
 const projection = geoMercator().fitExtent(
@@ -205,7 +298,7 @@ const projection = geoMercator().fitExtent(
 const path = geoPath(projection).digits(1);
 
 let previous = new Map<string, string>();
-const frames: Frame[] = loaded.map(({ year, label, features }, i) => {
+const frames: Frame[] = loaded.map(({ year, tick, mapYear, label, features }, i) => {
   const regions = features
     .map((f) => ({
       code: propOf(f.properties, "_cd"),
@@ -229,34 +322,16 @@ const frames: Frame[] = loaded.map(({ year, label, features }, i) => {
 
   previous = new Map(regions.map((r) => [r.code, r.name]));
 
-  /*
-   * 실제 날짜가 있으면 그것이 이 프레임의 해다.
-   *
-   * 없으면 지도의 해를 그대로 쓴다 — 2001년부터는 자료가 1년 단위라 지도의
-   * 해와 실제 해가 한 해 안에서 만나므로 크게 어긋나지 않는다.
-   */
-  const known = SIDO_EVENT_BY_YEAR.get(year);
-  const yearsOf = known ? [...new Set(known.dates.map((d) => d.on.slice(0, 4)))] : [];
-  const shown =
-    yearsOf.length === 0
-      ? year
-      : yearsOf.length === 1
-        ? yearsOf[0]
-        : `${yearsOf[0]}–${yearsOf.at(-1)}`;
-
   return {
-    year: shown,
-    tick: yearsOf[0] ?? year,
-    mapYear: year,
+    year,
+    tick,
+    mapYear,
     /*
-     * 라벨도 손으로 적은 쪽을 먼저 쓴다. 도형에서 뽑은 문장은 무엇이
-     * 달라졌는지는 정확하지만(`제주도 → 제주특별자치도`) 그것이 승격인지
-     * 개칭인지는 말해 주지 못한다.
+     * 라벨은 위에서 이미 정했다 — 손으로 적은 날짜가 있으면 그것이고,
+     * 없으면 도형에서 뽑은 문장이다. 출발점만 여기서 채운다: 사건이 아니라
+     * 그 주인공들이 라벨이다.
      */
-    label: known
-      ? known.dates.map((d) => `${d.on.slice(0, 4)}년 ${d.what}`).join(" · ")
-      : // 출발점의 라벨은 사건이 아니라 그 주인공들이다.
-        label || changed.map((c) => regions.find((r) => r.code === c)!.name).join(", "),
+    label: label || changed.map((c) => regions.find((r) => r.code === c)!.name).join(", "),
     changed,
     regions,
   };

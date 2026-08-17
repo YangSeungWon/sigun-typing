@@ -25,7 +25,23 @@ export interface AdminEvent {
   /** 이 변화가 자료에 처음 나타난 해. boundary-changes.json의 `to`와 같다. */
   seenAt: string;
   /** 실제로 시행된 날. 여럿이면 여럿이다. */
-  dates: { on: string; what: string }[];
+  dates: AdminDate[];
+}
+
+export interface AdminDate {
+  on: string;
+  what: string;
+  /**
+   * 이 날 생긴 곳과, 그것이 떨어져 나온 도.
+   *
+   * 한 판에 두 사건이 묶였을 때 **앞 사건의 상태를 만들어 내기 위해** 쓴다.
+   * 1990년 판에는 광주(1986)와 대전(1989)이 둘 다 있는데, 대전을 충남으로
+   * 도로 합치면 그것이 1986년의 지도다. 없던 것을 그리는 것이 아니라 있는
+   * 것을 되돌리는 것이라 도형이 지어내지지 않는다.
+   *
+   * 그럴 일이 없는 사건에는 적지 않아도 된다.
+   */
+  born?: { code: string; parent: string };
 }
 
 export const SIDO_EVENTS: AdminEvent[] = [
@@ -36,8 +52,9 @@ export const SIDO_EVENTS: AdminEvent[] = [
   {
     seenAt: "1990",
     dates: [
-      { on: "1986-11-01", what: "광주직할시 승격" },
-      { on: "1989-01-01", what: "대전직할시 승격" },
+      // 광주는 전라남도에서, 대전은 충청남도에서 떨어져 나왔다.
+      { on: "1986-11-01", what: "광주직할시 승격", born: { code: "24", parent: "36" } },
+      { on: "1989-01-01", what: "대전직할시 승격", born: { code: "25", parent: "34" } },
     ],
   },
   {

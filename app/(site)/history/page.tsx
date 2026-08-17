@@ -32,7 +32,14 @@ export const metadata = {
  * 전국 지도에서는 몇 픽셀이라, 그쪽은 사건마다 그 자리를 확대해야 한다.
  */
 export default function HistoryPage() {
-  const sigungu = changes.sigungu.filter((e) => Number(e.from) >= 2000);
+  /*
+   * 다 보여 준다.
+   *
+   * 2000년 이후만 두고 있었는데, 그러면 **가장 큰 사건이 잘린다** —
+   * 1990~1995년에 시군구가 58곳 사라지고 37곳 생겼다(도농통합). 목록을
+   * 짧게 두려고 넣은 필터가 정작 볼 것을 가리고 있었다.
+   */
+  const sigungu = changes.sigungu;
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
@@ -47,6 +54,14 @@ export default function HistoryPage() {
       */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold">시군구</h2>
+        {/*
+          앞쪽 다섯 줄은 5년치가 뭉쳐 있다. 자료가 그 간격이라 나눌 수가 없고,
+          한 해의 일이 아니므로 지도도 없다 — 그걸 밝히지 않으면 1995년 하루에
+          쉰여덟 곳이 사라진 것처럼 읽힌다.
+        */}
+        <p className="text-sm break-keep text-dim">
+          2000년까지는 자료가 5년 단위라 그사이 일이 한 줄에 뭉쳐 있습니다.
+        </p>
         <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
           {sigungu.map((e) => {
             const row = (

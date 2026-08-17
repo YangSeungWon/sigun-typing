@@ -48,10 +48,26 @@ interface Shape {
 }
 
 interface Side {
+  /** 단추에 적을 시점. `2011`이거나 `2012.01`이다. */
   year: string;
   regions: Shape[];
-  /** 이 시점에서 눈여겨볼 곳. 사라진 쪽과 생긴 쪽이 각각 다르다. */
+  /** 이 시점에서 눈여겨볼 곳. */
   marked: string[];
+  /** 짚은 것이 사라질 것인가 생긴 것인가. 화면의 색이 갈린다. */
+  tone: "gone" | "born";
+}
+
+interface Named {
+  name: string;
+  /** 지도에서 짚을 도형. 이름이 도형과 안 맞으면 없다. */
+  code?: string;
+}
+
+interface Change {
+  /** 시행일. 손으로 적은 것이 있을 때만. */
+  on?: string;
+  from: Named[];
+  to: Named[];
 }
 
 interface Event {
@@ -67,10 +83,22 @@ interface Event {
   at: string;
   /** 실제 날짜를 아는가. 모르면 화면이 "자료에 처음 나타난 해"라고 밝힌다. */
   dated: boolean;
-  /** 이 해에 무슨 일이 있었는지. 시도와 시군구를 합쳐 적는다. */
+  /**
+   * 무엇이 무엇으로 바뀌었는지. **문장이 아니라 짝**이다.
+   *
+   * 화면이 표로 그린다. 문장으로 넘기면 여러 건이 겹칠 때 가운뎃점으로
+   * 늘어놓게 되고, 그러면 눈이 세로로 훑을 수가 없다.
+   */
+  changes: Change[];
+  /** 제목·설명에 쓸 한 줄. 표를 글로 옮긴 것이라 화면에는 안 쓴다. */
   headline: string;
-  before: Side;
-  after: Side;
+  /**
+   * 앞에서 뒤로 가는 상태들. 보통 둘(전·후)이다.
+   *
+   * 한 판에 사건이 둘이면 셋이 된다 — 2012년에는 당진시(1월 1일)와
+   * 세종시(7월 1일)가 함께 나타나는데, 그 사이 반년의 지도가 따로 있다.
+   */
+  states: Side[];
 }
 
 function prop(props: Record<string, unknown> | null | undefined, suffix: string): string {
@@ -225,40 +253,149 @@ for (const [year, group] of [...byYear].sort()) {
   const known = [
     ...(SIDO_EVENT_BY_YEAR.get(year)?.dates ?? []),
     ...(SIGUNGU_EVENT_BY_YEAR.get(year)?.dates ?? []),
-  ].sort((a, b) => a.on.localeCompare(b.on));
+  ]
+    .sort((a, b) => a.on.localeCompare(b.on))
+    /*
+     * 같은 사건이 두 층에 적혀 있으면 한 줄로 남긴다.
+     *
+     * 세종 출범은 시도 목록에도 시군구 목록에도 있다 — 시도 쪽은
+     * `충청남도 연기군 → 세종특별자치시`, 시군구 쪽은 `연기군 → 세종특별자치시`.
+     * 같은 날 같은 결과이므로 한 사건이고, 어느 도에서 나왔는지까지 적힌
+     * 쪽을 남긴다.
+     */
+    .filter((d, i, all) => {
+      const same = all.filter((x) => x.on === d.on && (x.to ?? []).join() === (d.to ?? []).join());
+      if (same.length < 2) return true;
+      const best = same.reduce((a, b) =>
+        (b.from ?? []).join().length > (a.from ?? []).join().length ? b : a,
+      );
+      return all.indexOf(best) === i;
+    });
 
-  const derived = [
-    ...(group.sido
-      ? [...group.sido.born.map((n) => `${n} 신설`), ...group.sido.renamed]
-      : []),
-    ...(group.sigungu
-      ? [
-          ...(group.sigungu.born.length ? [`${group.sigungu.born.join(", ")} 생김`] : []),
-          ...(group.sigungu.gone.length ? [`${group.sigungu.gone.join(", ")} 사라짐`] : []),
-        ]
-      : []),
-  ].join(" · ");
+  /*
+   * 무엇이 무엇으로 바뀌었는지를 **짝으로** 만든다.
+   *
+   * `화성시 생김 · 화성군 사라짐`은 두 사건처럼 읽히지만 실은 하나다 —
+   * 화성군이 화성시로 승격한 것이다. 접미사를 뗀 이름이 같고 같은 시도에
+   * 있으면 같은 곳으로 보고 한 줄에 담는다.
+   *
+   * 짝이 없는 것은 한쪽만 채운 줄로 남는다. 통합처럼 여럿이 하나가 되는
+   * 사건은 이 규칙으로 못 잡으므로, 그런 것이야말로 손으로 적을 자리다.
+   */
+  const stem = (n: string) => n.replace(/(특별자치시|특별자치도|특별시|광역시|시|군|구)$/, "");
+  const goneList = prev.filter((f) => goneSet.has(codeOf(f)));
+  const bornList = now.filter((f) => bornSet.has(codeOf(f)));
 
-  const headline = known.length
-    ? known.map((d) => `${d.on.replace(/-/g, ".")} ${d.what}`).join(" · ")
-    : derived;
+  /** 손으로 적은 이름을 도형에 붙인다. 붙지 않으면 지도에서 못 짚을 뿐이다. */
+  const locate = (name: string, pool: Feature<Geometry>[]): Named => {
+    const hit = pool.find((f) => nameOf(f) === name || name.endsWith(nameOf(f)));
+    return hit ? { name, code: codeOf(hit) } : { name };
+  };
+
+  let changes: Change[];
+  if (known.length) {
+    changes = known.map((d) => ({
+      on: d.on.replace(/-/g, "."),
+      from: (d.from ?? []).map((n) => locate(n, prevIn)),
+      to: (d.to ?? []).map((n) => locate(n, nowIn)),
+    }));
+  } else {
+    const leftGone = [...goneList];
+    const leftBorn = [...bornList];
+    const paired: Change[] = [];
+    for (const g of [...leftGone]) {
+      const twin = leftBorn.find(
+        (b) =>
+          codeOf(b).slice(0, 2) === codeOf(g).slice(0, 2) &&
+          stem(nameOf(b)) === stem(nameOf(g)) &&
+          nameOf(b) !== nameOf(g),
+      );
+      if (!twin) continue;
+      paired.push({
+        from: [{ name: nameOf(g), code: codeOf(g) }],
+        to: [{ name: nameOf(twin), code: codeOf(twin) }],
+      });
+      leftGone.splice(leftGone.indexOf(g), 1);
+      leftBorn.splice(leftBorn.indexOf(twin), 1);
+    }
+    changes = [
+      ...(group.sido
+        ? group.sido.renamed.map((r) => {
+            const [a, b] = r.split(" → ");
+            return { from: [{ name: a }], to: [{ name: b }] };
+          })
+        : []),
+      ...paired,
+      ...leftBorn.map((f) => ({ from: [], to: [{ name: nameOf(f), code: codeOf(f) }] })),
+      ...leftGone.map((f) => ({ from: [{ name: nameOf(f), code: codeOf(f) }], to: [] })),
+    ];
+  }
+
+  /** 제목·설명용 한 줄. 화면은 위의 짝을 쓴다. */
+  const headline = changes
+    .map((c) =>
+      c.from.length && c.to.length
+        ? `${c.from.map((x) => x.name).join(", ")} → ${c.to.map((x) => x.name).join(", ")}`
+        : c.to.length
+          ? `${c.to.map((x) => x.name).join(", ")} 생김`
+          : `${c.from.map((x) => x.name).join(", ")} 사라짐`,
+    )
+    .join(", ");
+
   const atYears = [...new Set(known.map((d) => d.on.slice(0, 4)))];
+
+  /*
+   * 상태를 만든다.
+   *
+   * 보통은 앞뒤 둘이다. 한 판에 사건이 여럿이고 그중 **경계는 그대로고
+   * 이름만 바뀐 것**이 있으면 그 사이 상태를 지어낼 수 있다 — 당진군이
+   * 당진시가 된 것은 땅이 달라진 게 아니라, 앞 판의 도형에 이름만 갈아
+   * 끼우면 그 시점의 지도가 된다.
+   */
+  const states: Side[] = [
+    {
+      year: prevYear,
+      regions: prevIn.map(shape),
+      marked: prevIn.filter((f) => goneSet.has(codeOf(f))).map(codeOf),
+      tone: "gone",
+    },
+  ];
+
+  const renaming = known.filter((d) => d.renames?.length);
+  for (const d of renaming) {
+    const byCode = new Map(d.renames!.map((r) => [r.code, r.to]));
+    states.push({
+      year: d.on.slice(0, 7).replace("-", "."),
+      regions: prevIn.map((f) => {
+        const to = byCode.get(codeOf(f));
+        return to ? { ...shape(f), name: to } : shape(f);
+      }),
+      marked: [...byCode.keys()],
+      tone: "born",
+    });
+  }
+
+  states.push({
+    year,
+    regions: nowIn.map(shape),
+    /*
+     * 앞에서 이미 짚은 곳은 여기서 다시 짚지 않는다. 당진시는 1월에 생겼으니
+     * 7월 지도에서 새것으로 보일 이유가 없다.
+     */
+    marked: nowIn
+      .filter((f) => bornSet.has(codeOf(f)))
+      .filter((f) => !renaming.some((d) => d.renames!.some((r) => r.to === nameOf(f))))
+      .map(codeOf),
+    tone: "born",
+  });
 
   events.push({
     year,
     at: atYears.length === 0 ? year : atYears.length === 1 ? atYears[0] : `${atYears[0]}–${atYears.at(-1)}`,
     dated: known.length > 0,
+    changes,
     headline,
-    before: {
-      year: prevYear,
-      regions: prevIn.map(shape),
-      marked: prevIn.filter((f) => goneSet.has(codeOf(f))).map(codeOf),
-    },
-    after: {
-      year,
-      regions: nowIn.map(shape),
-      marked: nowIn.filter((f) => bornSet.has(codeOf(f))).map(codeOf),
-    },
+    states,
   });
   process.stdout.write(`  ${prevYear}→${year} · ${level} · ${nowIn.length}곳\n`);
 }

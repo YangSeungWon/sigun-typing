@@ -196,6 +196,20 @@ for (const m of milestones) {
 }
 
 /**
+ * 손으로 적은 짝을 한 줄로.
+ *
+ * 타임랩스는 프레임마다 한 줄만 들어가는 자리라 표를 못 쓴다. 사건 페이지는
+ * 짝을 그대로 표로 그린다(`components/EventMaps.tsx`).
+ */
+function describe(d: { on: string; from?: string[]; to?: string[] }): string {
+  const from = (d.from ?? []).join(", ");
+  const to = (d.to ?? []).join(", ");
+  const year = d.on.slice(0, 4);
+  if (from && to) return `${year}년 ${from} → ${to}`;
+  return `${year}년 ${to || from}`;
+}
+
+/**
  * 아직 안 생긴 곳을 도로 합친다.
  *
  * 한 판에 두 사건이 묶였을 때 앞 사건의 지도를 만들어 내는 방법이다. 1990년
@@ -262,9 +276,7 @@ for (const r of raw) {
             : `${yearsOf[0]}–${yearsOf.at(-1)}`,
       tick: yearsOf[0] ?? r.year,
       mapYear: r.year,
-      label: dates.length
-        ? dates.map((d) => `${d.on.slice(0, 4)}년 ${d.what}`).join(" · ")
-        : r.label,
+      label: dates.length ? dates.map(describe).join(" · ") : r.label,
       features: r.features,
     });
     continue;
@@ -277,7 +289,7 @@ for (const r of raw) {
       year: d.on.slice(0, 4),
       tick: d.on.slice(0, 4),
       mapYear: r.year,
-      label: `${d.on.slice(0, 4)}년 ${d.what}`,
+      label: describe(d),
       features: mergeBack(r.features, later),
     });
     process.stdout.write(

@@ -40,9 +40,6 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
           {event.at}
         </h1>
         <div className="flex flex-col items-end gap-1">
-          <p className="text-right text-lg leading-snug font-medium break-keep">
-            {event.headline}
-          </p>
           {/*
             실제 날짜를 모르면 그렇다고 밝힌다. 자료의 해는 시행일보다 늦을 수
             있다 — 제주특별자치도는 2006년 출범인데 2007년 판에서야 바뀐다.
@@ -84,7 +81,7 @@ export async function generateMetadata({ params }: PageProps<"/history/[year]">)
   const title = `${event.at}년 행정구역 개편 — ${event.headline}`;
   return {
     title: title.slice(0, 90),
-    description: `${event.before.year}년과 ${event.after.year}년 지도를 나란히 놓고 봅니다. ${event.headline}`.slice(
+    description: `${event.states[0].year}년과 ${event.states.at(-1)!.year}년 지도를 나란히 놓고 봅니다. ${event.headline}`.slice(
       0,
       300,
     ),

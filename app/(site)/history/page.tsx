@@ -1,11 +1,16 @@
+import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
 import { Timelapse, type TimelapseData } from "@/components/Timelapse";
 import timelapse from "@/data/timelapse/sido.json";
 import changes from "@/data/reference/boundary-changes.json";
+import events from "@/data/timelapse/events.json";
 
 const DATA = timelapse as TimelapseData;
 const FIRST = DATA.frames[0];
 const LAST = DATA.frames[DATA.frames.length - 1];
+
+/** 전후 지도를 구워 둔 해. 나머지는 목록에만 남는다. */
+const DRAWN = new Set(events.events.map((e) => e.year));
 
 export const metadata = {
   title: `대한민국 행정구역 변천사 ${FIRST.year}~${LAST.year}`,
@@ -36,27 +41,46 @@ export default function HistoryPage() {
       <Timelapse data={DATA} />
 
       {/*
-        시군구는 지도를 붙이지 않는다. 전국 축척에서 안 보이기 때문인데,
-        그렇다고 목록마저 빼면 "시군구는 안 바뀌었나" 싶어진다. 사건 이름만
-        적어 두면 그 자체로 읽을거리이고, 나중에 사건마다 지도를 붙일 자리가
-        여기 그대로 남는다.
+        시군구 개편은 위 지도에 안 담긴다 — 전국 축척에서 창원 통합도 청주
+        통합도 몇 픽셀이다. 대신 사건마다 자기 자리를 확대한 페이지가 있고,
+        여기가 그 문이다.
       */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold">시군구</h2>
         <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
-          {sigungu.map((e) => (
-            <li key={`${e.from}-${e.to}`} className="flex gap-4 py-2.5">
-              <span className="shrink-0 font-mono text-sm tabular-nums text-dim">
-                {e.to}
-              </span>
-              <span className="flex flex-col gap-0.5 text-base break-keep">
-                {e.born.length > 0 && <span>{e.born.join(", ")} 생김</span>}
-                {e.gone.length > 0 && (
-                  <span className="text-dim">{e.gone.join(", ")} 사라짐</span>
+          {sigungu.map((e) => {
+            const row = (
+              <>
+                <span className="shrink-0 font-mono text-sm tabular-nums text-dim">
+                  {e.to}
+                </span>
+                <span className="flex flex-col gap-0.5 text-base break-keep">
+                  {e.born.length > 0 && <span>{e.born.join(", ")} 생김</span>}
+                  {e.gone.length > 0 && (
+                    <span className="text-dim">{e.gone.join(", ")} 사라짐</span>
+                  )}
+                </span>
+              </>
+            );
+            /*
+             * 지도가 있는 해만 링크가 된다. 시도 셋 이상에 걸친 해는 확대해도
+             * 안 보여서 굽지 않았다(`scripts/build-history-events.mts`).
+             */
+            return (
+              <li key={`${e.from}-${e.to}`}>
+                {DRAWN.has(e.to) ? (
+                  <Link
+                    href={`/history/${e.to}`}
+                    className="flex gap-4 py-2.5 transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
+                  >
+                    {row}
+                  </Link>
+                ) : (
+                  <span className="flex gap-4 py-2.5">{row}</span>
                 )}
-              </span>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </section>
 

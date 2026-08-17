@@ -1,0 +1,96 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { BackLink } from "@/components/BackLink";
+import { EventMaps, type HistoryEvent } from "@/components/EventMaps";
+import data from "@/data/timelapse/events.json";
+
+const EVENTS = data.events as HistoryEvent[];
+const find = (year: string) => EVENTS.find((e) => e.year === year);
+
+export function generateStaticParams() {
+  return EVENTS.map((e) => ({ year: e.year }));
+}
+
+/**
+ * 개편 한 건.
+ *
+ * `/history`의 타임랩스는 전국 시도만 다룬다. 시군구 개편은 그 축척에서
+ * 몇 픽셀이라, 창원 통합도 청주 통합도 거기서는 아무 일도 아닌 것처럼 보인다.
+ * 여기서는 그 일이 일어난 시도만 잘라 전후를 나란히 놓는다.
+ *
+ * 검색으로 들어오는 길이 게임 쪽과 아주 다르다 — `창원 통합`, `군위군 대구
+ * 편입`은 실제로 찾는 말이고, 그 사람에게 보여 줄 것이 여기 있다.
+ */
+export default async function EventPage({ params }: PageProps<"/history/[year]">) {
+  const { year } = await params;
+  const event = find(year);
+  if (!event) notFound();
+
+  const i = EVENTS.indexOf(event);
+  const prev = EVENTS[i - 1];
+  const next = EVENTS[i + 1];
+
+  return (
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
+      <BackLink href="/history">행정구역 변천사</BackLink>
+
+      {/* 연도와 사건이 제목이다. 그 위에 설명을 얹지 않는다. */}
+      <header className="flex items-end justify-between gap-5">
+        <h1 className="shrink-0 font-mono text-6xl leading-none font-bold tabular-nums sm:text-7xl">
+          {event.year}
+        </h1>
+        <p className="text-right text-lg leading-snug font-medium break-keep">
+          {event.headline}
+        </p>
+      </header>
+
+      <EventMaps event={event} width={data.width} height={data.height} />
+
+      {/*
+        색이 무슨 뜻인지는 적어 둔다. 지도에서 빨강과 초록이 각각 사라진 곳과
+        생긴 곳인데, 그건 보고 알 수 있는 종류가 아니다.
+      */}
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-dim">
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-[var(--color-alert)]" />
+          사라진 곳
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-sign" />
+          생긴 곳
+        </span>
+      </div>
+
+      <nav className="flex justify-between gap-4 border-t border-concrete-deep pt-4 text-base">
+        {prev ? (
+          <Link href={`/history/${prev.year}`} className="text-dim hover:text-ink">
+            ← {prev.year}
+          </Link>
+        ) : (
+          <span />
+        )}
+        {next && (
+          <Link href={`/history/${next.year}`} className="text-dim hover:text-ink">
+            {next.year} →
+          </Link>
+        )}
+      </nav>
+    </main>
+  );
+}
+
+export async function generateMetadata({ params }: PageProps<"/history/[year]">) {
+  const { year } = await params;
+  const event = find(year);
+  if (!event) return {};
+
+  const title = `${year}년 행정구역 개편 — ${event.headline}`;
+  return {
+    title: title.slice(0, 90),
+    description: `${event.before.year}년과 ${year}년 지도를 나란히 놓고 봅니다. ${event.headline}`.slice(
+      0,
+      300,
+    ),
+    alternates: { canonical: `/history/${year}` },
+  };
+}

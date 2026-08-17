@@ -11,6 +11,7 @@
     "build:dong": "node scripts/build-dong-courses.mts",
     "build:changes": "node scripts/build-changes.mts",
     "build:timelapse": "node scripts/build-timelapse.mts",
+    "build:events": "node scripts/build-history-events.mts",
     "build:og": "node scripts/build-og.mts",
     "build:thumbs": "node scripts/build-thumbs.mts",
     "test": "vitest run",

@@ -23,6 +23,7 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import changes from "../data/reference/boundary-changes.json" with { type: "json" };
+import { SIDO_EVENT_BY_YEAR } from "../data/reference/sido-events.ts";
 
 const run = promisify(execFile);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -71,8 +72,23 @@ const MIN_ISLAND_AREA = 20_000_000;
 const SOURCE_ERRORS = new Set(["2009", "2010"]);
 
 interface Frame {
+  /**
+   * 화면에 크게 뜨는 해 — **실제로 그 일이 있었던 해**다.
+   *
+   * 지도의 연도가 아니다. 경계 자료가 1975~2000년은 5년 단위라, 그 사이 어느
+   * 날 일어난 일이 다음 판에 처음 나타날 뿐이다 — 대구·인천직할시는 1981년에
+   * 생겼는데 자료에서는 1985년 판에서 처음 보인다. 그대로 두면 화면이
+   * "1985년에 대구직할시가 생겼다"고 말하게 된다.
+   *
+   * 실제 날짜는 도형에서 나오지 않으므로 `data/reference/sido-events.ts`에
+   * 손으로 적어 두었다. 한 지도에 두 사건이 묶이면 구간이 된다(`1986–1989`).
+   */
   year: string;
-  /** 이 해에 무슨 일이 있었는지. 첫 프레임은 출발점이라 비어 있다. */
+  /** 눈금에 적을 짧은 해. 구간이면 앞의 것. */
+  tick: string;
+  /** 이 그림이 실제로는 몇 년 판인가. year와 다를 때만 화면에 밝힌다. */
+  mapYear: string;
+  /** 무슨 일이 있었는지. 첫 프레임은 출발점이라 비어 있다. */
   label: string;
   /**
    * 이 해에 달라진 지역의 코드.
@@ -212,10 +228,35 @@ const frames: Frame[] = loaded.map(({ year, label, features }, i) => {
       : regions.filter((r) => previous.get(r.code) !== r.name).map((r) => r.code);
 
   previous = new Map(regions.map((r) => [r.code, r.name]));
+
+  /*
+   * 실제 날짜가 있으면 그것이 이 프레임의 해다.
+   *
+   * 없으면 지도의 해를 그대로 쓴다 — 2001년부터는 자료가 1년 단위라 지도의
+   * 해와 실제 해가 한 해 안에서 만나므로 크게 어긋나지 않는다.
+   */
+  const known = SIDO_EVENT_BY_YEAR.get(year);
+  const yearsOf = known ? [...new Set(known.dates.map((d) => d.on.slice(0, 4)))] : [];
+  const shown =
+    yearsOf.length === 0
+      ? year
+      : yearsOf.length === 1
+        ? yearsOf[0]
+        : `${yearsOf[0]}–${yearsOf.at(-1)}`;
+
   return {
-    year,
-    // 출발점의 라벨은 사건이 아니라 그 주인공들이다.
-    label: label || changed.map((c) => regions.find((r) => r.code === c)!.name).join(", "),
+    year: shown,
+    tick: yearsOf[0] ?? year,
+    mapYear: year,
+    /*
+     * 라벨도 손으로 적은 쪽을 먼저 쓴다. 도형에서 뽑은 문장은 무엇이
+     * 달라졌는지는 정확하지만(`제주도 → 제주특별자치도`) 그것이 승격인지
+     * 개칭인지는 말해 주지 못한다.
+     */
+    label: known
+      ? known.dates.map((d) => `${d.on.slice(0, 4)}년 ${d.what}`).join(" · ")
+      : // 출발점의 라벨은 사건이 아니라 그 주인공들이다.
+        label || changed.map((c) => regions.find((r) => r.code === c)!.name).join(", "),
     changed,
     regions,
   };

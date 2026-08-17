@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface TimelapseFrame {
+  /** 실제로 그 일이 있었던 해. 지도의 해가 아니다. */
   year: string;
+  /** 눈금에 적을 짧은 해. */
+  tick: string;
+  /** 이 그림이 몇 년 판인가. */
+  mapYear: string;
   label: string;
   /** 이 해에 달라진 지역의 코드. 첫 프레임은 비어 있다. */
   changed: string[];
@@ -24,8 +29,10 @@ const HOLD_MS = 2200;
  *
  * 프레임은 **바뀐 해에만** 있다(`scripts/build-timelapse.mts`). 그래서 이
  * 컴포넌트가 보여 주는 것은 "해마다 조금씩"이 아니라 "이 해에 이런 일이"다.
- * 연도 눈금을 균등 간격으로 두지 않고 실제 연도 위치에 찍는 것도 그래서다 —
- * 1975와 1985 사이는 십 년이고 2023과 2024 사이는 한 해다.
+ *
+ * 크게 뜨는 해는 **실제로 그 일이 있었던 해**이고 지도의 해가 아니다. 경계
+ * 자료가 1975~2000년은 5년 단위라 둘이 어긋난다 — 대구직할시는 1981년에
+ * 생겼는데 1985년 판에서 처음 보인다. 다를 때는 지도가 몇 년 판인지 밝힌다.
  *
  * 자동재생은 **기본으로 켜지 않는다.** 들어오자마자 움직이는 지도는 읽는
  * 사람의 자리를 뺏고, 애초에 이 페이지에 오는 사람은 특정 연도를 보러 오는
@@ -78,9 +85,21 @@ export function Timelapse({ data }: { data: TimelapseData }) {
         >
           {frame.year}
         </h1>
-        <p className="text-right text-lg leading-snug font-medium break-keep">
-          {frame.label || `시도 ${frame.regions.length}곳`}
-        </p>
+        <div className="flex flex-col items-end gap-1">
+          <p className="text-right text-lg leading-snug font-medium break-keep">
+            {frame.label || `시도 ${frame.regions.length}곳`}
+          </p>
+          {/*
+            지도의 해가 사건의 해와 다르면 밝힌다.
+            경계 자료가 1975~2000년은 5년 단위라, 1981년에 생긴 대구직할시가
+            1985년 판에서 처음 보인다. 그 차이를 감추면 지도가 거짓말이 된다.
+          */}
+          {frame.mapYear !== frame.year && (
+            <p className="font-mono text-xs tabular-nums text-dim">
+              지도는 {frame.mapYear}년 판
+            </p>
+          )}
+        </div>
       </header>
 
       {/*
@@ -142,7 +161,7 @@ export function Timelapse({ data }: { data: TimelapseData }) {
                     i === index ? "font-bold text-ink" : "text-dim"
                   }`}
                 >
-                  {f.year}
+                  {f.tick}
                 </span>
               </button>
             ))}
@@ -154,7 +173,7 @@ export function Timelapse({ data }: { data: TimelapseData }) {
         viewBox={`0 0 ${data.width} ${data.height}`}
         className="h-auto w-full"
         role="img"
-        aria-label={`${frame.year}년 대한민국 시도 경계 ${frame.regions.length}개`}
+        aria-label={`${frame.mapYear}년 대한민국 시도 경계 ${frame.regions.length}개`}
       >
         {frame.regions.map((r) => {
           /*

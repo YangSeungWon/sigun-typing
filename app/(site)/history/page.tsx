@@ -1,0 +1,87 @@
+import { BackLink } from "@/components/BackLink";
+import { Timelapse, type TimelapseData } from "@/components/Timelapse";
+import timelapse from "@/data/timelapse/sido.json";
+import changes from "@/data/reference/boundary-changes.json";
+
+const DATA = timelapse as TimelapseData;
+const FIRST = DATA.frames[0];
+const LAST = DATA.frames[DATA.frames.length - 1];
+
+export const metadata = {
+  title: `대한민국 행정구역 변천사 ${FIRST.year}~${LAST.year}`,
+  description: `시도가 ${FIRST.regions.length}개에서 ${LAST.regions.length}개로 늘기까지. 직할시 승격, 광역시 개편, 세종특별자치시 신설까지 지도로 봅니다.`,
+  alternates: { canonical: "/history" },
+};
+
+/**
+ * 행정구역 변천사.
+ *
+ * 이 게임이 가르치는 것은 지금의 지도인데, "왜 이 이름인가"는 지금의 지도에
+ * 안 적혀 있다. 부산이 왜 광역시인지, 세종은 왜 도가 없는지, 울산은 왜 늦게
+ * 생겼는지 — 그건 시간 축에만 있다.
+ *
+ * 그래서 이 페이지는 문제를 내지 않는다. 읽고 나가는 자리다. 대신 게임에서
+ * 만난 이름이 여기서 설명되고, 여기서 본 사람이 게임으로 갈 수 있게 한다.
+ *
+ * 시도만 다룬다. 시군구는 이 축척에서 안 보인다 — 창원 통합도 청주 통합도
+ * 전국 지도에서는 몇 픽셀이라, 그쪽은 사건마다 그 자리를 확대해야 한다.
+ */
+export default function HistoryPage() {
+  const sigungu = changes.sigungu.filter((e) => Number(e.from) >= 2000);
+
+  return (
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
+      <header className="flex flex-col gap-3">
+        <BackLink href="/">시군 타이핑</BackLink>
+        <h1 className="text-4xl font-bold tracking-tight">
+          행정구역은 이렇게 바뀌었다
+        </h1>
+        <p className="text-lg break-keep text-dim">
+          {FIRST.year}년에는 시도가 {FIRST.regions.length}개였습니다. 지금은{" "}
+          {LAST.regions.length}개입니다. 그사이 무슨 일이 있었는지 지도로 봅니다.
+        </p>
+      </header>
+
+      <Timelapse data={DATA} />
+
+      {/*
+        시군구는 지도를 붙이지 않는다. 전국 축척에서 안 보이기 때문인데,
+        그렇다고 목록마저 빼면 "시군구는 안 바뀌었나" 싶어진다. 사건 이름만
+        적어 두면 그 자체로 읽을거리이고, 나중에 사건마다 지도를 붙일 자리가
+        여기 그대로 남는다.
+      */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-2xl font-semibold">시군구는 이렇게</h2>
+        <p className="text-base break-keep text-dim">
+          시군구 개편은 전국 지도에서는 몇 픽셀이라 위 지도에 담기지 않습니다.
+          2000년 이후 {sigungu.length}번 바뀌었습니다.
+        </p>
+        <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
+          {sigungu.map((e) => (
+            <li key={`${e.from}-${e.to}`} className="flex gap-4 py-2.5">
+              <span className="shrink-0 font-mono text-sm tabular-nums text-dim">
+                {e.to}
+              </span>
+              <span className="flex flex-col gap-0.5 text-base break-keep">
+                {e.born.length > 0 && <span>{e.born.join(", ")} 생김</span>}
+                {e.gone.length > 0 && (
+                  <span className="text-dim">{e.gone.join(", ")} 사라짐</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/*
+        자료의 나이를 밝힌다. 이 게임의 지역 데이터가 2025년 기준이라는 것과
+        같은 이유다 — 언제까지 반영된 자료인지 모르면 빠진 것이 오류인지
+        시점 차이인지 알 수 없다.
+      */}
+      <p className="text-sm break-keep text-dim">
+        통계청 SGIS 센서스용 행정구역경계(1975~2025)를 바탕으로 만들었습니다.
+        경계가 실제로 달라진 해만 그립니다.
+      </p>
+    </main>
+  );
+}

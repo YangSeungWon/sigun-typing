@@ -9,6 +9,7 @@
     "lint": "eslint",
     "build:geo": "node scripts/build-geo.mts",
     "build:changes": "node scripts/build-changes.mts",
+    "build:timelapse": "node scripts/build-timelapse.mts",
     "build:og": "node scripts/build-og.mts",
     "build:thumbs": "node scripts/build-thumbs.mts",
     "test": "vitest run",

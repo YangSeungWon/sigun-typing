@@ -35,6 +35,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...courses,
     ...games,
     { url: at("/guide"), changeFrequency: "monthly", priority: 0.6 },
+    /*
+     * 변천사는 게임이 아니라 읽을거리다. 검색으로 들어오는 길이 게임 화면과
+     * 다르고("행정구역 변천", "직할시 광역시 차이"), 잘 안 바뀐다.
+     */
+    { url: at("/history"), changeFrequency: "yearly", priority: 0.7 },
     { url: at("/ranking"), changeFrequency: "daily", priority: 0.5 },
     { url: at("/rooms"), changeFrequency: "monthly", priority: 0.4 },
     { url: at("/privacy"), changeFrequency: "yearly", priority: 0.2 },

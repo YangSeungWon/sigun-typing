@@ -74,6 +74,17 @@ interface Frame {
   year: string;
   /** 이 해에 무슨 일이 있었는지. 첫 프레임은 출발점이라 비어 있다. */
   label: string;
+  /**
+   * 이 해에 달라진 지역의 코드.
+   *
+   * 지도가 다시 그려지기만 하면 무엇이 바뀌었는지 안 보인다 — 인천이 경기도에서
+   * 떨어져 나온 해에도 그냥 지도 한 장이다. 여기 담긴 곳을 화면에서 다른 색으로
+   * 칠한다.
+   *
+   * 사건 목록을 이름으로 맞추지 않고 **앞 프레임의 도형과 직접 견준다.** 이름은
+   * 표기가 흔들리지만 코드는 31년 내내 고정이다.
+   */
+  changed: string[];
   regions: { code: string; name: string; d: string }[];
 }
 
@@ -177,17 +188,38 @@ const projection = geoMercator().fitExtent(
 );
 const path = geoPath(projection).digits(1);
 
-const frames: Frame[] = loaded.map(({ year, label, features }) => ({
-  year,
-  label,
-  regions: features
+let previous = new Map<string, string>();
+const frames: Frame[] = loaded.map(({ year, label, features }, i) => {
+  const regions = features
     .map((f) => ({
       code: propOf(f.properties, "_cd"),
       name: propOf(f.properties, "_nm"),
       d: path(f) ?? "",
     }))
-    .sort((a, b) => a.code.localeCompare(b.code)),
-}));
+    .sort((a, b) => a.code.localeCompare(b.code));
+
+  /*
+   * 첫 프레임은 견줄 앞이 없다. 그렇다고 아무것도 안 짚으면 출발점이 빈
+   * 지도가 되는데, 이 타임랩스의 이야기는 **도에서 도시가 하나씩 파여
+   * 나오는 것**이라 출발점에도 주인공이 있다 — 1975년에는 서울과 부산
+   * 둘뿐이었다. 그 둘을 짚어 두면 뒤 프레임들이 같은 패턴을 이어받는다.
+   *
+   * 도가 아닌 것이 곧 그것이다(특별시·직할시·광역시·특별자치시).
+   */
+  const changed =
+    i === 0
+      ? regions.filter((r) => !r.name.endsWith("도")).map((r) => r.code)
+      : regions.filter((r) => previous.get(r.code) !== r.name).map((r) => r.code);
+
+  previous = new Map(regions.map((r) => [r.code, r.name]));
+  return {
+    year,
+    // 출발점의 라벨은 사건이 아니라 그 주인공들이다.
+    label: label || changed.map((c) => regions.find((r) => r.code === c)!.name).join(", "),
+    changed,
+    regions,
+  };
+});
 
 const empty = frames.flatMap((f) => f.regions.filter((r) => !r.d).map((r) => `${f.year} ${r.name}`));
 if (empty.length) throw new Error(`도형이 비었습니다: ${empty.join(", ")}`);

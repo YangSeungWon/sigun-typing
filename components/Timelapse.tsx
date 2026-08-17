@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export interface TimelapseFrame {
   year: string;
   label: string;
+  /** 이 해에 달라진 지역의 코드. 첫 프레임은 비어 있다. */
+  changed: string[];
   regions: { code: string; name: string; d: string }[];
 }
 
@@ -60,29 +62,36 @@ export function Timelapse({ data }: { data: TimelapseData }) {
         페이지 제목은 따로 두지 않는다 — 첫 화면이 카피 대신 숫자를 h1으로
         둔 것과 같다. 여기서 읽을 것은 "몇 년에 무슨 일이 있었나"뿐이다.
       */}
-      <header className="flex flex-col gap-1">
+      {/*
+        연도와 사건을 한 줄에 나란히 둔다.
+        아래위로 쌓으면 사건 문장이 제 줄을 하나 더 차지하는데, 정작 연도
+        오른쪽은 비어 있었다. 옆에 붙이면 그 폭을 그대로 쓴다.
+
+        무엇보다 **높이가 안 흔들린다.** 사건 문장은 프레임마다 한 줄에서 세
+        줄까지 오가지만, 연도 블록이 이미 두 줄만큼 높아서 그 안에 들어간다.
+        전에는 최소 높이를 억지로 박아 두고 있었다.
+      */}
+      <header className="flex items-end justify-between gap-5">
         <h1
-          className="font-mono text-6xl leading-none font-bold tabular-nums sm:text-7xl"
+          className="shrink-0 font-mono text-6xl leading-none font-bold tabular-nums sm:text-7xl"
           aria-label={`${frame.year}년. ${frame.label || `시도 ${frame.regions.length}곳`}`}
         >
           {frame.year}
         </h1>
-        {/*
-          높이를 고정한다. 사건 문장의 길이가 프레임마다 달라서(한 줄에서 세
-          줄까지) 그대로 두면 아래 타임라인과 지도가 위아래로 튄다.
-        */}
-        <p className="flex min-h-14 items-start text-lg font-medium break-keep sm:min-h-8">
+        <p className="text-right text-lg leading-snug font-medium break-keep">
           {frame.label || `시도 ${frame.regions.length}곳`}
         </p>
       </header>
 
       {/*
-        연도는 눌러서 고른다.
-        점을 실제 연도 자리에 찍어 봤는데, 개편이 몰린 최근 구간에서 점과
-        글자가 서로 밟았다. 아홉 개뿐이라 균등하게 늘어놓는 편이 읽기 쉽다 —
-        어느 시기에 몰렸는지는 위의 사건 문장이 이미 말해 준다.
+        재생 단추와 눈금을 한 줄에 붙여 **하나의 재생 막대**로 읽히게 한다.
+        따로 놓으면 단추 하나와 연도 목록 하나로 보인다.
+
+        눈금은 균등 간격이다. 실제 연도 자리에 찍어 봤더니 개편이 몰린 최근
+        구간에서 점과 글자가 서로 밟았다 — 어느 시기에 몰렸는지는 위의 사건
+        문장이 이미 말해 준다.
       */}
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => {
@@ -90,25 +99,55 @@ export function Timelapse({ data }: { data: TimelapseData }) {
             if (!playing && index >= last) setIndex(0);
             setPlaying((p) => !p);
           }}
-          className="mr-1 rounded-lg bg-sign px-4 py-1.5 text-sm font-bold text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          aria-label={playing ? "멈춤" : "재생"}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sign text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          {playing ? "멈춤" : "재생"}
+          <svg viewBox="0 0 16 16" className="h-4 w-4 fill-current" aria-hidden>
+            {playing ? (
+              <path d="M4 3h3v10H4zM9 3h3v10H9z" />
+            ) : (
+              <path d="M5 3l8 5-8 5z" />
+            )}
+          </svg>
         </button>
-        {data.frames.map((f, i) => (
-          <button
-            key={f.year}
-            type="button"
-            onClick={() => pick(i)}
-            aria-current={i === index}
-            className={`rounded-lg border px-2.5 py-1.5 font-mono text-sm tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-              i === index
-                ? "border-ink bg-ink text-paint"
-                : "border-concrete-deep text-dim hover:bg-concrete-deep hover:text-ink"
-            }`}
-          >
-            {f.year}
-          </button>
-        ))}
+
+        <div className="relative flex-1">
+          {/* 지나온 길과 남은 길. 어디쯤인지가 색으로 먼저 읽힌다. */}
+          <div className="absolute top-[7px] right-1 left-1 h-0.5 bg-concrete-deep" />
+          <div
+            className="absolute top-[7px] left-1 h-0.5 bg-sign transition-[width] duration-500"
+            style={{ width: `calc((100% - 0.5rem) * ${index / last})` }}
+          />
+          <div className="relative flex justify-between">
+            {data.frames.map((f, i) => (
+              <button
+                key={f.year}
+                type="button"
+                onClick={() => pick(i)}
+                aria-current={i === index}
+                aria-label={`${f.year}년`}
+                className="group flex cursor-pointer flex-col items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                <span
+                  className={`block rounded-full transition-all ${
+                    i === index
+                      ? "h-4 w-4 bg-sign ring-2 ring-paint"
+                      : i < index
+                        ? "mt-[3px] h-2.5 w-2.5 bg-sign"
+                        : "mt-[3px] h-2.5 w-2.5 bg-concrete-deep group-hover:bg-dim"
+                  }`}
+                />
+                <span
+                  className={`mt-1.5 font-mono text-xs tabular-nums transition-colors ${
+                    i === index ? "font-bold text-ink" : "text-dim"
+                  }`}
+                >
+                  {f.year}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <svg
@@ -117,20 +156,34 @@ export function Timelapse({ data }: { data: TimelapseData }) {
         role="img"
         aria-label={`${frame.year}년 대한민국 시도 경계 ${frame.regions.length}개`}
       >
-        {frame.regions.map((r) => (
+        {frame.regions.map((r) => {
           /*
-           * key를 코드로 준다. 프레임이 바뀌어도 같은 시도는 같은 엘리먼트라
-           * path만 갈리고, 새로 생긴 시도만 새로 그려진다.
+           * 이 해에 달라진 곳만 칠한다. 지도가 다시 그려지기만 하면 무엇이
+           * 바뀌었는지 안 보인다 — 인천이 경기도에서 떨어져 나온 해에도
+           * 그냥 지도 한 장이다.
+           *
+           * 색은 게임에서 "맞힌 곳"에 쓰는 표지판 초록과 같다. 이 화면에서
+           * 그 색이 하는 말은 다르지만("여기가 달라졌다"), 이 제품에서 초록은
+           * 언제나 "눈여겨볼 곳"이라 서로 부딪치지 않는다.
            */
-          <path
-            key={r.code}
-            d={r.d}
-            className="fill-[var(--color-map-idle)] stroke-[var(--color-map-line)] transition-[d] duration-500"
-            strokeWidth={1}
-          >
-            <title>{r.name}</title>
-          </path>
-        ))}
+          const hit = frame.changed.includes(r.code);
+          return (
+            /*
+             * key를 코드로 준다. 프레임이 바뀌어도 같은 시도는 같은 엘리먼트라
+             * path만 갈리고, 새로 생긴 시도만 새로 그려진다.
+             */
+            <path
+              key={r.code}
+              d={r.d}
+              className={`stroke-[var(--color-map-line)] transition-[d,fill] duration-500 ${
+                hit ? "fill-[var(--color-sign)]" : "fill-[var(--color-map-idle)]"
+              }`}
+              strokeWidth={1}
+            >
+              <title>{hit ? `${r.name} — 이 해에 달라진 곳` : r.name}</title>
+            </path>
+          );
+        })}
       </svg>
     </div>
   );

@@ -9,6 +9,23 @@ import type { ModeId } from "../lib/game/types";
 
 export type RoomStatus = "waiting" | "counting" | "racing" | "finished";
 
+/**
+ * 방의 규칙.
+ *
+ * 방장이 정하지만 **모두가 본다.** 무슨 규칙으로 겨루는지 모르고 달리게 하면
+ * 안 된다. 판이 시작되면 못 바꾼다 — 달리는 중에 규칙이 바뀌면 먼저 지나간
+ * 사람과 나중에 지나간 사람이 다른 게임을 한 것이 된다.
+ */
+export interface RoomRules {
+  /** 초성 힌트(Tab). */
+  hint: boolean;
+  /** 모르겠으면 넘기기(Esc). 넘긴 곳은 맞힌 것으로 안 센다. */
+  skip: boolean;
+}
+
+/** 기본은 힌트만. 패스는 켜는 사람이 켠다. */
+export const DEFAULT_RULES: RoomRules = { hint: true, skip: false };
+
 export const MAX_PLAYERS = 8;
 export const COUNTDOWN_MS = 3_000;
 /** 아무도 움직이지 않는 방을 영원히 붙들고 있지 않는다. */
@@ -19,13 +36,20 @@ export interface Player {
   id: string;
   nickname: string;
   ready: boolean;
-  /** 지금까지 맞힌 지역 수 */
+  /** 지금까지 지나온 지역 수. 패스한 것도 포함한다 — 진행한 자리다. */
   index: number;
+  /** 그중 **맞힌** 수. 순위는 이것이 먼저다. */
+  solved: number;
   cpm: number;
   accuracy: number;
   finishedAt: number | null;
-  /** 완주 순서. 미완주는 null. */
+  /**
+   * 등수. `standings`가 매번 다시 매긴다 — 맞힌 개수가 먼저이고 시간이 다음이라,
+   * 완주하는 순간에는 아직 정해지지 않는다. 끝까지 못 간 사람은 null.
+   */
   rank: number | null;
+  /** 판에서 스스로 내려왔는가. 등수를 안 준다. */
+  quit: boolean;
   connected: boolean;
   /** 다음 판으로 이 코스를 하자는 추천. 한 사람에 하나. */
   pick: string | null;
@@ -45,6 +69,8 @@ export interface Room {
   startsAt: number | null;
   /** 이 방에서 몇 번째 판인가. 1부터. */
   round: number;
+  /** 이 방의 규칙. 방장이 정하고 모두가 본다. */
+  rules: RoomRules;
   updatedAt: number;
 }
 
@@ -82,8 +108,21 @@ export function createRoom(input: {
     players: [],
     startsAt: null,
     round: 1,
+    rules: DEFAULT_RULES,
     updatedAt: input.now,
   };
+}
+
+/** 규칙을 바꾼다. 방장만, 대기실에서만. */
+export function setRules(
+  room: Room,
+  playerId: string,
+  rules: Partial<RoomRules>,
+  now: number,
+): RoomResult<Room> {
+  if (room.hostId !== playerId) return err("not_host");
+  if (room.status !== "waiting") return err("already_started");
+  return ok({ ...room, rules: { ...room.rules, ...rules }, updatedAt: now });
 }
 
 export function join(
@@ -109,10 +148,12 @@ export function join(
     nickname: player.nickname,
     ready: false,
     index: 0,
+    solved: 0,
     cpm: 0,
     accuracy: 1,
     finishedAt: null,
     rank: null,
+    quit: false,
     connected: true,
     pick: null,
   };
@@ -167,7 +208,7 @@ export function tick(room: Room, now: number): Room {
 export function progress(
   room: Room,
   playerId: string,
-  update: { index: number; cpm: number; accuracy: number },
+  update: { index: number; solved: number; cpm: number; accuracy: number },
   now: number,
 ): RoomResult<Room> {
   if (room.status !== "racing") return err("not_racing");
@@ -180,6 +221,7 @@ export function progress(
             ...p,
             // 진행도는 되돌아가지 않는다. 뒤늦게 도착한 패킷이 순위를 흔들지 않게 한다.
             index: Math.max(p.index, Math.min(update.index, room.total)),
+            solved: Math.max(p.solved, Math.min(update.solved, room.total)),
             cpm: Math.max(0, update.cpm),
             accuracy: Math.min(1, Math.max(0, update.accuracy)),
           }
@@ -189,13 +231,20 @@ export function progress(
   });
 }
 
+/**
+ * 끝까지 갔다.
+ *
+ * 등수를 여기서 매기지 않는다. 순위는 **맞힌 개수가 먼저이고 시간이 다음**이라,
+ * 먼저 들어왔다고 앞선다는 보장이 없다 — 패스를 켜면 열넷 맞히고 빨리 들어온
+ * 사람이 열일곱 맞히고 늦게 들어온 사람 뒤에 서야 한다. 그건 다 들어와 봐야
+ * 아는 것이므로 `standings`가 매길 일이다.
+ */
 export function finish(room: Room, playerId: string, now: number): Room {
   const already = room.players.find((p) => p.id === playerId)?.finishedAt !== null;
   if (already) return room;
 
-  const rank = room.players.filter((p) => p.finishedAt !== null).length + 1;
   const players = room.players.map((p) =>
-    p.id === playerId ? { ...p, finishedAt: now, rank, index: room.total } : p,
+    p.id === playerId ? { ...p, finishedAt: now, index: room.total } : p,
   );
 
   return closeIfDone({ ...room, players, updatedAt: now });
@@ -230,7 +279,9 @@ export function giveUp(room: Room, playerId: string, now: number): Room {
 
   return closeIfDone({
     ...room,
-    players: room.players.map((p) => (p.id === playerId ? { ...p, finishedAt: now } : p)),
+    players: room.players.map((p) =>
+      p.id === playerId ? { ...p, finishedAt: now, quit: true } : p,
+    ),
     updatedAt: now,
   });
 }
@@ -329,25 +380,47 @@ export function nextRound(
       ...p,
       ready: false,
       index: 0,
+      solved: 0,
       cpm: 0,
       accuracy: 1,
       finishedAt: null,
       rank: null,
+      quit: false,
       pick: null,
     })),
     updatedAt: input.now,
   });
 }
 
-/** 순위표 정렬 — 완주자가 완주 순서대로 먼저, 나머지는 진행도순. */
+/**
+ * 순위표. 등수도 여기서 매긴다.
+ *
+ * **맞힌 개수가 먼저, 시간이 다음이다.** 완주 순서로만 매기면 넘길 수 있는
+ * 판에서 다 넘긴 사람이 1등이 된다. 열넷 맞히고 1분에 들어온 사람은 열일곱
+ * 맞히고 2분에 들어온 사람 뒤다.
+ *
+ * 이 규칙은 패스가 꺼진 판의 결과를 바꾸지 않는다 — 그때는 모두가 다 맞혀야
+ * 끝나므로 맞힌 개수가 같고, 남는 것은 시간뿐이다.
+ *
+ * 스스로 내려온 사람에게는 등수를 안 준다. 끝까지 간 사람과 같은 줄에 세울 수
+ * 없다. 아직 달리는 사람과 함께 아래에 진행도순으로 선다.
+ */
 export function standings(room: Room): Player[] {
-  return [...room.players].sort((a, b) => {
-    if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
-    if (a.rank !== null) return -1;
-    if (b.rank !== null) return 1;
-    if (b.index !== a.index) return b.index - a.index;
-    return b.cpm - a.cpm;
-  });
+  const done = room.players
+    .filter((p) => p.finishedAt !== null && !p.quit)
+    .sort((a, b) => b.solved - a.solved || a.finishedAt! - b.finishedAt!);
+  const rankOf = new Map(done.map((p, i) => [p.id, i + 1]));
+
+  return room.players
+    .map((p) => ({ ...p, rank: rankOf.get(p.id) ?? null }))
+    .sort((a, b) => {
+      if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
+      if (a.rank !== null) return -1;
+      if (b.rank !== null) return 1;
+      if (b.solved !== a.solved) return b.solved - a.solved;
+      if (b.index !== a.index) return b.index - a.index;
+      return b.cpm - a.cpm;
+    });
 }
 
 export function isAbandoned(room: Room, now: number): boolean {

@@ -16,6 +16,7 @@ import {
   nominate,
   progress,
   setReady,
+  setRules,
   standings,
   startCountdown,
   tally,
@@ -74,6 +75,7 @@ function publish(room: Room) {
     hostId: room.hostId,
     startsAt: room.startsAt,
     round: room.round,
+    rules: room.rules,
     /* 다음 판 후보. 방장이 무엇을 고를지 정하는 데 쓰고, 모두가 함께 본다. */
     picks: tally(room),
     players: standings(room),
@@ -177,6 +179,17 @@ io.on("connection", (socket: Socket) => {
     ack?.({ ok: true });
   });
 
+  /* 규칙 바꾸기. 방장만, 대기실에서만. 모두가 같은 화면으로 본다. */
+  socket.on("room:rules", (payload: { hint?: unknown; skip?: unknown }) => {
+    const room = currentRoom(socket);
+    if (!room) return;
+    const next: { hint?: boolean; skip?: boolean } = {};
+    if (typeof payload?.hint === "boolean") next.hint = payload.hint;
+    if (typeof payload?.skip === "boolean") next.skip = payload.skip;
+    const result = setRules(room, socket.id, next, Date.now());
+    if (result.ok) save(result.value);
+  });
+
   socket.on("room:start", (_payload: unknown, ack?: (res: unknown) => void) => {
     const room = currentRoom(socket);
     if (!room) return ack?.({ ok: false, error: "방에 있지 않습니다" });
@@ -188,21 +201,25 @@ io.on("connection", (socket: Socket) => {
     ack?.({ ok: true });
   });
 
-  socket.on("race:progress", (payload: { index?: number; cpm?: number; accuracy?: number }) => {
-    const room = currentRoom(socket);
-    if (!room) return;
-    const result = progress(
-      room,
-      socket.id,
-      {
-        index: Number(payload?.index) || 0,
-        cpm: Number(payload?.cpm) || 0,
-        accuracy: Number(payload?.accuracy) || 0,
-      },
-      Date.now(),
-    );
-    if (result.ok) save(result.value);
-  });
+  socket.on(
+    "race:progress",
+    (payload: { index?: number; solved?: number; cpm?: number; accuracy?: number }) => {
+      const room = currentRoom(socket);
+      if (!room) return;
+      const result = progress(
+        room,
+        socket.id,
+        {
+          index: Number(payload?.index) || 0,
+          solved: Number(payload?.solved) || 0,
+          cpm: Number(payload?.cpm) || 0,
+          accuracy: Number(payload?.accuracy) || 0,
+        },
+        Date.now(),
+      );
+      if (result.ok) save(result.value);
+    },
+  );
 
   socket.on("race:finish", () => {
     const room = currentRoom(socket);

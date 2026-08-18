@@ -24,7 +24,7 @@ interface MultiRaceProps {
   room: RoomState;
   raceStart: RaceStart | null;
   selfId: string | null;
-  onProgress: (u: { index: number; cpm: number; accuracy: number }) => void;
+  onProgress: (u: { index: number; solved: number; cpm: number; accuracy: number }) => void;
   onFinish: () => void;
   onGiveUp: () => void;
 }
@@ -55,8 +55,30 @@ export function MultiRace({
     [course],
   );
 
-  const { state, current, score, advancedAt, rejectedAt, begin, type, submitAnswer, hint } =
-    useGame(items, MODES.multi, room.seed);
+  /*
+   * 규칙은 방이 정한다.
+   *
+   * 모드 설정은 원래 고정값인데, 대결만은 방마다 갈린다 — 실력을 겨루는 판과
+   * 같이 노는 판이 같은 규칙일 이유가 없다. 방장이 고른 것을 그대로 얹는다.
+   */
+  const config = useMemo(
+    () => ({ ...MODES.multi, allowHint: room.rules.hint, allowSkip: room.rules.skip }),
+    [room.rules.hint, room.rules.skip],
+  );
+
+  const {
+    state,
+    current,
+    score,
+    advancedAt,
+    rejectedAt,
+    begin,
+    type,
+    submitAnswer,
+    hint,
+    giveUpItem,
+    skipReveal,
+  } = useGame(items, config, room.seed);
 
   /*
    * 이 화면이 떠 있는 동안 사이트의 헤더와 탭 바를 걷는다.
@@ -89,6 +111,8 @@ export function MultiRace({
     if (state.status !== "playing") return;
     onProgress({
       index: state.results.length,
+      /* 넘긴 곳은 안 센다. 순위는 맞힌 개수가 먼저다. */
+      solved: state.results.filter((r) => !r.skipped).length,
       cpm: score.cpm,
       accuracy: score.accuracy,
     });
@@ -105,6 +129,18 @@ export function MultiRace({
 
   // 막혔을 때 빠져나갈 길은 힌트뿐이다 — 건너뛰기는 순위가 진행 칸수로
   // 매겨지는 이상 열어 줄 수 없다.
+  /* 정답을 보여 주는 동안 Esc는 그 화면을 닫는다. 읽는 속도는 사람마다 다르다. */
+  useEffect(() => {
+    if (state.status !== "revealing") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      skipReveal();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.status, skipReveal]);
+
   useEffect(() => {
     if (state.status !== "playing") return;
     const onKey = (e: KeyboardEvent) => {
@@ -115,19 +151,38 @@ export function MultiRace({
         submitAnswer();
         return;
       }
-      if (e.key !== "Tab") return;
+      /*
+       * 모르겠으면 넘긴다. 방장이 켰을 때만.
+       *
+       * 넘겨도 공짜가 아니다 — 정답이 뜨고 그것을 손으로 쳐야 다음으로 간다.
+       * 그리고 넘긴 곳은 맞힌 것으로 안 세므로 순위에서 뒤로 간다. 다 넘긴
+       * 사람이 1등이 되는 일은 이 두 가지로 막힌다.
+       */
+      if (e.key === "Escape" && config.allowSkip) {
+        e.preventDefault();
+        giveUpItem();
+        return;
+      }
+      if (e.key !== "Tab" || !config.allowHint) return;
       // Tab이 포커스를 옮기면 입력창을 벗어나 경주 중에 타건이 먹지 않는다.
       e.preventDefault();
       hint();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.status, hint, submitAnswer]);
+  }, [state.status, hint, submitAnswer, giveUpItem, config.allowHint, config.allowSkip]);
 
   const passedCodes = useMemo(
     () => state.results.filter((r) => !r.skipped).map((r) => r.id),
     [state.results],
   );
+
+  /*
+   * 정답을 보여 주는 사이. `모르겠어요`를 누르면 답이 뜨고, 그것을 손으로 쳐야
+   * 다음으로 간다 — 눈으로 보고 지나가면 다음에 또 모른다.
+   */
+  const revealing =
+    state.status === "revealing" && state.revealed ? state.revealed.answer : null;
 
   const done = state.status === "finished";
   const myRank = room.players.find((p) => p.id === selfId)?.rank ?? null;
@@ -158,7 +213,7 @@ export function MultiRace({
           />
         </div>
       ) : (
-        current && (
+        (current || revealing) && (
           <>
             {/*
               멀티도 본편과 같은 문제를 푼다. 지도가 어디인지 묻고, 이름을 친다.
@@ -170,7 +225,7 @@ export function MultiRace({
                 geo={geo}
                 // 세는 동안에는 아무 곳도 켜지 않는다. 미리 보여 주면 출발
                 // 신호가 오기 전에 생각할 시간을 공짜로 갖는 셈이다.
-                currentCode={counting ? undefined : current.id}
+                currentCode={counting || revealing ? undefined : current?.id}
                 passedCodes={passedCodes}
                 variant="hint"
                 className="h-[24vh] max-h-80 min-h-32 w-auto sm:h-[32vh]"
@@ -179,7 +234,7 @@ export function MultiRace({
 
             <TypingSurface
               onType={type}
-              value={state.input}
+              value={revealing ? state.revealInput : state.input}
               // 세는 동안 눌린 글자는 이 경주의 것이 아니다. 출발선에서 비운다.
               resetAt={counting ? 0 : 1}
             >
@@ -192,10 +247,11 @@ export function MultiRace({
                 <CountdownPlate seconds={seconds} />
               ) : (
               <SignPlate
-                target={current.answer}
-                typed={state.input}
+                target={revealing ?? current!.answer}
+                typed={revealing ? state.revealInput : state.input}
                 focused
                 masked
+                revealed={Boolean(revealing)}
                 hinted={state.hintShown}
                 judge={MODES.multi.judge}
                 erroredAt={rejectedAt}
@@ -210,11 +266,18 @@ export function MultiRace({
             </TypingSurface>
 
             <p className="flex min-h-6 items-center justify-center text-sm text-dim">
+              {revealing ? (
+                <KeyHint keys="Esc">넘어가기</KeyHint>
+              ) : (
+                <>
               <KeyHint keys="Space">제출</KeyHint>
-              {!state.hintShown && (
+              {config.allowHint && !state.hintShown && (
                 // 추가 시간을 물리지 않는다. 경주에서는 힌트를 여는 동안
                 // 상대가 달리는 것이 이미 값이다.
                 <KeyHint keys="Tab">초성 힌트</KeyHint>
+              )}
+              {config.allowSkip && <KeyHint keys="Esc">모르겠어요</KeyHint>}
+                </>
               )}
             </p>
 

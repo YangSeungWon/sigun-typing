@@ -13,6 +13,7 @@ import {
   nominate,
   progress,
   setReady,
+  setRules,
   standings,
   startCountdown,
   tally,
@@ -116,7 +117,7 @@ describe("출발", () => {
 describe("진행", () => {
   it("경주 중이 아니면 진행도를 받지 않는다", () => {
     const r = withPlayers("하나");
-    expect(progress(r, "s0", { index: 3, cpm: 300, accuracy: 1 }, T0)).toEqual({
+    expect(progress(r, "s0", { index: 3, solved: 3, cpm: 300, accuracy: 1 }, T0)).toEqual({
       ok: false,
       error: "not_racing",
     });
@@ -124,41 +125,58 @@ describe("진행", () => {
 
   it("진행도는 뒤로 가지 않는다 — 늦게 도착한 패킷 방어", () => {
     let r = racing("하나");
-    r = (progress(r, "s0", { index: 5, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
-    r = (progress(r, "s0", { index: 2, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
+    r = (progress(r, "s0", { index: 5, solved: 5, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
+    r = (progress(r, "s0", { index: 2, solved: 2, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
     expect(r.players[0].index).toBe(5);
   });
 
   it("코스 길이를 넘는 진행도는 잘라 낸다", () => {
     let r = racing("하나");
-    r = (progress(r, "s0", { index: 999, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
+    r = (progress(r, "s0", { index: 999, solved: 999, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
     expect(r.players[0].index).toBe(17);
   });
 
   it("정확도는 0~1로 묶인다", () => {
     let r = racing("하나");
-    r = (progress(r, "s0", { index: 1, cpm: -5, accuracy: 3 }, T0) as { value: Room }).value;
+    r = (progress(r, "s0", { index: 1, solved: 1, cpm: -5, accuracy: 3 }, T0) as { value: Room }).value;
     expect(r.players[0].accuracy).toBe(1);
     expect(r.players[0].cpm).toBe(0);
   });
 });
 
 describe("완주와 순위", () => {
-  it("완주 순서대로 등수가 매겨진다", () => {
+  /** 맞힌 수까지 채워서 완주시킨다. 순위는 맞힌 개수가 먼저다. */
+  function complete(r: Room, id: string, solved: number, at: number): Room {
+    const moved = progress(r, id, { index: r.total, solved, cpm: 300, accuracy: 1 }, at);
+    if (!moved.ok) throw new Error(moved.error);
+    return finish(moved.value, id, at);
+  }
+
+  it("다 맞힌 사람들끼리는 먼저 들어온 순서다", () => {
     let r = racing("하나", "둘", "셋");
-    r = finish(r, "s1", T0 + 10_000);
-    r = finish(r, "s0", T0 + 12_000);
-    expect(r.players.find((p) => p.id === "s1")!.rank).toBe(1);
-    expect(r.players.find((p) => p.id === "s0")!.rank).toBe(2);
-    expect(r.players.find((p) => p.id === "s2")!.rank).toBeNull();
+    r = complete(r, "s1", 17, T0 + 10_000);
+    r = complete(r, "s0", 17, T0 + 12_000);
+    const board = standings(r);
+    expect(board.find((p) => p.id === "s1")!.rank).toBe(1);
+    expect(board.find((p) => p.id === "s0")!.rank).toBe(2);
+    expect(board.find((p) => p.id === "s2")!.rank).toBeNull();
+  });
+
+  it("빨라도 적게 맞혔으면 뒤로 간다", () => {
+    let r = racing("하나", "둘");
+    r = complete(r, "s0", 14, T0 + 10_000);
+    r = complete(r, "s1", 17, T0 + 20_000);
+    const board = standings(r);
+    expect(board.map((p) => p.nickname)).toEqual(["둘", "하나"]);
+    expect(board[0].rank).toBe(1);
   });
 
   it("같은 사람이 두 번 완주해도 등수가 밀리지 않는다", () => {
     let r = racing("하나", "둘");
     r = finish(r, "s0", T0 + 10_000);
     r = finish(r, "s0", T0 + 11_000);
-    expect(r.players.find((p) => p.id === "s0")!.rank).toBe(1);
-    expect(r.players.filter((p) => p.rank !== null)).toHaveLength(1);
+    expect(standings(r).find((p) => p.id === "s0")!.rank).toBe(1);
+    expect(standings(r).filter((p) => p.rank !== null)).toHaveLength(1);
   });
 
   it("모두 완주하면 방이 닫힌다", () => {
@@ -171,8 +189,8 @@ describe("완주와 순위", () => {
 
   it("순위표는 완주자를 먼저, 나머지는 진행도순으로 놓는다", () => {
     let r = racing("하나", "둘", "셋");
-    r = (progress(r, "s1", { index: 9, cpm: 400, accuracy: 1 }, T0) as { value: Room }).value;
-    r = (progress(r, "s2", { index: 4, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
+    r = (progress(r, "s1", { index: 9, solved: 9, cpm: 400, accuracy: 1 }, T0) as { value: Room }).value;
+    r = (progress(r, "s2", { index: 4, solved: 4, cpm: 300, accuracy: 1 }, T0) as { value: Room }).value;
     r = finish(r, "s0", T0 + 10_000);
     expect(standings(r).map((p) => p.id)).toEqual(["s0", "s1", "s2"]);
   });
@@ -218,7 +236,7 @@ describe("이탈", () => {
     let r = racing("하나", "둘");
     r = finish(r, "s1", T0 + 5_000);
     r = leave(r, "s1", T0 + 6_000);
-    expect(r.players.find((p) => p.id === "s1")?.rank).toBe(1);
+    expect(standings(r).find((p) => p.id === "s1")?.rank).toBe(1);
   });
 
   it("한 사람이 그만두면 방이 끝난다", () => {
@@ -231,11 +249,11 @@ describe("이탈", () => {
 
   it("그만둔 사람에게는 등수를 주지 않는다", () => {
     let r = racing("하나", "둘");
-    const moved = progress(r, "s1", { index: 5, cpm: 200, accuracy: 1 }, T0 + 3_000);
+    const moved = progress(r, "s1", { index: 5, solved: 5, cpm: 200, accuracy: 1 }, T0 + 3_000);
     if (!moved.ok) throw new Error(moved.error);
     r = moved.value;
     r = giveUp(r, "s1", T0 + 9_000);
-    const quit = r.players.find((p) => p.id === "s1");
+    const quit = standings(r).find((p) => p.id === "s1");
     expect(quit?.rank).toBe(null);
     expect(quit?.index).toBe(5);
   });
@@ -243,9 +261,9 @@ describe("이탈", () => {
   it("이미 완주한 사람은 그만둘 것이 없다", () => {
     let r = racing("하나", "둘");
     r = finish(r, "s0", T0 + 5_000);
-    const before = r.players.find((p) => p.id === "s0")?.rank;
+    const before = standings(r).find((p) => p.id === "s0")?.rank;
     r = giveUp(r, "s0", T0 + 6_000);
-    expect(r.players.find((p) => p.id === "s0")?.rank).toBe(before);
+    expect(standings(r).find((p) => p.id === "s0")?.rank).toBe(before);
   });
 
   it("아무도 없는 방은 일정 시간 뒤 버려진 것으로 본다", () => {
@@ -392,5 +410,44 @@ describe("다음 판", () => {
       now: T0,
     });
     expect(result.ok).toBe(true);
+  });
+});
+
+describe("규칙", () => {
+  it("기본은 힌트만 켜져 있다", () => {
+    const r = room();
+    expect(r.rules).toEqual({ hint: true, skip: false });
+  });
+
+  it("방장만 바꾼다", () => {
+    const r = withPlayers("하나", "둘");
+    expect(setRules(r, "s1", { skip: true }, T0)).toEqual({ ok: false, error: "not_host" });
+    const good = setRules(r, "s0", { skip: true }, T0);
+    if (!good.ok) throw new Error(good.error);
+    expect(good.value.rules).toEqual({ hint: true, skip: true });
+  });
+
+  it("출발한 뒤에는 못 바꾼다", () => {
+    const r = racing("하나");
+    expect(setRules(r, "s0", { skip: true }, T0)).toEqual({
+      ok: false,
+      error: "already_started",
+    });
+  });
+
+  it("다음 판에도 규칙은 그대로 간다", () => {
+    let r = withPlayers("하나");
+    const set = setRules(r, "s0", { skip: true, hint: false }, T0);
+    if (!set.ok) throw new Error(set.error);
+    r = set.value;
+    r.players.forEach((p) => {
+      r = setReady(r, p.id, true, T0);
+    });
+    const started = startCountdown(r, "s0", T0);
+    if (!started.ok) throw new Error(started.error);
+    r = finish(tick(started.value, T0 + COUNTDOWN_MS), "s0", T0 + 9_000);
+    const next = nextRound(r, { playerId: "s0", courseId: "jeju", seed: 1, total: 2, now: T0 });
+    if (!next.ok) throw new Error(next.error);
+    expect(next.value.rules).toEqual({ hint: false, skip: true });
   });
 });

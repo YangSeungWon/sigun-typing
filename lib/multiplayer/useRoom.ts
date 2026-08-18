@@ -101,8 +101,13 @@ export function useRoom() {
     });
   }, []);
 
+  /** 규칙 바꾸기. 방장이 아니면 서버가 무시한다. */
+  const setRules = useCallback((rules: { hint?: boolean; skip?: boolean }) => {
+    socketRef.current?.emit("room:rules", rules);
+  }, []);
+
   const sendProgress = useCallback(
-    (update: { index: number; cpm: number; accuracy: number }) => {
+    (update: { index: number; solved: number; cpm: number; accuracy: number }) => {
       socketRef.current?.emit("race:progress", update);
     },
     [],
@@ -126,6 +131,7 @@ export function useRoom() {
     create,
     join,
     setReady,
+    setRules,
     start,
     nominate,
     next,

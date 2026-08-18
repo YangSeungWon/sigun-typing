@@ -26,6 +26,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     create,
     join,
     setReady,
+    setRules,
     start,
     nominate,
     next,
@@ -323,6 +324,14 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         showReady
       />
 
+      {/*
+        이 판의 규칙.
+
+        방장이 정하지만 **모두가 본다.** 무슨 규칙으로 겨루는지 모르고 달리게
+        하면 안 된다. 방장 아닌 사람에게는 켜짐·꺼짐만 보이고 눌리지 않는다.
+      */}
+      <RoomRules rules={room.rules} isHost={isHost} onChange={setRules} />
+
       {room.status === "waiting" && (
         <div className="flex gap-3">
           <button
@@ -352,6 +361,69 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         {error ?? (isHost ? "전원이 준비하면 출발할 수 있습니다" : "방장이 출발시킬 때까지 기다립니다")}
       </p>
     </div>
+  );
+}
+
+/** 이 판의 규칙. 방장은 누를 수 있고 나머지는 읽는다. */
+function RoomRules({
+  rules,
+  isHost,
+  onChange,
+}: {
+  rules: { hint: boolean; skip: boolean };
+  isHost: boolean;
+  onChange: (r: { hint?: boolean; skip?: boolean }) => void;
+}) {
+  const rows = [
+    {
+      key: "hint" as const,
+      name: "초성 힌트",
+      /* 값을 안 물린다. 경주에서는 힌트를 여는 동안 상대가 달리는 것이 이미 값이다. */
+      note: "Tab을 누르면 초성이 보입니다",
+      on: rules.hint,
+    },
+    {
+      key: "skip" as const,
+      name: "모르겠으면 넘기기",
+      note: "넘긴 곳은 맞힌 것으로 안 셉니다",
+      on: rules.skip,
+    },
+  ];
+
+  return (
+    <section className="flex flex-col gap-2 rounded-xl border border-concrete-deep p-4">
+      <h2 className="text-sm font-medium text-dim">이 판의 규칙</h2>
+      <ul className="flex flex-col gap-1">
+        {rows.map((r) => (
+          <li key={r.key} className="flex items-baseline justify-between gap-3">
+            <span className="flex flex-col">
+              <span className="text-base">{r.name}</span>
+              <span className="text-xs text-dim">{r.note}</span>
+            </span>
+            {isHost ? (
+              <button
+                type="button"
+                onClick={() => onChange({ [r.key]: !r.on })}
+                aria-pressed={r.on}
+                className={`shrink-0 rounded-lg border px-3 py-1.5 font-mono text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                  r.on
+                    ? "border-sign bg-sign/15 text-ink"
+                    : "border-concrete-deep text-dim hover:bg-concrete-deep"
+                }`}
+              >
+                {r.on ? "켜짐" : "꺼짐"}
+              </button>
+            ) : (
+              <span className={`shrink-0 font-mono text-sm ${r.on ? "text-sign" : "text-dim"}`}>
+                {r.on ? "켜짐" : "꺼짐"}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+      {/* 달리는 중에 규칙이 바뀌면 먼저 지나간 사람과 나중 사람이 다른 게임을 한 것이 된다. */}
+      {isHost && <p className="text-xs text-dim">출발하면 바꿀 수 없습니다</p>}
+    </section>
   );
 }
 

@@ -11,10 +11,13 @@ import {
   join,
   leave,
   makeRoomCode,
+  nextRound,
+  nominate,
   progress,
   setReady,
   standings,
   startCountdown,
+  tally,
   tick,
   type Room,
 } from "./rooms.ts";
@@ -69,6 +72,9 @@ function publish(room: Room) {
     status: room.status,
     hostId: room.hostId,
     startsAt: room.startsAt,
+    round: room.round,
+    /* 다음 판 후보. 방장이 무엇을 고를지 정하는 데 쓰고, 모두가 함께 본다. */
+    picks: tally(room),
     players: standings(room),
   });
 }
@@ -124,6 +130,50 @@ io.on("connection", (socket: Socket) => {
     const room = currentRoom(socket);
     if (!room) return;
     save(setReady(room, socket.id, Boolean(payload?.ready), Date.now()));
+  });
+
+  /*
+   * 다음 판 코스 추천. 한 사람에 하나다.
+   *
+   * 없는 코스를 보내면 무시한다 — 방 화면의 목록에서 고르게 되어 있지만,
+   * 소켓은 아무나 아무 말이나 보낼 수 있는 문이다.
+   */
+  socket.on("room:nominate", (payload: { courseId?: unknown }) => {
+    const room = currentRoom(socket);
+    if (!room) return;
+    const raw = typeof payload?.courseId === "string" ? payload.courseId : "";
+    const course = raw ? getCourse(raw) : null;
+    if (raw && !course) return;
+    save(nominate(room, socket.id, course?.id ?? null, Date.now()));
+  });
+
+  /*
+   * 같은 방에서 다음 판.
+   *
+   * 코스를 안 실어 보내면 표가 가장 많은 것으로, 표도 없으면 방금 한 코스를
+   * 한 번 더 한다. 방장이 아무것도 안 골라도 단추 하나로 이어진다.
+   */
+  socket.on("room:next", (payload: { courseId?: unknown }, ack?: (res: unknown) => void) => {
+    const room = currentRoom(socket);
+    if (!room) return ack?.({ ok: false, error: "방에 있지 않습니다" });
+
+    const asked = typeof payload?.courseId === "string" ? payload.courseId : "";
+    const wanted = asked || tally(room)[0]?.courseId || room.courseId;
+    const course = getCourse(wanted);
+    if (!course) return ack?.({ ok: false, error: "없는 코스입니다" });
+
+    const result = nextRound(room, {
+      playerId: socket.id,
+      courseId: course.id,
+      // 같은 방의 모두가 같은 순서를 봐야 하므로 시드는 방이 정한다. 판마다 새로.
+      seed: Math.floor(Math.random() * 2 ** 31),
+      total: course.regions.length,
+      now: Date.now(),
+    });
+    if (!result.ok) return ack?.({ ok: false, error: result.error });
+
+    save(result.value);
+    ack?.({ ok: true });
   });
 
   socket.on("room:start", (_payload: unknown, ack?: (res: unknown) => void) => {

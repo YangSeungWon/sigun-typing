@@ -88,6 +88,19 @@ export function useRoom() {
     });
   }, []);
 
+  /** 다음 판으로 하고 싶은 코스. 같은 것을 다시 부르면 취소된다. */
+  const nominate = useCallback((courseId: string | null) => {
+    socketRef.current?.emit("room:nominate", { courseId: courseId ?? "" });
+  }, []);
+
+  /** 같은 방에서 다음 판. 코스를 안 주면 표가 가장 많은 것으로 간다. */
+  const next = useCallback((courseId?: string) => {
+    setError(null);
+    socketRef.current?.emit("room:next", { courseId }, (ack: Ack) => {
+      if (!ack?.ok) setError(nextError(ack?.error));
+    });
+  }, []);
+
   const sendProgress = useCallback(
     (update: { index: number; cpm: number; accuracy: number }) => {
       socketRef.current?.emit("race:progress", update);
@@ -109,9 +122,23 @@ export function useRoom() {
     join,
     setReady,
     start,
+    nominate,
+    next,
     sendProgress,
     sendFinish,
   };
+}
+
+/** 다음 판을 못 열었을 때. */
+function nextError(code?: string): string {
+  switch (code) {
+    case "not_host":
+      return "방장만 다음 판을 열 수 있습니다";
+    case "not_finished":
+      return "아직 판이 끝나지 않았습니다";
+    default:
+      return "다음 판을 열지 못했습니다";
+  }
 }
 
 /** 서버가 주는 코드를 사람이 읽을 말로 바꾼다. */

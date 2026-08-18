@@ -27,6 +27,8 @@ export interface Player {
   /** 완주 순서. 미완주는 null. */
   rank: number | null;
   connected: boolean;
+  /** 다음 판으로 이 코스를 하자는 추천. 한 사람에 하나. */
+  pick: string | null;
 }
 
 export interface Room {
@@ -41,6 +43,8 @@ export interface Room {
   players: Player[];
   /** 카운트다운이 끝나고 실제로 출발하는 서버 시각 */
   startsAt: number | null;
+  /** 이 방에서 몇 번째 판인가. 1부터. */
+  round: number;
   updatedAt: number;
 }
 
@@ -50,7 +54,9 @@ export type RoomError =
   | "not_host"
   | "not_ready"
   | "no_players"
-  | "not_racing";
+  | "not_racing"
+  | "not_finished"
+  | "no_course";
 
 export type RoomResult<T> = { ok: true; value: T } | { ok: false; error: RoomError };
 
@@ -75,6 +81,7 @@ export function createRoom(input: {
     status: "waiting",
     players: [],
     startsAt: null,
+    round: 1,
     updatedAt: input.now,
   };
 }
@@ -84,7 +91,15 @@ export function join(
   player: { id: string; nickname: string },
   now: number,
 ): RoomResult<Room> {
-  if (room.status !== "waiting") return err("already_started");
+  /*
+   * 끝난 방에도 들어올 수 있다.
+   *
+   * 한 판이 끝나면 방이 그대로 남아 다음 코스로 이어진다. 그 사이에 도착한
+   * 사람을 문 앞에서 돌려보내면, 링크를 받고 뒤늦게 온 친구는 영영 못 들어온다.
+   */
+  if (room.status !== "waiting" && room.status !== "finished") {
+    return err("already_started");
+  }
   if (room.players.filter((p) => p.connected).length >= MAX_PLAYERS) {
     return err("room_full");
   }
@@ -99,6 +114,7 @@ export function join(
     finishedAt: null,
     rank: null,
     connected: true,
+    pick: null,
   };
 
   return ok({
@@ -208,6 +224,78 @@ function closeIfDone(room: Room): Room {
   const running = room.players.filter((p) => p.connected && p.finishedAt === null);
   if (running.length > 0) return room;
   return { ...room, status: "finished" };
+}
+
+/**
+ * 다음 판으로 할 코스를 추천한다. 한 사람에 하나이고, 다시 부르면 바뀐다.
+ *
+ * 정하는 것은 여전히 방장이다. 표가 결정을 대신하면 여덟 명이 다 고를 때까지
+ * 아무도 시작을 못 하고, 한 명이 안 고르면 방이 멈춘다. 여기서 표가 하는 일은
+ * **방장에게 무엇을 하고 싶은지 알려 주는 것**이다.
+ */
+export function nominate(
+  room: Room,
+  playerId: string,
+  courseId: string | null,
+  now: number,
+): Room {
+  return {
+    ...room,
+    players: room.players.map((p) => (p.id === playerId ? { ...p, pick: courseId } : p)),
+    updatedAt: now,
+  };
+}
+
+/** 추천을 많은 순으로 센다. 같은 표면 먼저 고른 쪽이 앞이다. */
+export function tally(room: Room): { courseId: string; votes: number }[] {
+  const counts = new Map<string, number>();
+  for (const p of room.players) {
+    if (!p.connected || !p.pick) continue;
+    counts.set(p.pick, (counts.get(p.pick) ?? 0) + 1);
+  }
+  return [...counts]
+    .map(([courseId, votes]) => ({ courseId, votes }))
+    .sort((a, b) => b.votes - a.votes);
+}
+
+/**
+ * 같은 방에서 다음 판을 연다.
+ *
+ * 방을 새로 파지 않는다. 한 판 끝날 때마다 코드를 다시 부르고 링크를 다시
+ * 보내야 한다면, 그건 친구들과 한 판 더 하는 자리가 아니라 매번 처음부터
+ * 모이는 자리다.
+ *
+ * 달린 기록은 지운다 — 남겨 두면 다음 판 순위표에 지난 판 등수가 섞인다.
+ * 추천도 지운다. 그 추천은 이번 판을 고르려던 것이었다.
+ */
+export function nextRound(
+  room: Room,
+  input: { playerId: string; courseId: string; seed: number; total: number; now: number },
+): RoomResult<Room> {
+  if (room.hostId !== input.playerId) return err("not_host");
+  if (room.status !== "finished") return err("not_finished");
+  if (!input.courseId) return err("no_course");
+
+  return ok({
+    ...room,
+    courseId: input.courseId,
+    seed: input.seed,
+    total: input.total,
+    status: "waiting",
+    startsAt: null,
+    round: room.round + 1,
+    players: room.players.map((p) => ({
+      ...p,
+      ready: false,
+      index: 0,
+      cpm: 0,
+      accuracy: 1,
+      finishedAt: null,
+      rank: null,
+      pick: null,
+    })),
+    updatedAt: input.now,
+  });
 }
 
 /** 순위표 정렬 — 완주자가 완주 순서대로 먼저, 나머지는 진행도순. */

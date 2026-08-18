@@ -8,10 +8,13 @@ import {
   join,
   leave,
   makeRoomCode,
+  nextRound,
+  nominate,
   progress,
   setReady,
   standings,
   startCountdown,
+  tally,
   tick,
   type Room,
 } from "./rooms";
@@ -217,5 +220,114 @@ describe("방 코드", () => {
 
   it("여섯 자리다", () => {
     expect(makeRoomCode()).toHaveLength(6);
+  });
+});
+
+describe("다음 판", () => {
+  /** 한 판을 끝까지 돌린 방. */
+  function done(...names: string[]): Room {
+    let r = racing(...names);
+    r.players.forEach((p, i) => {
+      r = finish(r, p.id, T0 + COUNTDOWN_MS + 10_000 + i);
+    });
+    return r;
+  }
+
+  it("끝난 방에는 들어올 수 있다", () => {
+    const r = done("하나");
+    const result = join(r, { id: "s9", nickname: "늦둥이" }, T0);
+    expect(result.ok).toBe(true);
+  });
+
+  it("달리는 중에는 들어올 수 없다", () => {
+    const r = racing("하나");
+    const result = join(r, { id: "s9", nickname: "늦둥이" }, T0);
+    expect(result).toEqual({ ok: false, error: "already_started" });
+  });
+
+  it("추천은 한 사람에 하나이고 다시 부르면 바뀐다", () => {
+    let r = done("하나", "둘");
+    r = nominate(r, "s0", "gangwon", T0);
+    r = nominate(r, "s0", "jeju", T0);
+    expect(r.players.find((p) => p.id === "s0")?.pick).toBe("jeju");
+  });
+
+  it("표가 많은 코스가 앞에 온다", () => {
+    let r = done("하나", "둘", "셋");
+    r = nominate(r, "s0", "gangwon", T0);
+    r = nominate(r, "s1", "jeju", T0);
+    r = nominate(r, "s2", "jeju", T0);
+    expect(tally(r)).toEqual([
+      { courseId: "jeju", votes: 2 },
+      { courseId: "gangwon", votes: 1 },
+    ]);
+  });
+
+  it("나간 사람의 표는 세지 않는다", () => {
+    let r = done("하나", "둘");
+    r = nominate(r, "s1", "jeju", T0);
+    r = leave(r, "s1", T0);
+    expect(tally(r)).toEqual([]);
+  });
+
+  it("방장만 다음 판을 연다", () => {
+    const r = done("하나", "둘");
+    const result = nextRound(r, {
+      playerId: "s1",
+      courseId: "gangwon",
+      seed: 3,
+      total: 18,
+      now: T0,
+    });
+    expect(result).toEqual({ ok: false, error: "not_host" });
+  });
+
+  it("끝나지 않은 방에서는 열 수 없다", () => {
+    const r = racing("하나");
+    const result = nextRound(r, {
+      playerId: "s0",
+      courseId: "gangwon",
+      seed: 3,
+      total: 18,
+      now: T0,
+    });
+    expect(result).toEqual({ ok: false, error: "not_finished" });
+  });
+
+  it("코스와 판 수가 갈리고 달린 기록은 지워진다", () => {
+    let r = done("하나", "둘");
+    r = nominate(r, "s0", "gangwon", T0);
+    const result = nextRound(r, {
+      playerId: "s0",
+      courseId: "gangwon",
+      seed: 3,
+      total: 18,
+      now: T0 + 1,
+    });
+    if (!result.ok) throw new Error(result.error);
+    const next = result.value;
+
+    expect(next.status).toBe("waiting");
+    expect(next.courseId).toBe("gangwon");
+    expect(next.total).toBe(18);
+    expect(next.round).toBe(2);
+    expect(next.players.every((p) => p.rank === null)).toBe(true);
+    expect(next.players.every((p) => p.index === 0)).toBe(true);
+    expect(next.players.every((p) => !p.ready)).toBe(true);
+    expect(next.players.every((p) => p.pick === null)).toBe(true);
+  });
+
+  it("방장이 나가도 이어받은 사람이 다음 판을 연다", () => {
+    let r = done("하나", "둘");
+    r = leave(r, "s0", T0);
+    expect(r.hostId).toBe("s1");
+    const result = nextRound(r, {
+      playerId: "s1",
+      courseId: "jeju",
+      seed: 1,
+      total: 2,
+      now: T0,
+    });
+    expect(result.ok).toBe(true);
   });
 });

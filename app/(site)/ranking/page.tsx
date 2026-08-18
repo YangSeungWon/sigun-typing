@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
-import type { Course } from "@/data/types";
+import { COURSE_PICKER_GROUPS } from "@/lib/courses/picker";
 import { getScoreRepository } from "@/lib/db/client";
 import { SCORING_VERSION } from "@/lib/score/version";
 import {
@@ -25,28 +25,6 @@ export const metadata = {
 
 /** 겨루는 판은 본편 하나다. lib/game/modes.ts의 RANKED_MODES가 그 목록이다. */
 const BOARD_MODE = RANKED_MODES[0];
-
-/**
- * select에 담을 묶음.
- *
- * 전국 둘과 시도 열일곱이 이 게임의 사다리라 위에 온다. 읍면동 252개는
- * 그 아래 시도별로 나눈다 — `중구 9개 동`이 부산인지 대구인지는 이름만
- * 봐서 알 수 없고, parentName의 앞 토막이 그 답이다.
- */
-const PICKERS: { label: string; courses: Course[] }[] = (() => {
-  const ladder = COURSES.filter((c) => c.level !== "dong");
-  const groups = [
-    { label: "전국", courses: ladder.filter((c) => c.group === "nationwide") },
-    { label: "시도", courses: ladder.filter((c) => c.group !== "nationwide") },
-  ];
-  for (const c of COURSES.filter((c) => c.level === "dong")) {
-    const label = c.parentName?.split(" ")[0] ?? "읍면동";
-    const hit = groups.find((g) => g.label === label);
-    if (hit) hit.courses.push(c);
-    else groups.push({ label, courses: [c] });
-  }
-  return groups.filter((g) => g.courses.length > 0);
-})();
 
 function formatClock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -126,7 +104,7 @@ export default async function RankingPage({
             defaultValue={course.id}
             className="min-w-0 flex-1 rounded-lg border border-concrete-deep bg-paint px-4 py-2 text-base font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            {PICKERS.map((g) => (
+            {COURSE_PICKER_GROUPS.map((g) => (
               <optgroup key={g.label} label={g.label}>
                 {g.courses.map((c) => (
                   <option key={c.id} value={c.id}>

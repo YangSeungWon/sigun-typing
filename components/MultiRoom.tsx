@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
+import { COURSE_PICKER_GROUPS } from "@/lib/courses/picker";
 import { useRoom } from "@/lib/multiplayer/useRoom";
 import { useCourseGeo } from "@/lib/useCourseGeo";
 import { getSavedNickname, saveNickname } from "@/lib/score/client";
@@ -26,6 +27,8 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     join,
     setReady,
     start,
+    nominate,
+    next,
     sendProgress,
     sendFinish,
   } = useRoom();
@@ -191,9 +194,12 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             차지하고 **정작 `대결방 만들기` 버튼을 화면 밖으로 밀어냈다.**
             휴대폰에서는 아래 탭 바 뒤에 숨어서 아예 보이지 않았다.
 
-            골라야 하는 것이 열일곱 중 하나뿐이므로 목록으로 충분하다. 브라우저
-            기본 select를 쓰는 이유: 휴대폰에서 운영체제 선택기가 뜨는 것이
-            직접 만든 어떤 것보다 낫고, 키보드와 스크린리더도 공짜로 따라온다.
+            목록으로 충분하다. 브라우저 기본 select를 쓰는 이유: 휴대폰에서
+            운영체제 선택기가 뜨는 것이 직접 만든 어떤 것보다 낫고, 키보드와
+            스크린리더도 공짜로 따라온다.
+
+            시도별로 묶는다 — 읍면동이 들어오며 270개가 됐고, `중구 9개 동`이
+            부산인지 대구인지는 이름만 봐서 알 수 없다.
           */}
           <select
             id="course"
@@ -201,10 +207,14 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             onChange={(e) => setCourseId(e.target.value)}
             className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            {COURSES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+            {COURSE_PICKER_GROUPS.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <button
@@ -269,7 +279,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     if (!course) return null;
     return (
       <div className="flex w-full max-w-xl flex-col gap-6">
-        <RoomHeader code={room.id} courseName={course.name} />
+        <RoomHeader code={room.id} courseName={course.name} round={room.round} />
         <MultiRace
           course={course}
           geo={geo}
@@ -279,6 +289,15 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
           onProgress={sendProgress}
           onFinish={sendFinish}
         />
+        {room.status === "finished" && (
+          <NextRound
+            picks={room.picks}
+            myPick={room.players.find((p) => p.id === selfId)?.pick ?? null}
+            isHost={isHost}
+            onNominate={nominate}
+            onNext={next}
+          />
+        )}
       </div>
     );
   }
@@ -286,7 +305,11 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
   // ── 대기실 ────────────────────────────────────────────────────
   return (
     <div className="flex w-full max-w-md flex-col gap-6">
-      <RoomHeader code={room.id} courseName={course?.name ?? room.courseId} />
+      <RoomHeader
+        code={room.id}
+        courseName={course?.name ?? room.courseId}
+        round={room.round}
+      />
 
       <InviteLink code={room.id} />
 
@@ -330,7 +353,100 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
   );
 }
 
-function RoomHeader({ code, courseName }: { code: string; courseName: string }) {
+/**
+ * 다음 판.
+ *
+ * 한 판이 끝나면 방이 그대로 남는다. 코드를 다시 부르고 링크를 다시 보내야
+ * 한다면, 그건 친구들과 한 판 더 하는 자리가 아니라 매번 처음부터 모이는
+ * 자리다.
+ *
+ * 고르는 것은 방장이되 **모두가 하고 싶은 곳을 말할 수 있다.** 표가 결정을
+ * 대신하면 여덟 명이 다 고를 때까지 아무도 시작을 못 하고, 한 명이 안 고르면
+ * 방이 멈춘다. 여기서 표가 하는 일은 방장에게 무엇을 하고 싶은지 알려 주는
+ * 것이다.
+ */
+function NextRound({
+  picks,
+  myPick,
+  isHost,
+  onNominate,
+  onNext,
+}: {
+  picks: { courseId: string; votes: number }[];
+  myPick: string | null;
+  isHost: boolean;
+  onNominate: (courseId: string | null) => void;
+  onNext: (courseId?: string) => void;
+}) {
+  /* 방장이 그냥 누르면 표가 가장 많은 곳으로 간다. 그게 없으면 서버가 방금 한 코스를 다시 연다. */
+  const leading = picks[0]?.courseId;
+
+  return (
+    <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep p-5">
+      <h2 className="text-sm font-medium text-dim">다음 판</h2>
+
+      <label className="sr-only" htmlFor="next-course">
+        하고 싶은 코스
+      </label>
+      <select
+        id="next-course"
+        value={myPick ?? ""}
+        onChange={(e) => onNominate(e.target.value || null)}
+        className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        <option value="">하고 싶은 코스 고르기</option>
+        {COURSE_PICKER_GROUPS.map((g) => (
+          <optgroup key={g.label} label={g.label}>
+            {g.courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+
+      {/*
+        표는 이름과 수만 적는다. 막대나 비율로 그리면 투표처럼 보이는데,
+        정하는 것은 방장이라 그 그림이 거짓말이 된다.
+      */}
+      {picks.length > 0 && (
+        <ul className="flex flex-col gap-1 text-sm">
+          {picks.map((p) => (
+            <li key={p.courseId} className="flex items-baseline justify-between gap-3">
+              <span className={p.courseId === myPick ? "font-medium" : "text-dim"}>
+                {getCourse(p.courseId)?.name ?? p.courseId}
+              </span>
+              <span className="font-mono tabular-nums text-dim">{p.votes}표</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {isHost ? (
+        <button
+          type="button"
+          onClick={() => onNext(leading)}
+          className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          {leading ? `${getCourse(leading)?.name ?? leading} 한 판 더` : "같은 코스 한 판 더"}
+        </button>
+      ) : (
+        <p className="text-sm text-dim">방장이 다음 판을 열면 대기실로 돌아갑니다</p>
+      )}
+    </section>
+  );
+}
+
+function RoomHeader({
+  code,
+  courseName,
+  round,
+}: {
+  code: string;
+  courseName: string;
+  round: number;
+}) {
   return (
     <header className="flex flex-col gap-2">
       <BackLink href="/">시군 타이핑</BackLink>
@@ -338,7 +454,11 @@ function RoomHeader({ code, courseName }: { code: string; courseName: string }) 
         <span className="font-mono text-3xl font-semibold tracking-[0.2em]">
           {code}
         </span>
-        <span className="text-sm text-dim">{courseName}</span>
+        <span className="text-sm text-dim">
+          {/* 첫 판에는 안 적는다. `1판째`는 아무 말도 아니다. */}
+          {round > 1 && <span className="font-mono tabular-nums">{round}판째 · </span>}
+          {courseName}
+        </span>
       </div>
     </header>
   );

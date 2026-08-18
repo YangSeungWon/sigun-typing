@@ -440,7 +440,8 @@ for (const [year, group] of [...byYear].sort()) {
     const dropped = new Set<Shape>();
     for (const r of order) {
       const [x, y] = r.at!;
-      const [w, h] = [(r.label ?? "").length * 7.5, 15];
+      /* 화면에서 16px로 그린다. 한글 한 글자가 그만큼이고 여유를 조금 둔다. */
+      const [w, h] = [(r.label ?? "").length * 18, 19];
       const box: [number, number, number, number] = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
       if (boxes.some((o) => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1])) {
         dropped.add(r);

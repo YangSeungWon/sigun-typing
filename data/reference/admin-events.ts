@@ -184,3 +184,22 @@ export const SIGUNGU_EVENTS: AdminEvent[] = [
 
 export const SIDO_EVENT_BY_YEAR = new Map(SIDO_EVENTS.map((e) => [e.seenAt, e]));
 export const SIGUNGU_EVENT_BY_YEAR = new Map(SIGUNGU_EVENTS.map((e) => [e.seenAt, e]));
+
+/**
+ * 일어났지만 **경계 자료가 아직 없는** 개편.
+ *
+ * SGIS 최신판이 2025년이라 그 뒤의 개편은 지도가 없다. 그렇다고 빼 두면
+ * 변천사가 2024년에서 끝나 버리는데, 그건 사실이 아니라 자료의 한계다 —
+ * 가장 최근의 가장 큰 개편이 없는 연표는 낡은 것처럼 읽힌다.
+ *
+ * 여기 적어 두면 그 한계가 화면에 드러나고, 게임이 왜 아직 `광주광역시`를
+ * 묻는지도 같은 자리에서 설명된다(`data/reference/pinned-2025.ts`).
+ *
+ * 새 경계 자료를 구하면 이 목록이 그대로 할 일이 된다. 지우면 실제 사건이
+ * 도형에서 저절로 잡힌다.
+ */
+export const UNMAPPED: { from: string[]; to: string[] }[] = [
+  { from: ["광주광역시", "전라남도"], to: ["전남광주통합특별시"] },
+  { from: ["인천 중구", "인천 동구"], to: ["제물포구", "영종구"] },
+  { from: ["인천 서구"], to: ["서해구", "검단구"] },
+];

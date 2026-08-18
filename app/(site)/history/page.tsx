@@ -3,6 +3,8 @@ import { BackLink } from "@/components/BackLink";
 import { Timelapse, type TimelapseData } from "@/components/Timelapse";
 import timelapse from "@/data/timelapse/sido.json";
 import changes from "@/data/reference/boundary-changes.json";
+import { UNMAPPED } from "@/data/reference/admin-events";
+import { DATA_VINTAGE } from "@/data/vintage";
 import eventYears from "@/data/timelapse/event-years.json";
 
 const DATA = timelapse as TimelapseData;
@@ -96,6 +98,37 @@ export default function HistoryPage() {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      {/*
+        일어났지만 지도가 없는 개편.
+
+        빼 두면 연표가 2024년에서 끝나는데, 그건 사실이 아니라 자료의
+        한계다 — 가장 최근의 가장 큰 개편이 없는 연표는 낡은 것처럼 읽힌다.
+        여기 세워 두면 그 한계가 드러나고, 게임이 왜 아직 `광주광역시`를
+        묻는지도 같은 자리에서 설명된다.
+      */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">아직 지도가 없는 개편</h2>
+        <p className="text-sm break-keep text-dim">
+          {DATA_VINTAGE.boundarySource}가 {DATA_VINTAGE.year}년까지라 아래는
+          지도로 그리지 못했습니다. 게임의 정답도 같은 이유로 {DATA_VINTAGE.year}년
+          기준입니다.
+        </p>
+        <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
+          {UNMAPPED.map((c) => (
+            <li
+              key={c.to.join()}
+              className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2.5 text-base break-keep"
+            >
+              <span className="text-dim">{c.from.join(", ")}</span>
+              <span aria-label="에서" className="font-mono text-dim">
+                →
+              </span>
+              <span className="font-medium">{c.to.join(", ")}</span>
+            </li>
+          ))}
         </ul>
       </section>
 

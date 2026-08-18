@@ -202,8 +202,13 @@ export const RegionMap = memo(function RegionMap({
         */}
         {geo.terrain && (
           <g className="pointer-events-none" clipPath={`url(#${clipId}-land)`} aria-hidden>
+            {/*
+              띠는 겹쳐 쌓인다. 위 띠는 아래 띠 안에 들어 있으므로 색이
+              누적된다 — 넉 장이면 0.4씩 겹쳐 0.4 · 0.64 · 0.78 · 0.87이 된다.
+              장수가 늘 때 한 장의 농도를 낮춰야 층계가 고르게 남는다.
+            */}
             {geo.terrain.map((d, i) => (
-              <path key={i} d={d} fill="var(--color-relief)" opacity={0.5} />
+              <path key={i} d={d} fill="var(--color-relief)" opacity={0.4} />
             ))}
           </g>
         )}

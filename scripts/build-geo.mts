@@ -96,6 +96,19 @@ const WATER_RESOLUTION = "1400x1400";
 const WATER_MIN_PX = 6;
 
 /**
+ * 물줄기 하나가 이만큼은 그려져야 물길 층을 켠다(픽셀, 판 너비는 1000쯤).
+ *
+ * 종로구는 물길이 파란 점 두세 개다 — 청계천이 복개돼 OSM에 없기 때문인데,
+ * 결과적으로 물이 아니라 때처럼 보인다. 몇 점만 남을 바에는 없는 편이 낫다.
+ *
+ * 잣대를 **선에만** 건다. 길이의 합으로 재 봤더니 종로가 1,822px이었고, 모든
+ * 조각 중 가장 긴 것으로 재도 320px이었다 — 강이 아니라 **못의 둘레**다.
+ * 물이 물로 보이려면 흐르는 줄기가 있어야 한다. 못만 남은 판은 물길 층이
+ * 아니다.
+ */
+const WATER_TRUNK_MIN_PX = 200;
+
+/**
  * 전국 지도에서는 **길게 그려지는 강만** 남긴다(픽셀).
  *
  * 전부 얹으면 실타래가 되지만, 한강·낙동강·금강·영산강은 전국 축척에서도
@@ -103,7 +116,7 @@ const WATER_MIN_PX = 6;
  * `fclass=river`만으로는 못 가른다. 짧은 지방 하천도 river이므로, 그려 놓고
  * 길이로 자른다.
  */
-const WATER_TRUNK_PX = 120;
+const WATER_TRUNK_PX = 240;
 
 /**
  * 고도 띠가 사는 곳. `npm run build:terrain`이 채운다.
@@ -115,12 +128,26 @@ const DEM_DIR = join(ROOT, "data/geo/source/dem");
 const DEM_SIDE = 3601;
 
 /**
- * 고도를 나누는 자리(m).
+ * 고도를 몇 단으로 나눌 것인가, 그리고 그 자리를 **어디서** 잡을 것인가.
  *
- * 넷이면 족하다 — 평야·구릉·산지·고산. 더 잘게 나누면 지도가 시끄러워지고,
- * 이 지도가 하려는 말은 "여기가 산이다"이지 등고선 읽기가 아니다.
+ * 고정된 높이(100·300·700m)로 끊고 있었다. 그러면 어느 코스에서는 아무것도
+ * 안 칠해지고 어느 코스에서는 전부 칠해진다 — SRTM으로 재 보니 서울은
+ * 75%가 83m 아래인데 강원은 25%가 이미 215m 위다. **서울 땅의 대부분이
+ * 강원의 가장 낮은 자리보다 낮다.** 한 벌로는 둘 다 못 맞춘다.
+ *
+ * 그래서 코스마다 자기 땅의 분포에서 자리를 잡는다. 이 지도가 하려는 말은
+ * "해발 몇 미터"가 아니라 "여기가 이 동네에서 높은 곳"이고, 범례도 없다.
  */
-const TERRAIN_BANDS = [100, 300, 700];
+const TERRAIN_QUANTILES = [0.3, 0.55, 0.78, 0.93];
+
+/**
+ * 그래도 이보다 낮은 자리에서는 안 끊고, 띠 사이는 이만큼은 벌린다(m).
+ *
+ * 없으면 태안처럼 평평한 곳에서 5m 차이가 산맥처럼 칠해진다. 평평한 곳은
+ * 평평하게 보여야 한다.
+ */
+const TERRAIN_FLOOR = 20;
+const TERRAIN_STEP_M = 25;
 
 /**
  * 격자를 몇 픽셀마다 뜰 것인가.
@@ -756,6 +783,16 @@ async function waterFor(
         .join("")
     : "";
   const areas = bake(clipped.areas, true);
+
+  /*
+   * 남은 것이 티끌뿐이면 없던 일로 한다. 선은 길이로, 면은 테두리 길이로 잰다.
+   */
+  const longest = Math.max(
+    0,
+    ...lines.split("M").filter(Boolean).map((piece) => drawnLength(`M${piece}`)),
+  );
+  if (longest < WATER_TRUNK_MIN_PX) return null;
+
   return lines || areas ? { lines, areas } : null;
 }
 
@@ -809,9 +846,25 @@ async function terrainFor(
     }
   }
 
+  /*
+   * 이 코스의 땅에서 띠 자리를 잡는다.
+   *
+   * 바다와 값 없음(0)은 뺀다. 그것까지 세면 섬이 많은 코스에서 분위수가
+   * 통째로 0 쪽으로 쏠린다.
+   */
+  const land = Array.from(grid).filter((v) => v > 0).sort((a, b) => a - b);
+  if (land.length < 50) return null;
+
+  let floor = TERRAIN_FLOOR;
+  const cuts = TERRAIN_QUANTILES.map((q) => {
+    const v = Math.max(land[Math.floor(land.length * q)], floor);
+    floor = v + TERRAIN_STEP_M;
+    return Math.round(v);
+  });
+
   const { contours } = await import("d3-contour");
   /* smooth를 끄면 계단이 남지만 점이 준다. 옅은 덩어리라 계단이 안 보인다. */
-  const maker = contours().size([cols, rows]).thresholds(TERRAIN_BANDS).smooth(false);
+  const maker = contours().size([cols, rows]).thresholds(cuts).smooth(false);
   const path = geoPath().digits(0);
 
   /*
@@ -1042,8 +1095,14 @@ async function buildCourse(course: Course, legacy: Map<string, string>): Promise
   const water = await waterFor(
     landShape,
     projection,
-    // 전국 지도에서는 큰 강만. 실개천까지 얹으면 실타래가 된다.
-    course.level === "sido" ? WATER_TRUNK_PX : 0,
+    /*
+     * 전국 지도에서는 큰 강만. 실개천까지 얹으면 실타래가 된다.
+     *
+     * 층이 아니라 **축척**으로 가른다. `level === "sido"`로 걸었더니 같은
+     * 축척인 전국 시군구 지도가 실개천을 다 받아 파란 보풀이 됐다. 전국이
+     * 담기는 판은 그 둘이고, 그게 곧 `nationwide` 권역이다.
+     */
+    course.group === "nationwide" ? WATER_TRUNK_PX : 0,
   );
 
   const terrain = await terrainFor(projection, width, height);

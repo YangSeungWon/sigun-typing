@@ -37,6 +37,28 @@ export const EVENT_NAMES = [
   "mode_switch",
   /** 결과를 도전장으로 내보냈다 — 이 게임이 퍼지는 유일한 통로 */
   "share_clicked",
+
+  /*
+   * 대결 퍼널.
+   *
+   * 답하려는 질문은 하나다 — 대결이 안 쓰이는 것이 **길이 안 보여서**인가,
+   * **혼자라서**인가. 아흐레 동안 대결 기록이 0건이었는데, 그게 아무도 대결
+   * 화면에 닿지 않아서인지 닿았지만 부를 사람이 없어서인지를 지금은 가를 수
+   * 없다. 답이 갈려야 다음이 정해진다 — 앞쪽이면 입구 문제이고, 뒤쪽이면
+   * 빠른 참가나 공개방 같은 것이 필요하다는 뜻이다.
+   *
+   * versus_view → versus_create → versus_start(total≥2)가 그 퍼널이다.
+   * 만들었는데 출발이 없거나 늘 total=1이면 혼자 기다리다 나간 것이다.
+   */
+
+  /** 대결 화면에 도달했다 */
+  "versus_view",
+  /** 방을 만들었다 */
+  "versus_create",
+  /** 남의 방에 들어갔다. 코드를 받았거나 링크를 눌렀다 */
+  "versus_join",
+  /** 실제로 출발했다. total이 그때 방에 있던 사람 수다 — 이게 성사 여부다 */
+  "versus_start",
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];

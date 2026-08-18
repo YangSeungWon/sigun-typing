@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
@@ -8,6 +8,7 @@ import { COURSE_PICKER_GROUPS } from "@/lib/courses/picker";
 import { useRoom } from "@/lib/multiplayer/useRoom";
 import { useCourseGeo } from "@/lib/useCourseGeo";
 import { getSavedNickname, saveNickname } from "@/lib/score/client";
+import { track } from "@/lib/analytics/track";
 import { MultiRace } from "./MultiRace";
 import { Standings } from "./Standings";
 
@@ -34,6 +35,43 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     sendFinish,
     sendGiveUp,
   } = useRoom();
+
+  /*
+   * 실제로 출발했다. **이게 성사 여부다.**
+   *
+   * 방마다 판마다 한 번만 세야 하는데, 방에 있는 모두가 같은 순간에 이 코드를
+   * 지난다. 그래서 이벤트 id를 방·판으로 짓는다 — 서버가 event_id가 겹치면
+   * 버리므로 여덟 명이 보내도 한 건으로 남는다. 방장 한 사람에게 맡기면
+   * 그 사람의 전송이 유실될 때 판 하나가 통째로 안 세어진다.
+   *
+   * total에 그때 붙어 있던 사람 수를 싣는다. 1이면 혼자 달린 것이고, 그게
+   * 잦으면 부를 사람이 없다는 뜻이다.
+   */
+  const startSent = useRef<string | null>(null);
+  useEffect(() => {
+    if (!room || room.status !== "counting") return;
+    const key = `${room.id}-${room.round}`;
+    // 방 상태는 타건마다 날아온다. 한 판에 한 번만 센다.
+    if (startSent.current === key) return;
+    startSent.current = key;
+    track({
+      name: "versus_start",
+      id: `versus-${key}`,
+      courseId: room.courseId,
+      mode: "multi",
+      total: room.players.filter((p) => p.connected).length,
+    });
+  }, [room]);
+
+  /*
+   * 대결 화면에 도달했다.
+   *
+   * 여기서부터 세지 않으면 대결이 안 쓰이는 이유를 영영 못 가른다 — 아무도
+   * 안 왔는지, 왔는데 혼자였는지가 갈리지 않는다.
+   */
+  useEffect(() => {
+    track({ name: "versus_view" });
+  }, []);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
@@ -75,22 +113,26 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
 
   const doCreate = async () => {
     setBusy(true);
-    await create(courseId, nickname());
+    const ok = await create(courseId, nickname());
+    // 만들려다 실패한 것과 만든 것은 다른 일이다. 성공한 것만 센다.
+    if (ok) track({ name: "versus_create", courseId, mode: "multi" });
     setBusy(false);
   };
 
-  const doJoinCode = async (code: string) => {
+  /** 코드를 받았거나 링크를 눌러서 남의 방으로. 어느 쪽이든 부름을 받은 사람이다. */
+  const enter = async (code: string) => {
     setBusy(true);
-    await join(code.trim().toUpperCase(), nickname());
+    const ok = await join(code.trim().toUpperCase(), nickname());
+    if (ok) track({ name: "versus_join", mode: "multi" });
     setBusy(false);
   };
+
+  const doJoinCode = (code: string) => enter(code);
 
   const doJoin = async () => {
     const code = (codeRef.current?.value ?? "").trim();
     if (!code) return;
-    setBusy(true);
-    await join(code, nickname());
-    setBusy(false);
+    await enter(code);
   };
 
   // ── 초대 링크로 들어온 사람 ───────────────────────────────────

@@ -6,6 +6,7 @@ import changes from "@/data/reference/boundary-changes.json";
 import { UNMAPPED } from "@/data/reference/admin-events";
 import { DATA_VINTAGE } from "@/data/vintage";
 import eventYears from "@/data/timelapse/event-years.json";
+import summaries from "@/data/timelapse/event-summaries.json";
 
 const DATA = timelapse as TimelapseData;
 const FIRST = DATA.frames[0];
@@ -43,6 +44,27 @@ export default function HistoryPage() {
    */
   const sigungu = changes.sigungu;
 
+  /*
+   * 무엇이 무엇으로 바뀌었는지를 **짝으로** 적는다.
+   *
+   * 원본의 생김·사라짐 목록을 그대로 늘어놓고 있었다. 그러면 1995년이 이름
+   * 예순 개의 벽이 되고, 무엇보다 `나주군 사라짐`은 절반만 참이다 —
+   * 나주시와 나주군이 합쳐져 나주시가 된 것이고, 사라진 것은 이름이지
+   * 땅이 아니다. 그 짝은 도형에서만 나온다(build-history-events.mts).
+   *
+   * 넉 줄만 보일 때 무엇을 앞에 세우는가가 곧 그해의 요약이다. 손으로 적어
+   * 둔 줄(직할시 승격 같은 것)이 먼저, 그다음이 여럿을 하나로 합친 줄이다 —
+   * 1995년의 이야기는 도농통합인데 그게 뒤로 밀리면 넉 줄을 보고도 그해가
+   * 무슨 해인지 알 수 없다.
+   */
+  const paired = (year: string) => {
+    type Row = { dated?: boolean; from: string[]; to: string[] };
+    const all = (summaries as Record<string, Row[]>)[year] ?? [];
+    const rank = (c: Row) => (c.dated ? 0 : c.from.length > 1 ? 1 : 2);
+    const sorted = [...all].sort((a, b) => rank(a) - rank(b));
+    return { all, shown: all.length > 6 ? sorted.slice(0, 4) : sorted };
+  };
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
       <BackLink href="/">시군 타이핑</BackLink>
@@ -66,15 +88,35 @@ export default function HistoryPage() {
         </p>
         <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
           {sigungu.map((e) => {
+            const { all, shown } = paired(e.to);
+            const rest = all.length - shown.length;
             const row = (
               <>
                 <span className="shrink-0 font-mono text-sm tabular-nums text-dim">
                   {e.to}
                 </span>
-                <span className="flex flex-col gap-0.5 text-base break-keep">
-                  {e.born.length > 0 && <span>{e.born.join(", ")} 생김</span>}
-                  {e.gone.length > 0 && (
-                    <span className="text-dim">{e.gone.join(", ")} 사라짐</span>
+                <span className="flex flex-col gap-1 text-base break-keep">
+                  {shown.map((c, i) => (
+                    <span key={i} className="flex flex-wrap items-baseline gap-x-2">
+                      {c.from.length > 0 && (
+                        <span className={c.to.length ? "text-dim" : ""}>
+                          {c.from.join(", ")}
+                        </span>
+                      )}
+                      {c.from.length > 0 && c.to.length > 0 && (
+                        <span aria-label="에서" className="font-mono text-dim">
+                          →
+                        </span>
+                      )}
+                      {c.to.length > 0 && (
+                        <span className="font-medium">{c.to.join(", ")}</span>
+                      )}
+                      {c.from.length === 0 && <span className="text-sm text-dim">생김</span>}
+                      {c.to.length === 0 && <span className="text-sm text-dim">사라짐</span>}
+                    </span>
+                  ))}
+                  {rest > 0 && (
+                    <span className="font-mono text-sm text-dim">그 밖에 {rest}건</span>
                   )}
                 </span>
               </>

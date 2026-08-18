@@ -17,7 +17,7 @@ import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { geoCentroid, geoContains, geoMercator, geoPath } from "d3-geo";
+import { geoCentroid, geoContains, geoDistance, geoMercator, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
@@ -26,6 +26,7 @@ import {
   DONG_EVENTS,
   SIDO_EVENT_BY_YEAR,
   SIGUNGU_EVENT_BY_YEAR,
+  SOURCE_NAME_FIXES,
 } from "../data/reference/admin-events.ts";
 
 const run = promisify(execFile);
@@ -168,6 +169,19 @@ async function read(year: string, level: Level, file: string): Promise<Feature<G
     const topo = JSON.parse(Buffer.from(result["out.json"]).toString()) as Topology;
     const objKey = Object.keys(topo.objects)[0];
     const fc = feature(topo, topo.objects[objKey] as GeometryCollection) as FeatureCollection;
+
+    // 원본이 잘못 적어 둔 이름을 바로잡는다(admin-events.ts의 SOURCE_NAME_FIXES).
+    for (const fix of SOURCE_NAME_FIXES) {
+      if (fix.year !== year || fix.level !== level) continue;
+      for (const f of fc.features) {
+        const props = f.properties as Record<string, unknown>;
+        if (prop(props, "_cd") !== fix.code || prop(props, "_nm") !== fix.from) continue;
+        for (const k of Object.keys(props)) {
+          if (k.toLowerCase().endsWith("_nm")) props[k] = fix.to;
+        }
+      }
+    }
+
     cache.set(key, fc.features);
     return fc.features;
   } finally {
@@ -196,6 +210,14 @@ for (const e of changes.sigungu) {
 }
 
 const events: Event[] = [];
+
+/**
+ * 원본 자료의 해 → 그 해에 무엇이 무엇으로 바뀌었는가.
+ *
+ * `/history` 목록이 쓴다. 이름만 담는다 — 그 페이지는 도형이 필요 없고,
+ * 사건 전체를 가져오면 3MB가 딸려 온다.
+ */
+const summaries: Record<string, { dated?: boolean; from: string[]; to: string[] }[]> = {};
 
 for (const [year, group] of [...byYear].sort()) {
   const prevYear = years[years.indexOf(year) - 1];
@@ -355,11 +377,46 @@ for (const [year, group] of [...byYear].sort()) {
      * 그것이 흡수한 곳이다. 도농통합처럼 이름이 남지 않는 사건은 이 방법이
      * 아니면 `사라짐`으로만 적힌다.
      */
+    /*
+     * **접두사만 떨어진 곳은 이름으로 먼저 짝짓는다.**
+     *
+     * 광주가 직할시가 되면서 `광주시서구`는 `서구`가 됐다. 그런데 도형으로만
+     * 찾으면 옛 서구의 한가운데가 새 광산구 안에 들어가 `광주시서구, 광산군
+     * → 광산구` 한 줄이 된다 — 승격은 경계도 함께 손보므로 중심점이 이웃으로
+     * 넘어간다. 이럴 때는 이름 쪽이 더 강한 증거다.
+     *
+     * **뒤에서 잘라 붙는 경우만** 본다. `평택군`은 `평택시`로 끝나지 않으므로
+     * 이 규칙에 안 걸리고, 그래야 `송탄시, 평택군 → 평택시` 한 줄이 안 쪼개진다.
+     *
+     * 같은 이름이 여러 곳에 생겼으면(1990년에 서구가 광주·대전·인천에 다
+     * 생겼다) 그중에서 도형으로 가른다. 안에 안 들어가면 가장 가까운 것 —
+     * 경계가 크게 조정된 개편에서는 중심점이 이웃으로 넘어가지만, 그래도
+     * 대전이나 인천보다는 제 도시 쪽이 가깝다.
+     */
+    const bare = (f: Feature<Geometry>) => nameOf(f).replace(/\s+/g, "");
+    const byName = (g: Feature<Geometry>): Feature<Geometry> | undefined => {
+      const long = bare(g);
+      const cands = bornList.filter((b) => bare(b).length < long.length && long.endsWith(bare(b)));
+      if (cands.length === 1) return cands[0];
+      if (cands.length === 0) return undefined;
+      const at = geoCentroid(g as Parameters<typeof geoCentroid>[0]);
+      return (
+        cands.find((f) => geoContains(f as Parameters<typeof geoContains>[0], at)) ??
+        cands.reduce((a, b) =>
+          geoDistance(geoCentroid(b as Parameters<typeof geoCentroid>[0]), at) <
+          geoDistance(geoCentroid(a as Parameters<typeof geoCentroid>[0]), at)
+            ? b
+            : a,
+        )
+      );
+    };
+
     const absorbed = new Map<string, Feature<Geometry>[]>();
     const orphans: Feature<Geometry>[] = [];
     for (const g of goneList) {
       const at = geoCentroid(g as Parameters<typeof geoCentroid>[0]);
-      const host = now.find((f) => geoContains(f as Parameters<typeof geoContains>[0], at));
+      const host =
+        byName(g) ?? now.find((f) => geoContains(f as Parameters<typeof geoContains>[0], at));
       if (!host) {
         orphans.push(g);
         continue;
@@ -465,6 +522,20 @@ for (const [year, group] of [...byYear].sort()) {
       .map(codeOf),
     tone: "born",
   });
+
+  /*
+   * 목록용 요약은 **여기서** 챙긴다.
+   *
+   * 아래에서 같은 날짜의 사건을 하나로 합치는데, 그때 지도 한 장이 버려진다.
+   * 그래도 그 해에 무엇이 무엇으로 바뀌었는지는 목록에 남아야 한다 —
+   * `/history`의 줄은 원본 자료의 해마다 하나씩이기 때문이다.
+   */
+  summaries[year] = changes.map((c) => ({
+    /* 손으로 적어 둔 줄인지 가른다. 목록이 그 줄을 앞에 세운다. */
+    ...(c.on ? { dated: true } : {}),
+    from: c.from.map((x) => x.name),
+    to: c.to.map((x) => x.name),
+  }));
 
   events.push({
     year,
@@ -586,6 +657,18 @@ await writeFile(
 await writeFile(
   join(dirname(OUT), "event-years.json"),
   `${JSON.stringify(events.map((e) => e.year))}\n`,
+);
+
+/*
+ * 목록에 적을 짝.
+ *
+ * `/history`가 원본의 born·gone을 그대로 늘어놓고 있었다. 그러면 1995년이
+ * 이름 예순 개의 벽이 되고, `나주군 사라짐`처럼 절반만 참인 말이 된다 —
+ * 나주시와 나주군이 합쳐져 나주시가 된 것이다. 그 짝은 여기서만 알 수 있다.
+ */
+await writeFile(
+  join(dirname(OUT), "event-summaries.json"),
+  `${JSON.stringify(summaries)}\n`,
 );
 
 process.stdout.write(

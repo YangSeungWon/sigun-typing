@@ -18,8 +18,14 @@ describe("RegionMap", () => {
      *
      * 테두리는 그릴 것이 없어도 자리를 지킨다. 조건을 걸면 카운트다운이
      * 끝나는 순간 새로 태어나면서 트랜지션을 못 타고 지도와 따로 논다.
+     *
+     * 물길은 세지 않는다. 있는 코스와 없는 코스가 갈리고, 이 검사가 보는
+     * 것은 **지역이 다 그려졌는가**이지 지도에 무엇이 더 얹혔는가가 아니다.
      */
-    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length + 2);
+    const shapes = (html.match(/<path/g) ?? []).length;
+    // 물길은 면·선 두 장에 그것을 땅 안에 가두는 clipPath 한 장이 더 붙는다.
+    const water = geo.water ? 3 : 0;
+    expect(shapes - water).toBe(geo.regions.length + 2);
     expect(html).toContain(`viewBox="0 0 ${geo.width} ${geo.height}"`);
   });
 
@@ -40,8 +46,9 @@ describe("RegionMap", () => {
     );
     expect(html).toContain("var(--color-sign)");
     expect(html).toContain("var(--color-centerline)");
-    // 실루엣 한 장과 현재 지역 강조 테두리가 한 겹씩 더 붙는다.
-    expect(html.match(/<path/g) ?? []).toHaveLength(geo.regions.length + 2);
+    // 실루엣 한 장과 현재 지역 강조 테두리가 한 겹씩 더 붙는다. 물길은 세지 않는다.
+    const shapes = (html.match(/<path/g) ?? []).length;
+    expect(shapes - (geo.water ? 3 : 0)).toBe(geo.regions.length + 2);
   });
 
   it("진행을 보여 주는 지도에서는 노랑을 쓰지 않는다", () => {

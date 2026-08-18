@@ -30,6 +30,8 @@ export function SiteFooter() {
       >
         행정구역 데이터 기준 {DATA_VINTAGE.year} · {DATA_VINTAGE.boundarySource}
       </Link>
+      <span>물길 © OpenStreetMap</span>
+
       <span className="flex gap-4 pt-1">
         <Link href="/privacy" className="transition-colors hover:text-ink">
           개인정보 처리방침

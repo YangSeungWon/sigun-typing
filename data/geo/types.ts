@@ -16,4 +16,17 @@ export interface CourseGeo {
   height: number;
   /** 코스 순서와 같은 순서 */
   regions: RegionShape[];
+  /**
+   * 지도에 깔 물길. 있을 때만 실린다.
+   *
+   * 지역 도형과 **같은 투영으로 구운 화면 좌표**다. 지리 좌표가 아니라
+   * 픽셀이고 이름 같은 속성도 없다 — 그림이지 자료가 아니다.
+   * 출처는 OpenStreetMap이고 표시 의무가 있다(scripts/build-geo.mts).
+   */
+  water?: {
+    /** 강줄기. 선이라 stroke로 그린다. */
+    lines: string;
+    /** 호수·저수지·넓은 강. 면이라 fill로 그린다. */
+    areas: string;
+  };
 }

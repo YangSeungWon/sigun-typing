@@ -56,6 +56,66 @@ const SGIS_LEVELS: Partial<Record<keyof typeof SOURCES, string>> = {
 const SGIS_DIR = join(ROOT, "data/geo/source/sgis");
 
 /**
+ * 물길 원본이 사는 곳.
+ *
+ * OpenStreetMap을 Geofabrik이 SHP으로 말아 둔 것이다(`south-korea-free.shp.zip`).
+ * 신청이 없어 바로 받을 수 있고 좌표계도 이미 WGS84라 변환이 필요 없다.
+ *
+ * **라이선스가 SGIS와 다르다.** OSM은 ODbL이라 표시가 의무다. 다만 여기서
+ * 굽는 것은 화면 좌표로 투영해 소수점 한 자리로 반올림한 path라 — 지리
+ * 좌표가 아니라 픽셀이고 속성도 하나 안 실린다 — 산출물(Produced Work)에
+ * 가깝고, 그러면 동일조건은 붙지 않는다. 이름 같은 속성을 싣기 시작하면
+ * 그 판단이 달라진다.
+ */
+const OSM_DIR = join(ROOT, "data/geo/source/osm");
+const OSM_ZIP = "south-korea-free.shp.zip";
+
+/**
+ * 얹을 물길.
+ *
+ * 실개천까지 다 얹으면 지도가 실타래가 된다. 강과 그만한 것만 남긴다.
+ * `water_a`는 면(호수·저수지·넓은 강), `waterways`는 선(강줄기)이다.
+ */
+const WATER_KINDS = ["river", "canal"];
+
+/**
+ * 물길도 지역 도형만큼 깎는다.
+ *
+ * OSM은 손으로 그린 자료라 강기슭이 지역 경계보다 훨씬 촘촘하다. 안 깎으면
+ * 서울 한 코스가 387KB가 된다 — 지역 도형 8KB 옆에서 물이 파일의 전부가 된다.
+ */
+const WATER_RESOLUTION = "1400x1400";
+
+/**
+ * 이보다 작게 그려지는 물은 버린다(픽셀).
+ *
+ * 연못까지 남기면 서울에만 면이 920조각이다. 1000px 판에서 몇 픽셀짜리 점은
+ * 물로 보이지도 않는다 — 얹는 뜻이 "이 동네에 강이 흐른다"인데 티끌은 그
+ * 말을 하지 않는다.
+ */
+const WATER_MIN_PX = 6;
+
+/**
+ * 전국 지도에서는 **길게 그려지는 강만** 남긴다(픽셀).
+ *
+ * 전부 얹으면 실타래가 되지만, 한강·낙동강·금강·영산강은 전국 축척에서도
+ * 지리를 설명한다 — 어느 도가 어느 강을 끼고 있는지는 그 자체로 읽을거리다.
+ * `fclass=river`만으로는 못 가른다. 짧은 지방 하천도 river이므로, 그려 놓고
+ * 길이로 자른다.
+ */
+const WATER_TRUNK_PX = 120;
+
+/*
+ * 바다는 따로 걸러 내지 않는다.
+ *
+ * 크기로 걸러 봤더니 그 잣대가 **한강까지 죽였다** — 한강 폴리곤은 강원부터
+ * 김포까지라 서울 판에 투영하면 양방향으로 판을 넘는다. 겉보기 크기로는
+ * 바다와 강을 못 가른다.
+ *
+ * 아래에서 땅 모양으로 잘라 내므로 바다는 저절로 사라진다. 땅과 안 겹친다.
+ */
+
+/**
  * 원본 필드명. **출처마다, 그리고 해마다 다르다.**
  *
  * 시도·시군구는 대문자 `CTPRVN_CD`/`SIG_CD`를 쓰고, SGIS 읍면동은
@@ -533,6 +593,140 @@ async function poolFor(course: Course): Promise<Piece[]> {
   return load(source.prefix);
 }
 
+/**
+ * 코스 지도 위에 얹을 물길.
+ *
+ * **코스가 이미 잡아 둔 투영을 그대로 받는다.** 따로 맞추면 강이 제자리에
+ * 안 얹힌다. 그리고 화면 밖은 잘라 낸다 — 전국 물길을 다 실으면 한강 하나
+ * 보자고 낙동강까지 따라온다.
+ *
+ * 원본이 없으면 조용히 건너뛴다. 이 자료는 신청은 없지만 578MB라, 없다고
+ * 빌드가 멈추면 지도조차 못 만든다.
+ */
+const waterCache = new Map<string, unknown>();
+async function waterFor(
+  land: GeoJsonMultiPolygon,
+  projection: ReturnType<typeof geoMercator>,
+  /** 이보다 짧게 그려지는 강줄기는 버린다. 전국 지도에서만 쓴다. */
+  minLength = 0,
+): Promise<{ lines: string; areas: string } | null> {
+  const zip = join(OSM_DIR, OSM_ZIP);
+  if (!existsSync(zip)) return null;
+
+  if (!waterCache.has("loaded")) {
+    process.stdout.write(`물길 원본을 읽는 중 ${OSM_ZIP}\n`);
+    const { execFile } = await import("node:child_process");
+    const { promisify } = await import("node:util");
+    const { mkdtemp, rm } = await import("node:fs/promises");
+    const { tmpdir } = await import("node:os");
+    const run = promisify(execFile);
+    const dir = await mkdtemp(join(tmpdir(), "osm-"));
+    try {
+      const mapshaper = (await import("mapshaper")).default;
+      for (const [key, name, filter] of [
+        ["lines", "gis_osm_waterways_free_1", `-filter '${JSON.stringify(WATER_KINDS)}.indexOf(fclass) > -1'`],
+        ["areas", "gis_osm_water_a_free_1", ""],
+      ] as const) {
+        await run("unzip", ["-q", "-o", zip, `${name}.*`, "-d", dir]);
+        const out = await mapshaper.applyCommands(
+          `-i in.shp ${filter} -o out.json format=geojson`,
+          {
+            "in.shp": await readFile(join(dir, `${name}.shp`)),
+            "in.dbf": await readFile(join(dir, `${name}.dbf`)),
+          },
+        );
+        waterCache.set(key, JSON.parse(Buffer.from(out["out.json"]).toString()));
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+    waterCache.set("loaded", true);
+  }
+
+  /*
+   * **땅 모양으로 미리 잘라서 굽는다.**
+   *
+   * 화면에서 실루엣으로 가리기만 해 봤더니 서울 한 코스가 8KB에서 815KB가
+   * 됐다. 안 보이는 물까지 전부 파일에 실렸기 때문이다 — 바다도 그중 하나다.
+   * 가리는 것과 빼는 것은 다르다.
+   *
+   * 자르고 나면 바다는 저절로 사라진다. 땅과 안 겹치기 때문이다.
+   */
+  const mapshaper = (await import("mapshaper")).default;
+  const clipped: Record<string, unknown> = {};
+  for (const key of ["lines", "areas"] as const) {
+    const out = await mapshaper.applyCommands(
+      `-i in.json -clip land.json -simplify visvalingam resolution=${WATER_RESOLUTION} -o out.json format=geojson`,
+      {
+      "in.json": Buffer.from(JSON.stringify(waterCache.get(key))),
+        "land.json": Buffer.from(
+          JSON.stringify({ type: "Feature", properties: {}, geometry: land }),
+        ),
+      },
+    );
+    clipped[key] = JSON.parse(Buffer.from(out["out.json"]).toString());
+  }
+
+  const path = geoPath(projection).digits(1);
+  /**
+   * 판에서 터무니없이 벗어난 조각은 버린다.
+   *
+   * 클립이 바다 쪽에서 좌표가 십만 단위인 덩어리를 남긴다. 화면에서는
+   * 클립에 가려 안 보이지만 파일에는 그대로 실리고, 무엇보다 그런 값이
+   * 섞여 있으면 크기를 재는 잣대가 다 망가진다.
+   */
+  const offscreen = (d: string) => {
+    const n = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+    return n.some((v) => v < -2000 || v > 4000);
+  };
+
+  /** 그려 놓고 보니 티끌인 것을 버린다. 점 개수가 아니라 **화면에서의 크기**로 잰다. */
+  const tiny = (d: string) => {
+    const n = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+    if (n.length < 4) return true;
+    const xs = n.filter((_, i) => i % 2 === 0);
+    const ys = n.filter((_, i) => i % 2 === 1);
+    /*
+     * 전국 지도에서는 잣대를 더 올린다. 같은 저수지라도 축척이 달라지면
+     * 몇 픽셀짜리 점이 되고, 점이 이백 개면 물이 아니라 잡티다.
+     */
+    const min = minLength > 0 ? WATER_MIN_PX * 3 : WATER_MIN_PX;
+    return (
+      Math.max(...xs) - Math.min(...xs) < min &&
+      Math.max(...ys) - Math.min(...ys) < min
+    );
+  };
+
+  const bake = (fc: unknown, drop = false) =>
+    ((fc as { features?: unknown[] })?.features ?? [])
+      .flatMap((f) => (path(f as Parameters<typeof path>[0]) ?? "").split("M").filter(Boolean))
+      .map((piece) => `M${piece}`)
+      .filter((d) => !offscreen(d))
+      .filter((d) => !drop || !tiny(d))
+      .join("");
+
+  /** 그려진 길이. 점 사이 거리를 더한다. */
+  const drawnLength = (d: string) => {
+    const n = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+    let total = 0;
+    for (let i = 2; i + 1 < n.length; i += 2) {
+      total += Math.hypot(n[i] - n[i - 2], n[i + 1] - n[i - 1]);
+    }
+    return total;
+  };
+
+  const lines = bake(clipped.lines).length
+    ? bake(clipped.lines)
+        .split("M")
+        .filter(Boolean)
+        .map((piece) => `M${piece}`)
+        .filter((d) => drawnLength(d) >= minLength)
+        .join("")
+    : "";
+  const areas = bake(clipped.areas, true);
+  return lines || areas ? { lines, areas } : null;
+}
+
 async function buildCourse(course: Course, legacy: Map<string, string>): Promise<Report> {
   const source = course.geo!;
   const pool = await poolFor(course);
@@ -679,11 +873,12 @@ async function buildCourse(course: Course, legacy: Map<string, string>): Promise
    * 전국 코스에서 outlines.json이 그것 때문에 네 배가 됐다.
    */
   const outlinePath = geoPath(projection).digits(1);
+  // pool은 한 위상에서만 나온다(poolFor 참조). 조각에 실려 온 것을 그대로 쓴다.
+  const landShape = merge(pool[0].topology, pool.map((p) => p.geom));
   const outline = outlinePath({
     type: "Feature" as const,
     properties: {},
-    // pool은 한 위상에서만 나온다(poolFor 참조). 조각에 실려 온 것을 그대로 쓴다.
-    geometry: merge(pool[0].topology, pool.map((p) => p.geom)),
+    geometry: landShape,
   })!;
 
   /*
@@ -701,7 +896,21 @@ async function buildCourse(course: Course, legacy: Map<string, string>): Promise
   const lineKey = Object.keys(lines.objects)[0];
   const borders = path(feature(lines, lines.objects[lineKey])) ?? "";
 
-  const out = { id: course.id, width, height, regions };
+  /*
+   * 물길은 층에 따라 잣대가 다르다.
+   *
+   * 전국 지도에 실개천까지 얹으면 실타래가 되지만, 큰 강은 그 축척에서도
+   * 지리를 설명한다 — 어느 도가 어느 강을 끼고 있는지가 읽힌다. 시군구
+   * 아래로는 동네 하천이 그 동네의 표지라 다 남긴다.
+   */
+  const water = await waterFor(
+    landShape,
+    projection,
+    // 전국 지도에서는 큰 강만. 실개천까지 얹으면 실타래가 된다.
+    course.level === "sido" ? WATER_TRUNK_PX : 0,
+  );
+
+  const out = { id: course.id, width, height, regions, ...(water ? { water } : {}) };
   await mkdir(OUT_DIR, { recursive: true });
   await writeFile(join(OUT_DIR, `${course.id}.json`), JSON.stringify(out));
   outlines[course.id] = { outline, borders };
@@ -732,7 +941,17 @@ function printReport(r: Report): boolean {
   return ok;
 }
 
-const courses = (await loadCourses()).filter((c) => c.geo);
+/*
+ * `ONLY=seoul npm run build:geo`로 한 코스만 굽는다.
+ *
+ * 270개를 다 굽는 데 한참 걸리는데, 물길 하나 손보고 확인하려고 매번
+ * 전부 돌릴 이유가 없다. 쉼표로 여럿도 된다.
+ */
+const only = process.env.ONLY?.split(",").map((x) => x.trim()).filter(Boolean);
+const courses = (await loadCourses())
+  .filter((c) => c.geo)
+  .filter((c) => !only || only.includes(c.id));
+if (only) process.stdout.write(`ONLY=${only.join(",")} \u2014 ${courses.length}\uAC1C\uB9CC \uAD7D\uC2B5\uB2C8\uB2E4\n`);
 const legacy = legacyPrefixes(courses);
 let allOk = true;
 for (const course of courses) {

@@ -24,6 +24,7 @@
   --color-concrete-deep: var(--sig-concrete-deep);
   --color-map-idle: var(--sig-map-idle);
   --color-map-line: var(--sig-map-line);
+  --color-water: var(--sig-water);
   --color-sign: var(--sig-sign);
   --color-sign-deep: var(--sig-sign-deep);
   --color-sign-hi: var(--sig-sign-hi);
@@ -67,6 +68,11 @@
   /* 지도 비활성 지역. 배경(#dee0db)과 확실히 갈리되 현재 지역을 덮지 않을 만큼만. */
   --sig-map-idle: #bfc3bb;
   --sig-map-line: #e8eae5;
+  /*
+   * 물길. 지도색 위에 얹히므로 그보다 어둡고 푸른 쪽으로 기운다.
+   * 다만 표지판 초록과 겨루면 안 된다 — 강은 배경이고 답이 아니다.
+   */
+  --sig-water: #7d99a8;
   --sig-sign: #0a6b3d;
   --sig-sign-deep: #06522e;
   --sig-sign-hi: #0f8b4f;
@@ -107,6 +113,7 @@
     --sig-concrete-deep: #2b3d47;
     --sig-map-idle: #2f4350;
     --sig-map-line: #0a141b;
+    --sig-water: #4d7d99;
     --sig-sign: #23c08f;
     --sig-sign-deep: #169b72;
     --sig-sign-hi: #5cf2c0;
@@ -142,6 +149,7 @@
   --sig-concrete-deep: #c7cac3;
   --sig-map-idle: #bfc3bb;
   --sig-map-line: #e8eae5;
+  --sig-water: #7d99a8;
   --sig-sign: #0a6b3d;
   --sig-sign-deep: #06522e;
   --sig-sign-hi: #0f8b4f;
@@ -160,6 +168,7 @@
   --sig-concrete: #060d12;
   --sig-concrete-deep: #2b3d47;
   --sig-map-idle: #2f4350;
+  --sig-water: #4d7d99;
   --sig-map-line: #0a141b;
   --sig-sign: #23c08f;
   --sig-sign-deep: #169b72;

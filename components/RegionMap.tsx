@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState, type CSSProperties } from "react";
+import { memo, useId, useMemo, useState, type CSSProperties } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import { focusTransform } from "@/lib/geo/bbox";
 
@@ -90,6 +90,8 @@ export const RegionMap = memo(function RegionMap({
   );
   /** 모든 경계를 이어 붙인 한 장. 각 조각이 `M`으로 시작하므로 그대로 이으면 된다. */
   const silhouette = useMemo(() => geo.regions.map((r) => r.d).join(""), [geo]);
+  /* 한 화면에 지도가 둘 이상 뜰 수 있다. clipPath id가 겹치면 서로를 자른다. */
+  const clipId = useId();
 
   /*
    * 짚어 보는 지도.
@@ -140,6 +142,19 @@ export const RegionMap = memo(function RegionMap({
       }
     >
       <defs>
+        {/*
+          물길은 코스 실루엣 안에서만 보인다.
+
+          강은 경계에서 끊기지 않으므로, 서울 지도에 한강을 얹으면 그 줄기가
+          경기도까지 뻗어 화면 밖으로 나간다. 빌드에서 지리적으로 자르는
+          방법도 있지만 강줄기를 다각형으로 오려 내는 일이라 값이 크다.
+          여기서 실루엣으로 클립하면 정확하고 공짜다.
+        */}
+        {geo.water && (
+          <clipPath id={`${clipId}-land`}>
+            <path d={silhouette} />
+          </clipPath>
+        )}
         {/*
           못 맞힌 곳에는 색 위에 빗금을 덧댄다.
           초록과 빨강은 색각 이상에서 가장 흔히 겹치는 짝이다. 색만으로 가르면
@@ -249,6 +264,30 @@ export const RegionMap = memo(function RegionMap({
             />
           );
         })}
+
+        {/*
+          물길은 **지역 색 위**에 얹는다.
+
+          아래 두어 봤더니 언제나 안 보였다 — 지역은 불투명하게 칠해지므로
+          그 밑에 무엇을 그리든 덮인다. 위에 얹되 강은 가늘어서 맞힌 곳의
+          초록을 가리지 않는다.
+
+          땅 밖으로는 안 나간다. 강은 경계에서 끊기지 않으므로 서울 지도에
+          한강을 얹으면 줄기가 경기도까지 뻗는다.
+        */}
+        {geo.water && (
+          <g className="pointer-events-none" clipPath={`url(#${clipId}-land)`} aria-hidden>
+            <path d={geo.water.areas} fill="var(--color-water)" />
+            <path
+              d={geo.water.lines}
+              fill="none"
+              stroke="var(--color-water)"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
+        )}
       </g>
 
       {/*

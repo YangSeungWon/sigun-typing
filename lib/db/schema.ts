@@ -103,7 +103,7 @@ export const events = pgTable(
     revision: text("revision"),
     /** 한 판을 묶는 값. 퍼널의 분모를 사람·판 단위로 셀 수 있게 한다. */
     gameId: text("game_id"),
-    /** 개발·QA 트래픽. 분석에서 항상 제외한다. */
+    /** 개발·QA와 봇. 분석에서 항상 제외한다(lib/analytics/bots.ts). */
     internal: boolean("internal").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

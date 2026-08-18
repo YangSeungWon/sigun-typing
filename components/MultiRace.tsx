@@ -26,6 +26,7 @@ interface MultiRaceProps {
   selfId: string | null;
   onProgress: (u: { index: number; cpm: number; accuracy: number }) => void;
   onFinish: () => void;
+  onGiveUp: () => void;
 }
 
 /**
@@ -42,6 +43,7 @@ export function MultiRace({
   selfId,
   onProgress,
   onFinish,
+  onGiveUp,
 }: MultiRaceProps) {
   const items = useMemo(
     () =>
@@ -215,6 +217,24 @@ export function MultiRace({
                 <KeyHint keys="Tab">초성 힌트</KeyHint>
               )}
             </p>
+
+            {/*
+              판에서 내려오는 길.
+
+              건너뛰기는 안 연다 — 순위가 진행 칸수로 매겨지므로 넘길 수 있으면
+              다 넘긴 사람이 1등이 된다. 그런데 **방이 끝나려면 모두가 끝나야
+              해서**, 한 사람이 영영 막히면 먼저 끝낸 사람들도 갇힌다. 건너뛰기를
+              안 여는 것과 내려올 길이 없는 것은 다른 문제다.
+
+              작게 둔다. 눈에 띄는 자리에 있으면 막히기 전에 누르게 된다.
+            */}
+            <button
+              type="button"
+              onClick={onGiveUp}
+              className="mx-auto text-sm text-dim underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              여기까지 하기
+            </button>
 
             <Odometer
               cpm={score.cpm}

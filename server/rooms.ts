@@ -212,6 +212,29 @@ export function finish(room: Room, playerId: string, now: number): Room {
  * 갔는지가 그 판의 기록이다. 완주하고 나갔으면 등수도 그대로 둔다 — 뛴 것은
  * 뛴 것이다. 화면에서는 흐리게, `나감`으로 적힌다.
  */
+/**
+ * 그만하기.
+ *
+ * **방이 끝나려면 모두가 끝나야 한다.** 그런데 한 사람이 한 지역에서 영영
+ * 막히면 그 방은 영영 `racing`이다 — 먼저 끝낸 사람들은 나가는 것 말고 할 수
+ * 있는 게 없다. 겨루는 판이라 건너뛰기를 안 여는 것과, 판에서 내려올 길이
+ * 없는 것은 다른 문제다.
+ *
+ * 등수는 안 준다. 끝까지 간 사람과 같은 줄에 세울 수 없다. 어디까지 갔는지는
+ * 그대로 남아 순위표에 미완주로 적힌다.
+ */
+export function giveUp(room: Room, playerId: string, now: number): Room {
+  if (room.status !== "racing" && room.status !== "counting") return room;
+  const player = room.players.find((p) => p.id === playerId);
+  if (!player || player.finishedAt !== null) return room;
+
+  return closeIfDone({
+    ...room,
+    players: room.players.map((p) => (p.id === playerId ? { ...p, finishedAt: now } : p)),
+    updatedAt: now,
+  });
+}
+
 export function leave(room: Room, playerId: string, now: number): Room {
   const players =
     room.status === "waiting"

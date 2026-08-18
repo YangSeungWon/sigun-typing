@@ -7,6 +7,7 @@ import { issueToken, secretFingerprint } from "../lib/score/session.ts";
 import {
   createRoom,
   finish,
+  giveUp,
   isAbandoned,
   join,
   leave,
@@ -207,6 +208,13 @@ io.on("connection", (socket: Socket) => {
     const room = currentRoom(socket);
     if (!room) return;
     save(finish(room, socket.id, Date.now()));
+  });
+
+  /* 막혀서 판에서 내려온다. 방이 끝나려면 모두가 끝나야 하므로 이 길이 필요하다. */
+  socket.on("race:giveup", () => {
+    const room = currentRoom(socket);
+    if (!room) return;
+    save(giveUp(room, socket.id, Date.now()));
   });
 
   socket.on("disconnect", () => {

@@ -4,6 +4,7 @@ import {
   MAX_PLAYERS,
   createRoom,
   finish,
+  giveUp,
   isAbandoned,
   join,
   leave,
@@ -218,6 +219,33 @@ describe("이탈", () => {
     r = finish(r, "s1", T0 + 5_000);
     r = leave(r, "s1", T0 + 6_000);
     expect(r.players.find((p) => p.id === "s1")?.rank).toBe(1);
+  });
+
+  it("한 사람이 그만두면 방이 끝난다", () => {
+    let r = racing("하나", "둘");
+    r = finish(r, "s0", T0 + 5_000);
+    expect(r.status).toBe("racing");
+    r = giveUp(r, "s1", T0 + 9_000);
+    expect(r.status).toBe("finished");
+  });
+
+  it("그만둔 사람에게는 등수를 주지 않는다", () => {
+    let r = racing("하나", "둘");
+    const moved = progress(r, "s1", { index: 5, cpm: 200, accuracy: 1 }, T0 + 3_000);
+    if (!moved.ok) throw new Error(moved.error);
+    r = moved.value;
+    r = giveUp(r, "s1", T0 + 9_000);
+    const quit = r.players.find((p) => p.id === "s1");
+    expect(quit?.rank).toBe(null);
+    expect(quit?.index).toBe(5);
+  });
+
+  it("이미 완주한 사람은 그만둘 것이 없다", () => {
+    let r = racing("하나", "둘");
+    r = finish(r, "s0", T0 + 5_000);
+    const before = r.players.find((p) => p.id === "s0")?.rank;
+    r = giveUp(r, "s0", T0 + 6_000);
+    expect(r.players.find((p) => p.id === "s0")?.rank).toBe(before);
   });
 
   it("아무도 없는 방은 일정 시간 뒤 버려진 것으로 본다", () => {

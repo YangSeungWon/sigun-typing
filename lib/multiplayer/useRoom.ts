@@ -112,6 +112,11 @@ export function useRoom() {
     socketRef.current?.emit("race:finish");
   }, []);
 
+  /** 막혀서 판에서 내려온다. 등수 없이 미완주로 남는다. */
+  const sendGiveUp = useCallback(() => {
+    socketRef.current?.emit("race:giveup");
+  }, []);
+
   return {
     connected,
     room,
@@ -126,6 +131,7 @@ export function useRoom() {
     next,
     sendProgress,
     sendFinish,
+    sendGiveUp,
   };
 }
 

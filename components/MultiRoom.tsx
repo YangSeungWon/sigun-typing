@@ -31,6 +31,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     next,
     sendProgress,
     sendFinish,
+    sendGiveUp,
   } = useRoom();
 
   const nameRef = useRef<HTMLInputElement>(null);
@@ -288,6 +289,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
           selfId={selfId}
           onProgress={sendProgress}
           onFinish={sendFinish}
+          onGiveUp={sendGiveUp}
         />
         {room.status === "finished" && (
           <NextRound

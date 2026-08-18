@@ -18,6 +18,7 @@ function score(over: Partial<Score> = {}): Score {
     completed: 31,
     total: 31,
     hintsUsed: 0,
+    hintPenaltyMs: 0,
     firstTry: 0,
     ...over,
   };

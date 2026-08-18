@@ -69,6 +69,7 @@ function makeRun(opts: RunOptions = {}) {
     completed: results.length,
     total: sidoCourse.regions.length,
     hintsUsed: 0,
+    hintPenaltyMs: 0,
     firstTry: results.length,
   };
 
@@ -333,6 +334,7 @@ describe("초성 힌트 페널티", () => {
         firstTry: results.length,
         completed: results.length,
         total: sidoCourse.regions.length,
+        hintPenaltyMs: 0,
         hintsUsed,
       },
     };

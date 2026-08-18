@@ -185,6 +185,7 @@ export function validateSubmission(
    */
   const serverScore: Score = computeScore({
     correctKeystrokes: serverKeystrokes,
+    hintPenaltyMs,
     elapsedMs,
     totalErrors: results.reduce((a, r) => a + Math.max(0, r.errors), 0),
     completed: results.filter((r) => !r.skipped).length,

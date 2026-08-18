@@ -7,6 +7,9 @@ import { formatClock } from "./Odometer";
 interface CourseCompleteProps {
   courseName: string;
   elapsedMs: number;
+  /** 그중 힌트로 얹힌 시간. 0이면 아무것도 안 적는다. */
+  hintPenaltyMs?: number;
+  hintsUsed?: number;
   geo?: CourseGeo | null;
   passedCodes: string[];
 }
@@ -24,6 +27,8 @@ interface CourseCompleteProps {
 export function CourseComplete({
   courseName,
   elapsedMs,
+  hintPenaltyMs = 0,
+  hintsUsed = 0,
   geo,
   passedCodes,
 }: CourseCompleteProps) {
@@ -43,6 +48,16 @@ export function CourseComplete({
         <p className="font-mono text-2xl tabular-nums text-dim">
           {formatClock(elapsedMs)}
         </p>
+        {/*
+          힌트가 얹혔으면 뺄셈을 적는다. 안 적으면 1분 40초에 끝낸 사람이
+          4분 10초를 보고 무슨 일인지 알 수가 없다.
+        */}
+        {hintPenaltyMs > 0 && (
+          <p className="font-mono text-xs tabular-nums text-dim">
+            {formatClock(elapsedMs - hintPenaltyMs)} + 힌트 {hintsUsed}회{" "}
+            {formatClock(hintPenaltyMs)}
+          </p>
+        )}
       </div>
 
       {geo && (

@@ -437,6 +437,7 @@ export function score(state: GameState, now: number): Score {
   return computeScore({
     correctKeystrokes,
     elapsedMs,
+    hintPenaltyMs: state.hintPenaltyMs,
     totalErrors,
     completed: state.results.filter((r) => !r.skipped).length,
     total: state.items.length,

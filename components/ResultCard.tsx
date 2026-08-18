@@ -44,6 +44,26 @@ function formatPrecise(ms: number): string {
   return `${formatClock(ms)}.${String(Math.floor((ms % 1000) / 10)).padStart(2, "0")}`;
 }
 
+/**
+ * 힌트가 얹힌 만큼을 큰 숫자 바로 아래 적는다.
+ *
+ * 기록에는 힌트 한 번에 30초가 붙는다. 그런데 화면에는 그 합만 떠 있었고
+ * 설명은 접힌 `자세히 보기` 안에 있었다 — 1분 40초에 끝낸 사람이 4분 10초를
+ * 보고 무슨 일인지 알 방법이 없었다.
+ *
+ * 뺄셈을 보여 준다. 큰 숫자는 그대로 둔다 — 남과 겨루는 값이 그것이고, 실제로
+ * 흐른 시간을 앞세우면 순위표의 내 기록과 화면의 숫자가 달라진다.
+ */
+function HintMath({ score }: { score: Score }) {
+  if (score.hintPenaltyMs <= 0) return null;
+  return (
+    <p className="relative mt-1 font-mono text-xs text-on-sign/60">
+      {formatClock(score.elapsedMs - score.hintPenaltyMs)} + 힌트 {score.hintsUsed}회{" "}
+      {formatClock(score.hintPenaltyMs)}
+    </p>
+  );
+}
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between border-b border-concrete-deep py-3">
@@ -196,9 +216,12 @@ export function ResultCard({
           않는다 — 성취를 무효로 만들면 다시 할 이유도 함께 사라진다.
         */}
         {emphasis === "time" && perfect ? (
-          <p className="relative mt-4 font-mono text-5xl font-bold tabular-nums text-on-sign">
-            {formatPrecise(shown)}
-          </p>
+          <>
+            <p className="relative mt-4 font-mono text-5xl font-bold tabular-nums text-on-sign">
+              {formatPrecise(shown)}
+            </p>
+            <HintMath score={score} />
+          </>
         ) : (
           <p className="relative mt-4 text-5xl font-bold text-on-sign">
             {score.completed}
@@ -222,6 +245,7 @@ export function ResultCard({
             ? `한 번에 ${score.firstTry}곳`
             : `${formatPrecise(score.elapsedMs)} · 한 번에 ${score.firstTry}곳`}
         </p>
+        {!perfect && <HintMath score={score} />}
 
         {/*
           기록 해석은 기록에 붙어 있어야 한다. 카드 밖에 한 줄로 떼어 놓았을
@@ -308,7 +332,10 @@ export function ResultCard({
             <Row label="맞힌 타수" value={`${score.correctKeystrokes}타`} />
             <Row label="오타" value={`${score.totalErrors}회`} />
             {score.hintsUsed > 0 && (
-              <Row label="초성 힌트" value={`${score.hintsUsed}회 · 기록에 가산됨`} />
+              <Row
+                label="초성 힌트"
+                value={`${score.hintsUsed}회 · +${formatClock(score.hintPenaltyMs)}`}
+              />
             )}
           </div>
         </details>

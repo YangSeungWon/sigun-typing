@@ -511,6 +511,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
         <CourseComplete
           courseName={course.name}
           elapsedMs={score.elapsedMs}
+          hintPenaltyMs={score.hintPenaltyMs}
+          hintsUsed={score.hintsUsed}
           geo={geo}
           passedCodes={passedCodes}
         />

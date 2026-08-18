@@ -105,6 +105,38 @@ const WATER_MIN_PX = 6;
  */
 const WATER_TRUNK_PX = 120;
 
+/**
+ * 고도 띠가 사는 곳. `npm run build:terrain`이 채운다.
+ *
+ * SRTM 1초(약 30m). AWS 공개 자료라 신청도 키도 없고, `.hgt`는 빅엔디언
+ * 16비트 정수를 늘어놓은 것뿐이라 읽는 데 아무것도 필요 없다.
+ */
+const DEM_DIR = join(ROOT, "data/geo/source/dem");
+const DEM_SIDE = 3601;
+
+/**
+ * 고도를 나누는 자리(m).
+ *
+ * 넷이면 족하다 — 평야·구릉·산지·고산. 더 잘게 나누면 지도가 시끄러워지고,
+ * 이 지도가 하려는 말은 "여기가 산이다"이지 등고선 읽기가 아니다.
+ */
+const TERRAIN_BANDS = [100, 300, 700];
+
+/**
+ * 격자를 몇 픽셀마다 뜰 것인가.
+ *
+ * 촘촘할수록 곱지만 파일이 커진다. 등고선은 격자를 따라 계단처럼 나오므로,
+ * 이 값이 작을수록 계단이 잘아지고 점이 기하급수로 는다. 3으로 뜨니 강원
+ * 한 코스가 535KB였다.
+ */
+const TERRAIN_STEP = 5;
+
+/** 등고선을 얼마나 무디게 할 것인가. 격자 칸 단위다. */
+const TERRAIN_INTERVAL = 0.7;
+
+/** 이보다 작은 얼룩은 버린다. 격자 칸 넓이 단위다. */
+const TERRAIN_MIN_AREA = 6;
+
 /*
  * 바다는 따로 걸러 내지 않는다.
  *
@@ -727,6 +759,110 @@ async function waterFor(
   return lines || areas ? { lines, areas } : null;
 }
 
+/**
+ * 고도 띠.
+ *
+ * **화면 좌표 격자에서 바로 등고선을 뽑는다.** 지리 좌표로 격자를 만들어
+ * 등고선을 뜬 뒤 투영하는 방법도 있지만, 그러면 등고선이 투영을 두 번 거쳐
+ * 지역 경계와 미세하게 어긋난다. 판 위의 점마다 거꾸로 위경도를 물어
+ * 고도를 읽으면 결과가 처음부터 화면 좌표라 어긋날 자리가 없다.
+ *
+ * 봉우리 점은 쓰지 않는다. 이름을 얹으면 정답이 새고(지역 이름 3,108개 중
+ * 638개가 같은 어간의 봉우리를 갖는다) 이름을 빼면 점 무더기다.
+ */
+const demCache = new Map<string, Buffer | null>();
+async function terrainFor(
+  projection: ReturnType<typeof geoMercator>,
+  width: number,
+  height: number,
+): Promise<string[] | null> {
+  if (!existsSync(DEM_DIR)) return null;
+
+  const tile = async (lat: number, lon: number): Promise<Buffer | null> => {
+    const name = `N${String(lat).padStart(2, "0")}E${String(lon).padStart(3, "0")}`;
+    if (!demCache.has(name)) {
+      const path = join(DEM_DIR, `${name}.hgt`);
+      demCache.set(name, existsSync(path) ? await readFile(path) : null);
+    }
+    return demCache.get(name) ?? null;
+  };
+
+  /* `.hgt`는 북서 모서리부터 서→동, 북→남으로 읽는다. -32768은 값 없음이다. */
+  const elevation = async (lat: number, lon: number): Promise<number> => {
+    const buf = await tile(Math.floor(lat), Math.floor(lon));
+    if (!buf) return 0;
+    const row = Math.round((Math.floor(lat) + 1 - lat) * (DEM_SIDE - 1));
+    const col = Math.round((lon - Math.floor(lon)) * (DEM_SIDE - 1));
+    const i = (row * DEM_SIDE + col) * 2;
+    if (i < 0 || i + 1 >= buf.length) return 0;
+    const v = buf.readInt16BE(i);
+    return v === -32768 ? 0 : v;
+  };
+
+  const cols = Math.ceil(width / TERRAIN_STEP) + 1;
+  const rows = Math.ceil(height / TERRAIN_STEP) + 1;
+  const grid = new Float64Array(cols * rows);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const here = projection.invert?.([c * TERRAIN_STEP, r * TERRAIN_STEP]);
+      grid[r * cols + c] = here ? await elevation(here[1], here[0]) : 0;
+    }
+  }
+
+  const { contours } = await import("d3-contour");
+  /* smooth를 끄면 계단이 남지만 점이 준다. 옅은 덩어리라 계단이 안 보인다. */
+  const maker = contours().size([cols, rows]).thresholds(TERRAIN_BANDS).smooth(false);
+  const path = geoPath().digits(0);
+
+  /*
+   * 바다는 따로 자를 필요가 없다.
+   *
+   * 띠가 100m 위부터 시작하므로 바다(0m)는 어느 띠에도 안 들어간다. 해안
+   * 저지대도 마찬가지로 색이 없는데, 그게 맞다 — 거기는 낮은 땅이다.
+   */
+  /*
+   * **점을 줄인다.**
+   *
+   * 격자를 따라 나온 계단은 점이 많다 — 강원 한 코스가 535KB였다. 좌표가
+   * 격자 칸 단위라 여기서는 화면 좌표계가 아니고, 한 칸이 TERRAIN_STEP
+   * 픽셀이다. 그래서 간격도 칸 단위로 준다.
+   *
+   * 섬 거르기는 산봉우리 하나짜리 얼룩을 없앤다. 띠가 뜻을 갖는 것은
+   * 산줄기로 이어질 때이지, 점점이 흩어질 때가 아니다.
+   */
+  const thin = async (band: object): Promise<object> => {
+    const out = await mapshaper.applyCommands(
+      `-i in.json -filter-islands min-area=${TERRAIN_MIN_AREA} ` +
+        `-simplify visvalingam interval=${TERRAIN_INTERVAL} -o out.json format=geojson`,
+      { "in.json": Buffer.from(JSON.stringify(band)) },
+    );
+    return JSON.parse(Buffer.from(out["out.json"]).toString());
+  };
+
+  const mapshaper = (await import("mapshaper")).default;
+  const bands: string[] = [];
+  for (const band of maker(Array.from(grid))) {
+    // 등고선은 격자 칸 단위로 나오므로 화면 좌표로 되돌린다.
+    const raw = path((await thin(band)) as never) ?? "";
+    if (!raw) {
+      bands.push("");
+      continue;
+    }
+    /*
+     * 화면 좌표로 되돌리면서 정수로 자른다.
+     *
+     * 등고선은 계단 모양이라 소수점 아래가 아무 뜻이 없다 — 지역 경계와 달리
+     * 이건 옅은 색 덩어리이고, 한 픽셀 어긋나는 것을 알아볼 수가 없다.
+     */
+    const scaled = raw.replace(/-?\d+(\.\d+)?/g, (m) =>
+      String(Math.round(Number(m) * TERRAIN_STEP)),
+    );
+    bands.push(scaled);
+  }
+
+  return bands.some(Boolean) ? bands : null;
+}
+
 async function buildCourse(course: Course, legacy: Map<string, string>): Promise<Report> {
   const source = course.geo!;
   const pool = await poolFor(course);
@@ -910,7 +1046,16 @@ async function buildCourse(course: Course, legacy: Map<string, string>): Promise
     course.level === "sido" ? WATER_TRUNK_PX : 0,
   );
 
-  const out = { id: course.id, width, height, regions, ...(water ? { water } : {}) };
+  const terrain = await terrainFor(projection, width, height);
+
+  const out = {
+    id: course.id,
+    width,
+    height,
+    regions,
+    ...(water ? { water } : {}),
+    ...(terrain ? { terrain } : {}),
+  };
   await mkdir(OUT_DIR, { recursive: true });
   await writeFile(join(OUT_DIR, `${course.id}.json`), JSON.stringify(out));
   outlines[course.id] = { outline, borders };

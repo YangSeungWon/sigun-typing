@@ -23,6 +23,12 @@ export interface CourseGeo {
    * 픽셀이고 이름 같은 속성도 없다 — 그림이지 자료가 아니다.
    * 출처는 OpenStreetMap이고 표시 의무가 있다(scripts/build-geo.mts).
    */
+  /**
+   * 고도 띠. 낮은 쪽부터 순서대로 100m·300m·700m 위다.
+   *
+   * 지역 도형과 같은 투영으로 구운 화면 좌표다. 출처는 SRTM(공개 자료).
+   */
+  terrain?: string[];
   water?: {
     /** 강줄기. 선이라 stroke로 그린다. */
     lines: string;

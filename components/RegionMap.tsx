@@ -150,7 +150,7 @@ export const RegionMap = memo(function RegionMap({
           방법도 있지만 강줄기를 다각형으로 오려 내는 일이라 값이 크다.
           여기서 실루엣으로 클립하면 정확하고 공짜다.
         */}
-        {geo.water && (
+        {(geo.water || geo.terrain) && (
           <clipPath id={`${clipId}-land`}>
             <path d={silhouette} />
           </clipPath>
@@ -194,6 +194,20 @@ export const RegionMap = memo(function RegionMap({
         */}
         <path d={silhouette} fill="var(--color-map-idle)" />
 
+        {/*
+          고도 띠. 낮은 쪽부터 겹쳐 쌓아 높은 곳일수록 진해진다.
+
+          땅 안에서만 보인다 — 등고선은 판 전체에 걸쳐 나오므로 자르지 않으면
+          바다에까지 산이 걸린다.
+        */}
+        {geo.terrain && (
+          <g className="pointer-events-none" clipPath={`url(#${clipId}-land)`} aria-hidden>
+            {geo.terrain.map((d, i) => (
+              <path key={i} d={d} fill="var(--color-relief)" opacity={0.5} />
+            ))}
+          </g>
+        )}
+
         {geo.regions.map((r) => {
           const isCurrent = r.code === currentCode;
           const isPassed = passed.has(r.code);
@@ -220,9 +234,23 @@ export const RegionMap = memo(function RegionMap({
                       ? // 지나왔지만 못 맞힌 곳. 아직 안 간 회색과 구분돼야
                         // 지도만 보고도 어디를 다시 봐야 하는지 읽힌다.
                         "var(--color-alert)"
-                      : // 배경·면·경계선이 모두 비슷한 명도라 실루엣이 안개처럼 보였다.
-                        "var(--color-map-idle)"
+                      : /*
+                         * 아직 모르는 곳은 **비워 둔다.**
+                         *
+                         * 여기를 칠하면 밑에 깐 고도 띠가 통째로 덮인다. 비워
+                         * 두면 지형이 그대로 드러나고, 맨 아래 실루엣이 지형
+                         * 없는 저지대의 바탕을 맡는다.
+                         */
+                        "none"
               }
+              /*
+               * 색이 든 곳은 반투명으로 덮는다.
+               *
+               * 지형을 완전히 가리면 아는 곳만 평평해져서, 지도를 채울수록
+               * 지형이 사라진다. 살짝 비치게 두면 맞힌 뒤에도 그 땅이 어떤
+               * 땅인지가 남는다.
+               */
+              opacity={isCurrent || isPassed || isMissed ? 0.82 : 1}
               /*
                * 주변 경계는 지도를 읽는 데 필요한 만큼만.
                * 2px 흰 선으로 다 두르면 지도가 아니라 퍼즐판으로 읽히고,

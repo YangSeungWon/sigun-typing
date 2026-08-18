@@ -25,6 +25,7 @@
   --color-map-idle: var(--sig-map-idle);
   --color-map-line: var(--sig-map-line);
   --color-water: var(--sig-water);
+  --color-relief: var(--sig-relief);
   --color-sign: var(--sig-sign);
   --color-sign-deep: var(--sig-sign-deep);
   --color-sign-hi: var(--sig-sign-hi);
@@ -73,6 +74,8 @@
    * 다만 표지판 초록과 겨루면 안 된다 — 강은 배경이고 답이 아니다.
    */
   --sig-water: #7d99a8;
+  /* 고도 띠. 겹쳐 쌓이므로 한 겹은 아주 옅어야 한다. */
+  --sig-relief: #9a9d90;
   --sig-sign: #0a6b3d;
   --sig-sign-deep: #06522e;
   --sig-sign-hi: #0f8b4f;
@@ -114,6 +117,8 @@
     --sig-map-idle: #2f4350;
     --sig-map-line: #0a141b;
     --sig-water: #4d7d99;
+  --sig-relief: #46565f;
+    --sig-relief: #46565f;
     --sig-sign: #23c08f;
     --sig-sign-deep: #169b72;
     --sig-sign-hi: #5cf2c0;
@@ -150,6 +155,8 @@
   --sig-map-idle: #bfc3bb;
   --sig-map-line: #e8eae5;
   --sig-water: #7d99a8;
+  /* 고도 띠. 겹쳐 쌓이므로 한 겹은 아주 옅어야 한다. */
+  --sig-relief: #9a9d90;
   --sig-sign: #0a6b3d;
   --sig-sign-deep: #06522e;
   --sig-sign-hi: #0f8b4f;
@@ -169,6 +176,7 @@
   --sig-concrete-deep: #2b3d47;
   --sig-map-idle: #2f4350;
   --sig-water: #4d7d99;
+  --sig-relief: #46565f;
   --sig-map-line: #0a141b;
   --sig-sign: #23c08f;
   --sig-sign-deep: #169b72;

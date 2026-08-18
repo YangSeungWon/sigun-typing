@@ -22,7 +22,11 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import changes from "../data/reference/boundary-changes.json" with { type: "json" };
-import { SIDO_EVENT_BY_YEAR, SIGUNGU_EVENT_BY_YEAR } from "../data/reference/admin-events.ts";
+import {
+  DONG_EVENTS,
+  SIDO_EVENT_BY_YEAR,
+  SIGUNGU_EVENT_BY_YEAR,
+} from "../data/reference/admin-events.ts";
 
 const run = promisify(execFile);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -45,7 +49,7 @@ const MIN_ISLAND_AREA = 20_000_000;
 /** 제주 2009·2010은 원본의 오류다(boundary-changes.json의 _caveats). */
 const SOURCE_ERRORS = new Set(["2009", "2010"]);
 
-type Level = "sido" | "sigungu";
+type Level = "sido" | "sigungu" | "dong";
 
 /**
  * 시도 접두사 → 이름.
@@ -142,7 +146,8 @@ async function read(year: string, level: Level, file: string): Promise<Feature<G
 
   const dir = await mkdtemp(join(tmpdir(), `ev-${year}-`));
   try {
-    await run("unzip", ["-q", "-o", join(SOURCE_DIR, file), `bnd_${level}_*`, "-d", dir]);
+    // 2021년만 안쪽 파일이 `01.bnd_dong_…`처럼 접두사를 달고 있다.
+    await run("unzip", ["-q", "-o", join(SOURCE_DIR, file), `*bnd_${level}_*`, "-d", dir]);
     const inner = (await readdir(dir)).find((f) => f.endsWith(".zip"));
     if (!inner) throw new Error(`${year} ${level}: 안쪽 zip 없음`);
     await run("unzip", ["-q", "-o", join(dir, inner), "-d", dir]);
@@ -473,6 +478,69 @@ for (const [year, group] of [...byYear].sort()) {
     states,
   });
   process.stdout.write(`  ${prevYear}→${year} · ${level} · ${nowIn.length}곳\n`);
+}
+
+/*
+ * 읍면동 층에서만 보이는 사건.
+ *
+ * 시군구 층만 훑으면 2019년은 아무 일도 없는 해다. 부천이 동 서른여섯 개를
+ * 열 개로 묶은 그해가 연표에 아예 없다. 손으로 적어 둔 것만 굽는다 —
+ * 이 층에서 나올 이야기가 그것 하나임을 전국을 훑어 확인했다.
+ */
+for (const spec of DONG_EVENTS) {
+  const sides: Feature<Geometry>[][] = [];
+  for (const y of spec.states) {
+    const file = fileOf(y);
+    if (!file) break;
+    const all = await read(y, "dong", file);
+    sides.push(all.filter((f) => prop(f.properties, "_cd").startsWith(spec.prefix)));
+  }
+  if (sides.length !== spec.states.length) {
+    process.stdout.write(`  ${spec.key} 읍면동 원본이 모자람 — 건너뜀\n`);
+    continue;
+  }
+
+  // 투영은 모든 시점이 함께 쓴다. 조각 수가 달라져도 도시는 제자리에 있어야 한다.
+  const projection = geoMercator().fitExtent(
+    [
+      [6, 6],
+      [LOCAL.width - 6, LOCAL.height - 6],
+    ],
+    { type: "FeatureCollection", features: sides.flat() } as FeatureCollection,
+  );
+  const path = geoPath(projection).digits(1);
+
+  events.push({
+    year: spec.key,
+    at: spec.at,
+    width: LOCAL.width,
+    height: LOCAL.height,
+    nationwide: false,
+    dated: true,
+    changes: spec.changes.map((c) => ({
+      on: c.on?.replace(/-/g, "."),
+      from: c.from.map((name) => ({ name })),
+      to: c.to.map((name) => ({ name })),
+    })),
+    headline: spec.changes.map((c) => `${c.from.join(", ")} → ${c.to.join(", ")}`).join(", "),
+    /*
+     * 짚지 않는다. 도시가 통째로 다시 나뉜 사건이라 전부 칠하면 지도가
+     * 한 덩어리 색이 된다. 조각 수가 달라지는 것 자체가 이 사건이다.
+     */
+    states: sides.map((features, i) => ({
+      year: spec.states[i],
+      regions: features.map((f) => ({
+        code: prop(f.properties, "_cd"),
+        name: prop(f.properties, "_nm"),
+        d: path(f) ?? "",
+      })),
+      marked: [],
+      tone: "born" as const,
+    })),
+  });
+  process.stdout.write(
+    `  ${spec.key} 읍면동 · ${sides.map((s, i) => `${spec.states[i]} ${s.length}곳`).join(" → ")}\n`,
+  );
 }
 
 /*

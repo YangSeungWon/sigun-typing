@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
+import type { Course } from "@/data/types";
 import { getScoreRepository } from "@/lib/db/client";
 import { SCORING_VERSION } from "@/lib/score/version";
 import {
@@ -24,6 +25,28 @@ export const metadata = {
 
 /** 겨루는 판은 본편 하나다. lib/game/modes.ts의 RANKED_MODES가 그 목록이다. */
 const BOARD_MODE = RANKED_MODES[0];
+
+/**
+ * select에 담을 묶음.
+ *
+ * 전국 둘과 시도 열일곱이 이 게임의 사다리라 위에 온다. 읍면동 252개는
+ * 그 아래 시도별로 나눈다 — `중구 9개 동`이 부산인지 대구인지는 이름만
+ * 봐서 알 수 없고, parentName의 앞 토막이 그 답이다.
+ */
+const PICKERS: { label: string; courses: Course[] }[] = (() => {
+  const ladder = COURSES.filter((c) => c.level !== "dong");
+  const groups = [
+    { label: "전국", courses: ladder.filter((c) => c.group === "nationwide") },
+    { label: "시도", courses: ladder.filter((c) => c.group !== "nationwide") },
+  ];
+  for (const c of COURSES.filter((c) => c.level === "dong")) {
+    const label = c.parentName?.split(" ")[0] ?? "읍면동";
+    const hit = groups.find((g) => g.label === label);
+    if (hit) hit.courses.push(c);
+    else groups.push({ label, courses: [c] });
+  }
+  return groups.filter((g) => g.courses.length > 0);
+})();
 
 function formatClock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -79,22 +102,47 @@ export default async function RankingPage({
       </header>
 
       <nav className="flex flex-col gap-4" aria-label="순위표 고르기">
-        <div className="flex flex-wrap gap-2">
-          {COURSES.map((c) => (
-            <Link
-              key={c.id}
-              href={href({ course: c.id })}
-              aria-current={c.id === course.id ? "page" : undefined}
-              className={`rounded-lg px-4 py-2 text-base font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                c.id === course.id
-                  ? "bg-sign text-on-sign"
-                  : "border border-concrete-deep text-ink hover:bg-concrete-deep"
-              }`}
-            >
-              {c.name}
-            </Link>
-          ))}
-        </div>
+        {/*
+          코스를 칩으로 다 깔고 있었다. 열일곱 개일 때는 그게 지도 목록이자
+          곧 이 게임이 무엇인지였는데, 읍면동 252개가 들어오면서 270개가
+          됐다 — 순위표는 그 아래 화면 밖으로 밀렸고, 랭킹을 보러 온 사람이
+          랭킹에 닿지 못했다.
+
+          `/courses`는 같은 문제를 읍면동을 빼는 것으로 풀었다. 여기서는 뺄
+          수 없다. 자기 동네 코스를 뛴 사람의 기록이 갈 곳이 여기뿐이고,
+          그 코스로 들어오는 문이 이 목록 말고는 없다.
+
+          고르는 것이 270개면 그건 칩이 아니라 목록이고, 목록을 한 줄에
+          담는 물건이 select다. 자바스크립트 없이도 도는 GET 폼으로 둔다.
+        */}
+        <form action="/ranking" className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="period" value={period} />
+          <label className="sr-only" htmlFor="ranking-course">
+            코스
+          </label>
+          <select
+            id="ranking-course"
+            name="course"
+            defaultValue={course.id}
+            className="min-w-0 flex-1 rounded-lg border border-concrete-deep bg-paint px-4 py-2 text-base font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            {PICKERS.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="rounded-lg bg-sign px-5 py-2 text-base font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            보기
+          </button>
+        </form>
         {/*
           모드 탭이 있었다. 겨루는 판이 하나뿐이 되면서 뺐다 — 고를 것이 하나면
           그건 선택지가 아니라 라벨이고, 라벨은 아래 표 제목이 이미 달고 있다.

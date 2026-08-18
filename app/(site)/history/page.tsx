@@ -60,7 +60,8 @@ export default function HistoryPage() {
   const paired = (year: string) => {
     type Row = { dated?: boolean; from: string[]; to: string[] };
     const all = (summaries as Record<string, Row[]>)[year] ?? [];
-    const rank = (c: Row) => (c.dated ? 0 : c.from.length > 1 ? 1 : 2);
+    /* 손으로 적은 줄, 그다음 여럿이 하나가 되거나 하나가 여럿이 된 줄. */
+    const rank = (c: Row) => (c.dated ? 0 : c.from.length > 1 || c.to.length > 1 ? 1 : 2);
     const sorted = [...all].sort((a, b) => rank(a) - rank(b));
     return { all, shown: all.length > 6 ? sorted.slice(0, 4) : sorted };
   };

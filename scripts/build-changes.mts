@@ -15,6 +15,7 @@ import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SOURCE_NAME_FIXES } from "../data/reference/admin-events.ts";
 
 const run = promisify(execFile);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -70,6 +71,19 @@ async function readLevel(year: string, level: Level, outer: string): Promise<Row
       const code = (cells[iC] ?? "").replace(/^"|"$/g, "").trim();
       const name = (cells[iN] ?? "").replace(/^"|"$/g, "").trim();
       if (code && name) rows.push({ code, name });
+    }
+
+    /*
+     * 원본이 잘못 적어 둔 이름을 바로잡는다(admin-events.ts).
+     *
+     * 여기서 안 고치면 사건 목록에 없는 해가 생긴다 — 2007년은 고양 일산의
+     * 표기가 바뀐 것뿐인데, 그것만 빼면 그해에는 아무 일도 없다.
+     */
+    for (const fix of SOURCE_NAME_FIXES) {
+      if (fix.year !== year || fix.level !== level) continue;
+      for (const r of rows) {
+        if (r.code === fix.code && r.name === fix.from) r.name = fix.to;
+      }
     }
     return rows;
   } finally {

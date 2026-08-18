@@ -18,6 +18,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { geoCentroid, geoContains, geoDistance, geoMercator, geoPath } from "d3-geo";
+import polylabel from "polylabel";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
@@ -45,7 +46,15 @@ const NATIONWIDE = { width: 520, height: 660 };
 
 /** 잘라 낸 시도 하나를 이 판에 담으므로 전국 타임랩스보다 곱게 남긴다. */
 const RESOLUTION = "900x900";
-const MIN_ISLAND_AREA = 20_000_000;
+/**
+ * 이보다 작은 섬 조각은 버린다. 원본 좌표계(EPSG:5179) 제곱미터다.
+ *
+ * 20㎢였다. 그런데 영도가 14㎢라 영도구가 통째로 사라졌고, 그 판정이
+ * 해마다 흔들려 2013년에 `영도구 생김`, 2016년에 `영도구 사라짐`이라는
+ * 있지도 않은 사건이 적혔다. 지역 하나를 통째로 지우는 잣대는 잣대가
+ * 아니다 — 섬으로만 이루어진 시군구가 있다.
+ */
+const MIN_ISLAND_AREA = 1_000_000;
 
 /** 제주 2009·2010은 원본의 오류다(boundary-changes.json의 _caveats). */
 const SOURCE_ERRORS = new Set(["2009", "2010"]);
@@ -135,6 +144,38 @@ function prop(props: Record<string, unknown> | null | undefined, suffix: string)
     if (k.toLowerCase().endsWith(suffix)) return String(v);
   }
   return "";
+}
+
+/**
+ * 도형 **안쪽**의 한 점.
+ *
+ * 한가운데(centroid)는 도형 밖에 있을 수 있다. 월성군은 경주시를 고리처럼
+ * 두르고 있어 한가운데가 경주시 안이고, 옹진군은 섬들이라 한가운데가 바다다.
+ * 그대로 쓰면 월성군이 경주시에 흡수된 것으로, 옹진군은 아무 데도 안 들어간
+ * 것으로 적힌다.
+ *
+ * polylabel은 다각형 안에서 경계로부터 가장 먼 점을 찾는다. 조각이 여럿이면
+ * 가장 큰 조각에서 찾는다 — 그 조각이 그 지역을 대표한다.
+ */
+function inside(f: Feature<Geometry>): [number, number] {
+  const g = f.geometry;
+  const polys =
+    g.type === "Polygon"
+      ? [g.coordinates]
+      : g.type === "MultiPolygon"
+        ? g.coordinates
+        : [];
+  if (polys.length === 0) return geoCentroid(f as Parameters<typeof geoCentroid>[0]) as [number, number];
+
+  const area = (ring: number[][]) =>
+    Math.abs(
+      ring.reduce((sum, p, i) => {
+        const q = ring[(i + 1) % ring.length];
+        return sum + (p[0] * q[1] - q[0] * p[1]);
+      }, 0),
+    ) / 2;
+  const biggest = polys.reduce((a, b) => (area(b[0]) > area(a[0]) ? b : a));
+  return polylabel(biggest as [number, number][][], 0.001) as [number, number];
 }
 
 const cache = new Map<string, Feature<Geometry>[]>();
@@ -343,9 +384,19 @@ for (const [year, group] of [...byYear].sort()) {
     return hit ? nameOf(hit) : SIDO_LABEL[head] ?? "";
   };
 
-  /** 손으로 적은 이름을 도형에 붙인다. 붙지 않으면 지도에서 못 짚을 뿐이다. */
+  /**
+   * 손으로 적은 이름을 도형에 붙인다. 붙지 않으면 지도에서 못 짚을 뿐이다.
+   *
+   * 공백을 지우고 견준다. 손으로는 `천안시 동남구`라 적고 원본은
+   * `천안시동남구`인데, 그 한 칸 때문에 안 붙으면 도형 쪽에서 같은 말을
+   * 한 번 더 적는다 — 2008년이 세 줄이었고 그중 둘이 같은 말이었다.
+   */
   const locate = (name: string, pool: Feature<Geometry>[]): Named => {
-    const hit = pool.find((f) => nameOf(f) === name || name.endsWith(nameOf(f)));
+    const flat = name.replace(/\s+/g, "");
+    const hit = pool.find((f) => {
+      const n = nameOf(f).replace(/\s+/g, "");
+      return n === flat || flat.endsWith(n);
+    });
     return hit ? { name, code: codeOf(hit) } : { name };
   };
 
@@ -394,27 +445,48 @@ for (const [year, group] of [...byYear].sort()) {
      * 대전이나 인천보다는 제 도시 쪽이 가깝다.
      */
     const bare = (f: Feature<Geometry>) => nameOf(f).replace(/\s+/g, "");
+
+    /*
+     * **한 도시가 여러 구로 나뉜 것은 한 줄이다.**
+     *
+     * 수원시에 장안구와 권선구가 생긴 해를 도형으로만 읽으면 `수원시 →
+     * 수원시장안구` 한 줄에 `권선구 생김` 한 줄이 따로 붙는다. 흡수는 여럿을
+     * 하나로 모으는 규칙이라 하나가 여럿이 되는 쪽을 못 잡는다.
+     *
+     * 새 이름이 옛 이름으로 **시작하면** 그 도시가 나뉜 것이다. 안양시,
+     * 성남시, 청주시, 전주시, 마산시, 고양시, 안산시, 천안시, 용인시,
+     * 창원시, 부천시가 모두 이 꼴이다.
+     */
+    const split = new Map<Feature<Geometry>, Feature<Geometry>[]>();
+    {
+      const taken = new Set<Feature<Geometry>>();
+      for (const g of goneList) {
+        const head = bare(g);
+        const kids = bornList.filter(
+          (b) => !taken.has(b) && bare(b).length > head.length && bare(b).startsWith(head),
+        );
+        if (kids.length === 0) continue;
+        split.set(g, kids);
+        for (const k of kids) taken.add(k);
+      }
+    }
     const byName = (g: Feature<Geometry>): Feature<Geometry> | undefined => {
       const long = bare(g);
       const cands = bornList.filter((b) => bare(b).length < long.length && long.endsWith(bare(b)));
       if (cands.length === 1) return cands[0];
       if (cands.length === 0) return undefined;
-      const at = geoCentroid(g as Parameters<typeof geoCentroid>[0]);
+      const at = inside(g);
       return (
         cands.find((f) => geoContains(f as Parameters<typeof geoContains>[0], at)) ??
-        cands.reduce((a, b) =>
-          geoDistance(geoCentroid(b as Parameters<typeof geoCentroid>[0]), at) <
-          geoDistance(geoCentroid(a as Parameters<typeof geoCentroid>[0]), at)
-            ? b
-            : a,
-        )
+        cands.reduce((a, b) => (geoDistance(inside(b), at) < geoDistance(inside(a), at) ? b : a))
       );
     };
 
     const absorbed = new Map<string, Feature<Geometry>[]>();
     const orphans: Feature<Geometry>[] = [];
     for (const g of goneList) {
-      const at = geoCentroid(g as Parameters<typeof geoCentroid>[0]);
+      if (split.has(g)) continue;
+      const at = inside(g);
       const host =
         byName(g) ?? now.find((f) => geoContains(f as Parameters<typeof geoContains>[0], at));
       if (!host) {
@@ -426,13 +498,43 @@ for (const [year, group] of [...byYear].sort()) {
     }
 
     const swallowed = new Set([...absorbed.values()].flat());
-    const leftBorn = bornList.filter((b) => !absorbed.has(codeOf(b)));
+    const claimed = new Set([...split.values()].flat());
+
+    const splits: Change[] = [...split].map(([g, kids]) => ({
+      from: [{ name: nameOf(g), code: codeOf(g) }],
+      to: kids.map((k) => ({ name: nameOf(k), code: codeOf(k) })),
+    }));
 
     /*
      * 흡수한 쪽이 그 해에 새로 생긴 곳이면 통합이고(청원군 → 통합 청주시),
      * 원래 있던 곳이면 편입이다(명주군 → 강릉시). 표에서는 둘 다 같은
      * `A → B` 한 줄이라 가르지 않는다.
      */
+    /*
+     * **삼킨 자리에서 새로 생긴 곳도 그 줄에 담는다.**
+     *
+     * 제천군은 1980년에 제천시와 제원군이 됐는데, 흡수는 여럿을 하나로 모으는
+     * 규칙이라 `제천군 → 제천시` 한 줄에 `제원군 생김`이 따로 붙었다. 이름이
+     * 안 겹치니 접두사 규칙으로도 못 잡는다. 창원군(창원시·의창군), 인천
+     * 북구(부평구·계양구)가 모두 같은 꼴이다.
+     *
+     * 새로 생긴 곳의 안쪽 점이 **사라진 곳의 옛 땅** 안에 있으면 거기서
+     * 갈라져 나온 것이다. 이미 다른 줄이 짚은 곳은 건드리지 않는다 —
+     * 유성구는 대전시유성출장소가 이미 데려갔다.
+     */
+    const hosts = new Set([...absorbed.keys()]);
+    const spare = bornList.filter((b) => !hosts.has(codeOf(b)) && !claimed.has(b));
+    const extra = new Map<string, Feature<Geometry>[]>();
+    for (const b of spare) {
+      const at = inside(b);
+      for (const [hostCode, eaten] of absorbed) {
+        if (!eaten.some((g) => geoContains(g as Parameters<typeof geoContains>[0], at))) continue;
+        extra.set(hostCode, [...(extra.get(hostCode) ?? []), b]);
+        claimed.add(b);
+        break;
+      }
+    }
+
     const merges: Change[] = [...absorbed].map(([hostCode, eaten]) => {
       const host = now.find((f) => codeOf(f) === hostCode)!;
       /*
@@ -446,21 +548,34 @@ for (const [year, group] of [...byYear].sort()) {
         same ? `${sidoName(side, codeOf(f))} ${nameOf(f)}`.trim() : nameOf(f);
       return {
         from: eaten.map((f) => ({ name: label(f, prev), code: codeOf(f) })),
-        to: [{ name: label(host, now), code: hostCode }],
+        to: [
+          { name: label(host, now), code: hostCode },
+          ...(extra.get(hostCode) ?? []).map((f) => ({ name: nameOf(f), code: codeOf(f) })),
+        ],
       };
     });
 
-    const untold = (c: Change) =>
-      ![...c.from, ...c.to].every((x) => x.code && spoken.has(x.code));
+    /*
+     * 손으로 적은 줄이 이미 말한 곳은 도형 쪽에서 다시 적지 않는다.
+     *
+     * 양쪽 이름이 다 짚혔을 때만 걸렀더니, 손으로 `연기군 → 세종특별자치시`라
+     * 적어 두고도 도형 쪽에서 `연기군 → 세종시`가 한 줄 더 나왔다 — 원본의
+     * 이름은 `세종시`라 오른쪽이 안 붙는다. **어디가 달라졌는가**는 왼쪽이
+     * 정하므로 왼쪽만 본다.
+     */
+    const untold = (c: Change) => !c.from.every((x) => x.code && spoken.has(x.code));
+
+    const leftBorn = bornList.filter((b) => !absorbed.has(codeOf(b)) && !claimed.has(b));
 
     changes = [
       ...curated,
+      ...splits.filter(untold),
       ...merges.filter(untold),
       ...leftBorn
         .filter((f) => !spoken.has(codeOf(f)))
         .map((f) => ({ from: [], to: [{ name: nameOf(f), code: codeOf(f) }] })),
       ...orphans
-        .filter((f) => !swallowed.has(f) && !spoken.has(codeOf(f)))
+        .filter((f) => !swallowed.has(f) && !split.has(f) && !spoken.has(codeOf(f)))
         .map((f) => ({ from: [{ name: nameOf(f), code: codeOf(f) }], to: [] })),
     ];
   }

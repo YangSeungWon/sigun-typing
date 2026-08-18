@@ -201,10 +201,24 @@ export function finish(room: Room, playerId: string, now: number): Room {
   return closeIfDone({ ...room, players, updatedAt: now });
 }
 
+/**
+ * 나간 사람을 어떻게 둘 것인가.
+ *
+ * **대기실에서 나가면 지운다.** 아직 아무것도 안 했으므로 남길 것이 없고,
+ * 유령이 앉아 있으면 `전원이 준비하면 출발할 수 있습니다`와 어긋나 보인다.
+ * 끊겼다 돌아와도 소켓 id가 새것이라 어차피 새 사람으로 들어온다.
+ *
+ * **달리는 중이거나 끝난 뒤에 나가면 남긴다.** 같이 달리던 사람이고, 어디까지
+ * 갔는지가 그 판의 기록이다. 완주하고 나갔으면 등수도 그대로 둔다 — 뛴 것은
+ * 뛴 것이다. 화면에서는 흐리게, `나감`으로 적힌다.
+ */
 export function leave(room: Room, playerId: string, now: number): Room {
-  const players = room.players.map((p) =>
-    p.id === playerId ? { ...p, connected: false, ready: false } : p,
-  );
+  const players =
+    room.status === "waiting"
+      ? room.players.filter((p) => p.id !== playerId)
+      : room.players.map((p) =>
+          p.id === playerId ? { ...p, connected: false, ready: false } : p,
+        );
 
   // 방장이 나가면 남은 사람 중 먼저 들어온 사람이 이어받는다.
   const hostGone = room.hostId === playerId;
@@ -284,7 +298,11 @@ export function nextRound(
     status: "waiting",
     startsAt: null,
     round: room.round + 1,
-    players: room.players.map((p) => ({
+    /*
+     * 나간 사람은 여기서 지운다. 지난 판을 같이 뛴 사람이지 이번 판 사람이
+     * 아니다. 안 지우면 방이 이어질수록 유령이 쌓여 순위표가 길어진다.
+     */
+    players: room.players.filter((p) => p.connected).map((p) => ({
       ...p,
       ready: false,
       index: 0,

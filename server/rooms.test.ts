@@ -199,6 +199,27 @@ describe("이탈", () => {
     expect(r.status).toBe("finished");
   });
 
+  it("대기실에서 나가면 목록에서 지워진다", () => {
+    let r = withPlayers("하나", "둘");
+    r = leave(r, "s1", T0);
+    expect(r.players.map((p) => p.nickname)).toEqual(["하나"]);
+  });
+
+  it("달리는 중에 나가면 남아서 나감으로 보인다", () => {
+    let r = racing("하나", "둘");
+    r = leave(r, "s1", T0 + 5_000);
+    const gone = r.players.find((p) => p.id === "s1");
+    expect(gone?.connected).toBe(false);
+    expect(r.players).toHaveLength(2);
+  });
+
+  it("완주하고 나가도 등수는 남는다", () => {
+    let r = racing("하나", "둘");
+    r = finish(r, "s1", T0 + 5_000);
+    r = leave(r, "s1", T0 + 6_000);
+    expect(r.players.find((p) => p.id === "s1")?.rank).toBe(1);
+  });
+
   it("아무도 없는 방은 일정 시간 뒤 버려진 것으로 본다", () => {
     let r = withPlayers("하나");
     r = leave(r, "s0", T0);
@@ -315,6 +336,20 @@ describe("다음 판", () => {
     expect(next.players.every((p) => p.index === 0)).toBe(true);
     expect(next.players.every((p) => !p.ready)).toBe(true);
     expect(next.players.every((p) => p.pick === null)).toBe(true);
+  });
+
+  it("나간 사람은 다음 판에서 빠진다", () => {
+    let r = done("하나", "둘", "셋");
+    r = leave(r, "s1", T0);
+    const result = nextRound(r, {
+      playerId: "s0",
+      courseId: "jeju",
+      seed: 1,
+      total: 2,
+      now: T0,
+    });
+    if (!result.ok) throw new Error(result.error);
+    expect(result.value.players.map((p) => p.nickname)).toEqual(["하나", "셋"]);
   });
 
   it("방장이 나가도 이어받은 사람이 다음 판을 연다", () => {

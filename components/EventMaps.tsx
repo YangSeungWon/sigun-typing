@@ -67,6 +67,22 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
   /* 손을 얹은 줄이 있으면 그것만 짚는다. 없으면 이 시점에 달라진 것들. */
   const lit = hover ?? side.marked;
 
+  /*
+   * **반대편 시점을 점선으로 겹친다.**
+   *
+   * 전후가 둘 다 있는데 단추를 눌러야만 다른 쪽이 보였다. 그러면 견주는 일이
+   * 여전히 읽는 사람 몫이다 — 눌러 보고, 기억하고, 다시 눌러 견준다.
+   *
+   * 겹쳐 두면 누를 것이 없다. 통합된 나주시 안에 옛 나주시와 나주군을 가르던
+   * 선이 점선으로 남고, 그 선 하나가 곧 그 사건이다. 단추는 한쪽을 또렷이
+   * 보고 싶을 때만 쓰면 된다.
+   *
+   * 짚은 곳만 그린다. 안 바뀐 경계까지 겹치면 두 장을 포개 놓은 것일 뿐이라
+   * 어디가 달라졌는지 도로 안 보인다.
+   */
+  const other = event.states[index === 0 ? event.states.length - 1 : 0];
+  const ghost = other === side ? [] : other.regions.filter((r) => other.marked.includes(r.code));
+
   return (
     <div className="flex flex-col gap-4">
       {/*
@@ -126,7 +142,30 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
             </path>
           );
         })}
+
+        {/*
+          반대편 시점의 경계. 채우지 않는다 — 지금 보는 지도를 가리면 안 된다.
+
+          바탕색으로 긋는다. 이 선이 놓이는 자리는 거의 언제나 짚어 놓은
+          빨강이나 초록 위다(양쪽이 같은 땅을 두고 갈린 것이 이 사건이니까).
+          어두운 선으로는 그 위에서 안 읽혔다.
+        */}
+        <g fill="none" className="pointer-events-none stroke-[var(--color-paint)]" aria-hidden>
+          {ghost.map((r) => (
+            <path key={r.code} d={r.d} strokeWidth={1.4} strokeDasharray="4 3" opacity={0.9} />
+          ))}
+        </g>
       </svg>
+
+      {/*
+        점선이 무엇인지 한 번은 밝혀야 한다. 지도 아래 한 줄이면 되고,
+        아무것도 겹치지 않은 시점에서는 이 줄도 없다.
+      */}
+      {ghost.length > 0 && (
+        <p className="text-center font-mono text-xs text-dim">
+          점선은 {other.year}년 경계
+        </p>
+      )}
 
       {/*
         바뀐 내용은 표다.

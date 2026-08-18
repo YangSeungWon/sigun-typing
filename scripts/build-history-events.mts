@@ -17,7 +17,7 @@ import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { geoCentroid, geoContains, geoDistance, geoMercator, geoPath } from "d3-geo";
+import { geoBounds, geoCentroid, geoContains, geoDistance, geoMercator, geoPath } from "d3-geo";
 import polylabel from "polylabel";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
@@ -78,6 +78,10 @@ interface Shape {
   code: string;
   name: string;
   d: string;
+  /** 지도에 이름을 적을 자리. 짚은 곳에만, 그리고 몇 곳 안 될 때만 붙는다. */
+  at?: [number, number];
+  /** 지도에 적을 짧은 이름. 판이 한 도시에 맞춰져 있으면 시 이름은 군더더기다. */
+  label?: string;
 }
 
 interface Side {
@@ -320,21 +324,136 @@ for (const [year, group] of [...byYear].sort()) {
   const nowIn = now.filter(inScope);
   const prevIn = prev.filter(inScope);
 
+  /*
+   * **바뀐 자리에 판을 맞춘다.**
+   *
+   * 도 전체에 맞췄더니 2014년 청주가 판의 5분의 1이었다. 사건은 자기 자리를
+   * 확대해야 보인다는 것이 이 페이지가 있는 이유인데, 도 하나는 아직 넓다.
+   *
+   * 바뀐 곳들의 테두리를 잡아 그만큼 넓힌 네모에 맞춘다. 배로 넓히므로 바뀐
+   * 곳이 판의 절반쯤을 차지하고, 나머지 절반이 이웃이다 — 어디인지 알려면
+   * 둘레가 있어야 한다. 밖으로 밀려난 것은 판이 잘라 낸다.
+   *
+   * 전국에 걸친 사건은 좁힐 자리가 없다. 그때는 온 나라가 그 자리다.
+   */
+  const focus = [
+    ...prevIn.filter((f) => goneSet.has(codeOf(f))),
+    ...nowIn.filter((f) => bornSet.has(codeOf(f))),
+  ];
+
+  /** 바뀐 곳 둘레로 얼마나 더 볼 것인가. 1이면 딱 맞고, 2면 둘레가 절반이다. */
+  const PAD = 2;
+
+  /**
+   * 아무리 좁혀도 이만큼은 보여 준다. 위경도 도(度) 단위다.
+   *
+   * 배로만 넓혔더니 인천 남구 하나짜리 사건에서 그 구가 판을 꽉 채웠다.
+   * 도형은 큰데 어디인지는 알 수 없는 그림이다 — 작은 곳일수록 둘레가
+   * 더 필요하다. 0.45도면 사방 40km쯤이라 그 도시가 통째로 들어온다.
+   */
+  const MIN_SPAN = 0.45;
+
   // 투영은 두 시점이 함께 쓴다. 따로 맞추면 전후를 견줄 수 없다.
+  const box: [[number, number], [number, number]] = [
+    [6, 6],
+    [WIDTH - 6, HEIGHT - 6],
+  ];
+  const zoomed = !nationwide && focus.length > 0;
   const projection = geoMercator().fitExtent(
-    [
-      [6, 6],
-      [WIDTH - 6, HEIGHT - 6],
-    ],
-    { type: "FeatureCollection", features: [...nowIn, ...prevIn] } as FeatureCollection,
+    box,
+    {
+      type: "FeatureCollection",
+      features: zoomed ? focus : [...nowIn, ...prevIn],
+    } as FeatureCollection,
   );
+
+  /*
+   * 바깥으로 물린다.
+   *
+   * 바뀐 곳에 딱 맞추면 그 도형이 판을 꽉 채워 어디인지 알 수가 없다. 축척을
+   * 절반으로 줄이되 판 한가운데를 붙박아 두면, 바뀐 곳이 가운데 절반을 차지하고
+   * 나머지 절반이 이웃이 된다.
+   *
+   * 네모 하나를 지어 거기 맞추는 방법을 먼저 썼는데 지도가 통째로 사라졌다.
+   * d3는 위경도 다각형을 구면으로 읽어서, 링을 도는 방향이 반대면 그 네모가
+   * 아니라 **네모를 뺀 지구 전체**가 된다.
+   */
+  if (zoomed) {
+    const [[west, south], [east, north]] = geoBounds({
+      type: "FeatureCollection",
+      features: focus,
+    } as FeatureCollection);
+    const span = Math.max(east - west, north - south, 1e-6);
+    const pad = Math.min(Math.max(PAD, MIN_SPAN / span), 8);
+
+    const [cx, cy] = [WIDTH / 2, HEIGHT / 2];
+    const [tx, ty] = projection.translate();
+    projection.scale(projection.scale() / pad);
+    projection.translate([cx + (tx - cx) / pad, cy + (ty - cy) / pad]);
+  }
   const path = geoPath(projection).digits(1);
 
-  const shape = (f: Feature<Geometry>): Shape => ({
-    code: codeOf(f),
-    name: nameOf(f),
-    d: path(f) ?? "",
-  });
+  /*
+   * 짚은 곳에는 이름을 적는다.
+   *
+   * 도형만으로는 어느 것이 청원군인지 알 수 없어, 표의 줄에 손을 얹기 전에는
+   * 지도가 아무 말도 안 했다. 다만 여럿이 겹치면 글자가 서로를 덮으므로
+   * 몇 곳 안 될 때만 붙인다 — 도농통합처럼 전국이 물든 판은 세는 그림이지
+   * 읽는 그림이 아니다.
+   */
+  const LABEL_LIMIT = 8;
+
+  /**
+   * 지도에 적을 짧은 이름.
+   *
+   * 판이 청주 하나에 맞춰져 있는데 `청주시흥덕구`라고 적으면 글자가 도형보다
+   * 길다. 앞의 시 이름을 뗀다 — 이 판에서 그건 이미 아는 것이다.
+   */
+  const shortName = (n: string) => n.replace(/^.+?시(?=.{2,}구$)/, "");
+
+  const shape = (f: Feature<Geometry>, named = false): Shape => {
+    const at = named ? projection(inside(f)) : null;
+    return {
+      code: codeOf(f),
+      name: nameOf(f),
+      d: path(f) ?? "",
+      ...(at
+        ? {
+            at: [Math.round(at[0]), Math.round(at[1])] as [number, number],
+            label: shortName(nameOf(f)),
+          }
+        : {}),
+    };
+  };
+
+  /**
+   * 겹치는 이름은 하나만 남긴다.
+   *
+   * 상당구와 흥덕구는 붙어 있어 두 이름이 서로를 덮었다. 겹치면 큰 도형 쪽을
+   * 남긴다 — 작은 쪽은 어차피 글자가 도형 밖으로 비어져 나온다.
+   */
+  const place = (regions: Shape[]): Shape[] => {
+    const boxes: [number, number, number, number][] = [];
+    const order = [...regions]
+      .filter((r) => r.at)
+      .sort((a, b) => b.d.length - a.d.length);
+    const dropped = new Set<Shape>();
+    for (const r of order) {
+      const [x, y] = r.at!;
+      const [w, h] = [(r.label ?? "").length * 7.5, 15];
+      const box: [number, number, number, number] = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
+      if (boxes.some((o) => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1])) {
+        dropped.add(r);
+        continue;
+      }
+      boxes.push(box);
+    }
+    for (const r of dropped) {
+      delete r.at;
+      delete r.label;
+    }
+    return regions;
+  };
 
   /*
    * 손으로 적은 날짜가 있으면 그것이 이 사건의 문장이다.
@@ -601,11 +720,48 @@ for (const [year, group] of [...byYear].sort()) {
    * 당진시가 된 것은 땅이 달라진 게 아니라, 앞 판의 도형에 이름만 갈아
    * 끼우면 그 시점의 지도가 된다.
    */
+  /*
+   * **짚는 곳은 표가 정한다.**
+   *
+   * 원본 diff만 보면 2014년 뒤 지도에 새로 생긴 서원구와 청원구만 물든다.
+   * 상당구와 흥덕구는 이름이 그대로라 diff에 안 잡히기 때문이다. 그런데 그해
+   * 사건은 `청주시, 청원군 → 네 개 구`이고, 그 넷이 다 물들어야 그 문장이다.
+   *
+   * 앞 시점은 표의 왼쪽, 뒤 시점은 표의 오른쪽이다.
+   */
+  const sideCodes = (pick: (c: Change) => Named[], pool: Feature<Geometry>[]) => {
+    const want = new Set<string>();
+    for (const c of changes) {
+      for (const x of pick(c)) {
+        if (x.code) {
+          want.add(x.code);
+          continue;
+        }
+        /*
+         * 이름이 도형 하나에 안 붙으면 **여러 도형일 수 있다.**
+         *
+         * 2013년에는 `청주시`라는 도형이 없다. 그 도시는 상당구와 흥덕구
+         * 둘로 그려져 있다. 그래서 `청주시, 청원군 → 네 개 구`라 적어 두고도
+         * 앞 지도에서는 청원군만 물들고 가운데 구멍은 회색이었다.
+         */
+        const head = x.name.replace(/\s+/g, "");
+        for (const f of pool) {
+          if (nameOf(f).replace(/\s+/g, "").startsWith(head)) want.add(codeOf(f));
+        }
+      }
+    }
+    return pool.filter((f) => want.has(codeOf(f))).map(codeOf);
+  };
+  const goneCodes = new Set(sideCodes((c) => c.from, prevIn));
+  const bornCodes = new Set(sideCodes((c) => c.to, nowIn));
+
   const states: Side[] = [
     {
       year: prevYear,
-      regions: prevIn.map(shape),
-      marked: prevIn.filter((f) => goneSet.has(codeOf(f))).map(codeOf),
+      regions: place(
+        prevIn.map((f) => shape(f, goneCodes.has(codeOf(f)) && goneCodes.size <= LABEL_LIMIT)),
+      ),
+      marked: [...goneCodes],
       tone: "gone",
     },
   ];
@@ -626,13 +782,15 @@ for (const [year, group] of [...byYear].sort()) {
 
   states.push({
     year,
-    regions: nowIn.map(shape),
+    regions: place(
+      nowIn.map((f) => shape(f, bornCodes.has(codeOf(f)) && bornCodes.size <= LABEL_LIMIT)),
+    ),
     /*
      * 앞에서 이미 짚은 곳은 여기서 다시 짚지 않는다. 당진시는 1월에 생겼으니
      * 7월 지도에서 새것으로 보일 이유가 없다.
      */
     marked: nowIn
-      .filter((f) => bornSet.has(codeOf(f)))
+      .filter((f) => bornCodes.has(codeOf(f)))
       .filter((f) => !renaming.some((d) => d.renames!.some((r) => r.to === nameOf(f))))
       .map(codeOf),
     tone: "born",

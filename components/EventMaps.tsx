@@ -5,7 +5,7 @@ import { useState } from "react";
 export interface EventSide {
   /** 단추에 적을 시점. `2011`이거나 `2012.01`이다. */
   year: string;
-  regions: { code: string; name: string; d: string }[];
+  regions: { code: string; name: string; d: string; at?: [number, number]; label?: string }[];
   marked: string[];
   tone: "gone" | "born";
 }
@@ -81,7 +81,15 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
    * 어디가 달라졌는지 도로 안 보인다.
    */
   const other = event.states[index === 0 ? event.states.length - 1 : 0];
-  const ghost = other === side ? [] : other.regions.filter((r) => other.marked.includes(r.code));
+  /*
+   * 모양이 그대로인 것은 겹쳐 봐야 헛것이다. 군위군이 대구로 옮긴 해에는 땅이
+   * 달라지지 않아, 점선이 지금 그린 선 위에 그대로 포개진다.
+   */
+  const drawn = new Set(side.regions.map((r) => r.d));
+  const ghost =
+    other === side
+      ? []
+      : other.regions.filter((r) => other.marked.includes(r.code) && !drawn.has(r.d));
 
   return (
     <div className="flex flex-col gap-4">
@@ -98,11 +106,17 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
             aria-current={i === index}
             className={`rounded-lg border px-4 py-2 font-mono text-sm tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               i === index
-                ? "border-ink bg-ink text-paint"
+                ? "border-ink bg-ink text-paint [&_span]:text-concrete"
                 : "border-concrete-deep text-dim hover:bg-concrete-deep hover:text-ink"
             }`}
           >
             {s.year}
+            {/*
+              몇 곳이었나가 곧 그 사건이다. 도농통합처럼 전국이 물든 판은
+              도형 하나하나를 읽을 수 없고, 244에서 232로 줄었다는 수가
+              지도가 못 하는 말을 한다.
+            */}
+            <span className="ml-2 text-dim">{s.regions.length}곳</span>
           </button>
         ))}
       </div>
@@ -115,7 +129,10 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
       */}
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="mx-auto h-auto max-h-[46vh] w-auto max-w-full"
+        className={`mx-auto h-auto w-auto max-w-full ${
+          /* 전국에 걸친 사건은 지도가 곧 이야기다. 표보다 지도에 자리를 준다. */
+          event.nationwide ? "max-h-[62vh]" : "max-h-[46vh]"
+        }`}
         role="img"
         aria-label={`${side.year} ${side.regions.length}곳`}
       >
@@ -142,6 +159,31 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
             </path>
           );
         })}
+
+        {/*
+          짚은 곳의 이름.
+          도형만으로는 어느 것이 청원군인지 알 수 없어, 표의 줄에 손을 얹기
+          전에는 지도가 아무 말도 안 했다. 글자 뒤에 바탕색 테두리를 둘러
+          경계선 위에 놓여도 읽히게 한다.
+        */}
+        <g className="pointer-events-none" aria-hidden>
+          {side.regions
+            .filter((r) => r.at && lit.includes(r.code))
+            .map((r) => (
+              <text
+                key={r.code}
+                x={r.at![0]}
+                y={r.at![1]}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-[var(--color-ink)] stroke-[var(--color-paint)] text-[13px] font-semibold"
+                strokeWidth={3}
+                paintOrder="stroke"
+              >
+                {r.label}
+              </text>
+            ))}
+        </g>
 
         {/*
           반대편 시점의 경계. 채우지 않는다 — 지금 보는 지도를 가리면 안 된다.

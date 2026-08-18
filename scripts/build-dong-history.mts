@@ -18,7 +18,8 @@ import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { geoMercator, geoPath } from "d3-geo";
+import { geoArea, geoCentroid, geoContains, geoMercator, geoPath } from "d3-geo";
+import polylabel from "polylabel";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
@@ -31,7 +32,7 @@ const OUT = join(ROOT, "data/timelapse/dong-history.json");
 
 const WIDTH = 460;
 const HEIGHT = 460;
-const RESOLUTION = "900x900";
+const RESOLUTION = "5000x5000";
 
 /** 이만큼 움직여야 사건으로 본다. 하나둘 갈라진 것은 자연스러운 변화다. */
 const THRESHOLD = 3;
@@ -148,11 +149,91 @@ const targets = COURSES.filter((c) => c.level === "dong" && c.geo?.prefix).map((
   const parent = c.parentName ?? "";
   const own = parent.split(" ").slice(1).join("").replace(/\s+/g, "");
   return { id: c.id, name: c.name, parent, key: `${sido}:${own}` };
-});
+}).filter((t) => !process.env.ONLY || process.env.ONLY.split(",").includes(t.id));
 
 interface State {
   year: string;
   regions: { code: string; name: string; d: string }[];
+  /** 앞 시점에서 이 시점으로 오며 무엇이 무엇이 됐는가. 첫 시점에는 없다. */
+  changes?: { from: string[]; to: string[] }[];
+}
+
+/**
+ * 도형 안쪽의 한 점. 한가운데는 도형 밖일 수 있다(고리 모양이거나 섬들이면).
+ * `scripts/build-history-events.mts`의 같은 이름과 같은 일을 한다.
+ */
+function inside(f: Feature<Geometry>): [number, number] {
+  const g = f.geometry;
+  const polys =
+    g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+  if (polys.length === 0)
+    return geoCentroid(f as Parameters<typeof geoCentroid>[0]) as [number, number];
+  const area = (ring: number[][]) =>
+    Math.abs(
+      ring.reduce((sum, p, i) => {
+        const q = ring[(i + 1) % ring.length];
+        return sum + (p[0] * q[1] - q[0] * p[1]);
+      }, 0),
+    ) / 2;
+  const biggest = polys.reduce((a, b) => (area(b[0]) > area(a[0]) ? b : a));
+  return polylabel(biggest as [number, number][][], 0.0002) as [number, number];
+}
+
+/**
+ * 무엇이 무엇이 됐는지를 **짝으로** 적는다.
+ *
+ * 이름만 늘어놓으면 `삼선1동, 삼선2동`이 사라졌다는 것까지는 보이는데
+ * 어디로 갔는지가 없다. 사라진 동의 안쪽 점이 새 지도에서 어느 동 안에
+ * 드는지를 보면 그것이 물려받은 곳이다.
+ *
+ * 새로 생긴 동이 사라진 동의 옛 땅 안에 있으면 그 줄에 함께 담는다 —
+ * 하나가 여럿으로 나뉜 경우다(운정3동 → 운정3동·운정4동·운정5동).
+ */
+function pair(
+  before: Feature<Geometry>[],
+  after: Feature<Geometry>[],
+): { from: string[]; to: string[] }[] {
+  const nm = (f: Feature<Geometry>) => prop(f.properties, "_nm");
+  const [wasNames, isNames] = [new Set(before.map(nm)), new Set(after.map(nm))];
+  const gone = before.filter((f) => !isNames.has(nm(f)));
+  const born = after.filter((f) => !wasNames.has(nm(f)));
+  if (gone.length === 0 && born.length === 0) return [];
+
+  const eaten = new Map<string, Feature<Geometry>[]>();
+  const orphans: Feature<Geometry>[] = [];
+  for (const g of gone) {
+    const at = inside(g);
+    const host = after.find((f) => geoContains(f as Parameters<typeof geoContains>[0], at));
+    if (!host) {
+      orphans.push(g);
+      continue;
+    }
+    eaten.set(nm(host), [...(eaten.get(nm(host)) ?? []), g]);
+  }
+
+  const taken = new Set<Feature<Geometry>>();
+  const extra = new Map<string, Feature<Geometry>[]>();
+  for (const b of born) {
+    if (eaten.has(nm(b))) continue;
+    const at = inside(b);
+    for (const [host, group] of eaten) {
+      if (!group.some((g) => geoContains(g as Parameters<typeof geoContains>[0], at))) continue;
+      extra.set(host, [...(extra.get(host) ?? []), b]);
+      taken.add(b);
+      break;
+    }
+  }
+
+  return [
+    ...[...eaten].map(([host, group]) => ({
+      from: group.map(nm),
+      to: [host, ...(extra.get(host) ?? []).map(nm)],
+    })),
+    ...born
+      .filter((b) => !taken.has(b) && !eaten.has(nm(b)))
+      .map((b) => ({ from: [], to: [nm(b)] })),
+    ...orphans.map((g) => ({ from: [nm(g)], to: [] })),
+  ];
 }
 
 const out: Record<string, { name: string; parent: string; states: State[] }> = {};
@@ -178,8 +259,34 @@ for (const t of targets) {
   const keep = new Set<string>();
   /* 그 해에 한 곳도 못 찾았으면 자취가 끊긴 것이다. 0을 변화로 세면 안 된다. */
   const solid = counts.filter((c) => c.features.length > 0);
+
+  /**
+   * 그 해에 이 시군구가 덮은 땅. 구면 넓이(steradian)라 단위는 뜻이 없고,
+   * 해마다 견주는 데만 쓴다.
+   */
+  const ground = (c: (typeof solid)[number]) =>
+    c.features.reduce((sum, f) => sum + geoArea(f as Parameters<typeof geoArea>[0]), 0);
+
+  /**
+   * 땅이 이만큼 넘게 달라졌으면 개편이 아니다.
+   *
+   * 철원은 2015년 판부터 원본이 미수복 네 면을 넣기 시작했고, 파주는 2021년
+   * 판부터 민통선 안 세 면을 빼기 시작했다. 개수만 보면 각각 7→11, 20→17이라
+   * 큰 통폐합처럼 보이는데, 실제로 달라진 것은 **원본이 담는 땅**이다.
+   *
+   * 진짜 개편은 안쪽 선만 움직인다 — 동이 합쳐지든 나뉘든 그 동네의 바깥
+   * 테두리는 그대로다. 그래서 덮은 땅이 크게 달라졌으면 개편이 아니라 자료의
+   * 일이거나, 구 경계 자체가 움직인 것이다(2004년 수원은 영통구가 생기면서
+   * 장안구가 땅을 떼어 줬다 — 그건 동 통폐합 이야기가 아니다).
+   *
+   * 5%로 둔다. 해안선과 단순화 때문에 해마다 1~3%는 그냥 흔들린다.
+   */
+  const SAME_GROUND = 0.05;
+
   for (let i = 1; i < solid.length; i++) {
     if (Math.abs(solid[i].features.length - solid[i - 1].features.length) < THRESHOLD) continue;
+    const [before, after] = [ground(solid[i - 1]), ground(solid[i])];
+    if (Math.abs(after - before) / Math.max(before, after) > SAME_GROUND) continue;
     keep.add(solid[i - 1].year);
     keep.add(solid[i].year);
   }
@@ -199,13 +306,14 @@ for (const t of targets) {
   out[t.id] = {
     name: t.name,
     parent: t.parent,
-    states: picked.map((p) => ({
+    states: picked.map((p, i) => ({
       year: p.year,
       regions: p.features.map((f) => ({
         code: prop(f.properties, "_cd"),
         name: prop(f.properties, "_nm"),
         d: path(f) ?? "",
       })),
+      ...(i > 0 ? { changes: pair(picked[i - 1].features, p.features) } : {}),
     })),
   };
   process.stdout.write(

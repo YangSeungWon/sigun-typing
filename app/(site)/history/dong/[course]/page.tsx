@@ -41,10 +41,18 @@ export default async function DongHistoryPage({
           <span className="text-dim"> → </span>
           {last.regions.length}
         </h1>
-        <p className="text-right text-lg leading-snug font-medium break-keep">
-          {story.parent}의 동이 {first.year}년 {first.regions.length}곳에서{" "}
-          {last.year}년 {last.regions.length}곳으로
-        </p>
+        <div className="flex flex-col items-end gap-1">
+          <p className="text-right text-lg leading-snug font-medium break-keep">
+            {story.parent}의 동이 {first.year}년 {first.regions.length}곳에서{" "}
+            {last.year}년 {last.regions.length}곳으로
+          </p>
+          {/*
+            여기 적힌 해는 **자료의 해**다. 시행일이 아니다.
+            경계 자료는 해마다 한 번 찍히므로 그 사이에 일어난 일이 다음 해
+            판에 나타난다. 아는 척하느니 어디까지 아는지를 적는다.
+          */}
+          <p className="font-mono text-xs tabular-nums text-dim">자료에 나타난 해</p>
+        </div>
       </header>
 
       <DongHistory story={story} />

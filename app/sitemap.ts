@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { COURSES } from "@/data/courses";
 import { MODE_LADDER } from "@/lib/game/modes";
 import eventYears from "@/data/timelapse/event-years.json";
+import dongHistoryIds from "@/data/timelapse/dong-history-ids.json";
 import { siteUrl } from "@/lib/site";
 
 /**
@@ -55,6 +56,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: at(`/history/${year}`),
       changeFrequency: "yearly" as const,
       priority: 0.6,
+    })),
+    /*
+     * 동네별 변천. 목록에는 안 세우지만 검색으로는 닿아야 한다 —
+     * `성북구 동 통폐합`을 찾는 사람에게 보일 곳이 여기뿐이다.
+     */
+    ...(dongHistoryIds as string[]).map((id) => ({
+      url: at(`/history/dong/${id}`),
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
     })),
     { url: at("/ranking"), changeFrequency: "daily", priority: 0.5 },
     { url: at("/rooms"), changeFrequency: "monthly", priority: 0.4 },

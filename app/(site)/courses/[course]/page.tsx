@@ -7,6 +7,7 @@ import { COURSES, getCourse } from "@/data/courses";
 import { COURSE_GROUPS } from "@/data/groups";
 import { loadCourseGeo } from "@/lib/geo";
 import { MODE_LABELS } from "@/lib/game/modes";
+import dongHistoryIds from "@/data/timelapse/dong-history-ids.json";
 
 export function generateStaticParams() {
   return COURSES.map((course) => ({ course: course.id }));
@@ -193,6 +194,21 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
             ))}
           </ul>
         </section>
+      )}
+
+      {/*
+        이 동네가 어떻게 바뀌어 왔는지.
+        전국 변천사에는 안 올린다 — 성북구 동 통폐합은 온 나라가 겪은 일이
+        아니라 그 동네의 일이다. 대신 그 동네를 보고 있는 사람에게만 보인다.
+      */}
+      {(dongHistoryIds as string[]).includes(course.id) && (
+        <Link
+          href={`/history/dong/${course.id}`}
+          className="flex items-center justify-between gap-4 border-y border-concrete-deep py-3 text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
+        >
+          이 동네는 이렇게 나뉘어 왔습니다
+          <span className="text-dim">›</span>
+        </Link>
       )}
 
       {/* 이용안내와 랭킹은 헤더에 있다. 같은 링크를 위아래로 두 번 두지 않는다. */}

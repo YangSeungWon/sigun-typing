@@ -423,8 +423,17 @@ function commitItem(
 
 export function score(state: GameState, now: number): Score {
   const end = state.endedAt ?? now;
-  // 힌트로 얻은 시간은 기록에 되돌려 놓는다. 그래야 타수에 그대로 반영된다.
-  const elapsedMs = Math.max(0, end - state.startedAt) + state.hintPenaltyMs;
+  /*
+   * 시간은 **시간이다.** 힌트를 여기 얹지 않는다.
+   *
+   * 힌트 한 번에 30초를 더하고 있었다. 그러면 화면의 숫자가 벽시계와 어긋나
+   * 1분 40초에 끝낸 사람이 4분 10초를 본다. 무엇보다 그 30초의 무게가 코스
+   * 길이에 따라 널뛴다 — 제주 두 곳(5~10초)에서는 판을 끝장내고, 전국
+   * 229곳(5~10분)에서는 티도 안 난다. 같은 `힌트 한 번`인데.
+   *
+   * 힌트는 이제 따로 센다. 순위는 힌트 적은 순, 그다음이 시간이다.
+   */
+  const elapsedMs = Math.max(0, end - state.startedAt);
   const correctKeystrokes = state.results.reduce((a, r) => a + r.keystrokes, 0);
   const totalErrors = state.results.reduce((a, r) => a + r.errors, 0);
   /*
@@ -437,7 +446,6 @@ export function score(state: GameState, now: number): Score {
   return computeScore({
     correctKeystrokes,
     elapsedMs,
-    hintPenaltyMs: state.hintPenaltyMs,
     totalErrors,
     completed: state.results.filter((r) => !r.skipped).length,
     total: state.items.length,

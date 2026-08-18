@@ -22,8 +22,6 @@ export interface ScoreInputs {
   completed: number;
   total: number;
   hintsUsed: number;
-  /** 그중 elapsedMs에 얹힌 시간. 화면이 뺄셈을 보여 주는 데 쓴다. */
-  hintPenaltyMs: number;
   /** 첫 제출에 맞힌 항목 수 */
   firstTry: number;
 }
@@ -54,7 +52,6 @@ export function computeScore(inputs: ScoreInputs): Score {
     completed: inputs.completed,
     total: inputs.total,
     hintsUsed: inputs.hintsUsed,
-    hintPenaltyMs: Math.max(0, inputs.hintPenaltyMs),
     firstTry,
   };
 }

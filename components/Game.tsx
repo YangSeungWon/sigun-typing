@@ -511,7 +511,6 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
         <CourseComplete
           courseName={course.name}
           elapsedMs={score.elapsedMs}
-          hintPenaltyMs={score.hintPenaltyMs}
           hintsUsed={score.hintsUsed}
           geo={geo}
           passedCodes={passedCodes}
@@ -895,8 +894,12 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                     className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
                   >
                     힌트
+                    {/*
+                      값을 초로 적고 있었다. 이제 힌트는 시간에 안 얹히고
+                      **횟수로** 센다. 몇 번째인지가 곧 그 값이다.
+                    */}
                     <span className="ml-1.5 font-mono text-sm text-dim">
-                      +{(config.hintPenaltyMs ?? 0) / 1000}초
+                      {state.hintsUsed > 0 ? `${state.hintsUsed}회 봄` : "기록에 남음"}
                     </span>
                   </button>
                 )}
@@ -939,7 +942,9 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                       <KeyHint keys="Tab">
                         {state.hintShown
                           ? "한 번 더 누르면 정답"
-                          : `힌트 +${(config.hintPenaltyMs ?? 0) / 1000}초`}
+                          : state.hintsUsed > 0
+                            ? `힌트 ${state.hintsUsed}회 봄`
+                            : "힌트 · 기록에 남음"}
                       </KeyHint>
                     )}
                     {config.allowSkip && <KeyHint keys="Esc">모르겠어요</KeyHint>}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MemoryScoreRepository } from "./repo";
+import { MemoryScoreRepository, outranks } from "./repo";
 import type { NewScoreRow } from "./schema";
 
 const base: Omit<NewScoreRow, "sessionId" | "scoringVersion" | "courseVersion"> = {
@@ -9,6 +9,7 @@ const base: Omit<NewScoreRow, "sessionId" | "scoringVersion" | "courseVersion"> 
   deviceId: "dev-1",
   cpm: 300,
   accuracy: 1,
+  hintsUsed: 0,
   elapsedMs: 10_000,
   correctKeystrokes: 50,
   totalErrors: 0,
@@ -114,10 +115,10 @@ describe("지금 어디쯤인가", () => {
     await repo.insert(row("s3", 1, { elapsedMs: 80_000 }));
 
     expect(
-      await repo.standing("sido", "map", 1, 1, { completed: 17, elapsedMs: 50_000 }),
+      await repo.standing("sido", "map", 1, 1, { completed: 17, hintsUsed: 0, elapsedMs: 50_000 }),
     ).toEqual({ better: 1, total: 3 });
     expect(
-      await repo.standing("sido", "map", 1, 1, { completed: 17, elapsedMs: 30_000 }),
+      await repo.standing("sido", "map", 1, 1, { completed: 17, hintsUsed: 0, elapsedMs: 30_000 }),
     ).toEqual({ better: 0, total: 3 });
   });
 
@@ -128,14 +129,35 @@ describe("지금 어디쯤인가", () => {
     await repo.insert(row("s2", 2, { elapsedMs: 40_000 }));
 
     expect(
-      await repo.standing("sido", "map", 1, 1, { completed: 17, elapsedMs: 99_000 }),
+      await repo.standing("sido", "map", 1, 1, { completed: 17, hintsUsed: 0, elapsedMs: 99_000 }),
     ).toEqual({ better: 1, total: 1 });
   });
 
   it("아직 아무 기록도 없으면 0이다", async () => {
     const repo = new MemoryScoreRepository();
     expect(
-      await repo.standing("sido", "map", 1, 1, { completed: 17, elapsedMs: 30_000 }),
+      await repo.standing("sido", "map", 1, 1, { completed: 17, hintsUsed: 0, elapsedMs: 30_000 }),
     ).toEqual({ better: 0, total: 0 });
+  });
+});
+
+describe("힌트가 순위를 가른다", () => {
+  it("힌트를 덜 본 쪽이 느려도 위다", () => {
+    const fast = { completed: 17, hintsUsed: 3, elapsedMs: 50_000 };
+    const clean = { completed: 17, hintsUsed: 0, elapsedMs: 90_000 };
+    expect(outranks(clean, fast)).toBe(true);
+    expect(outranks(fast, clean)).toBe(false);
+  });
+
+  it("힌트가 같으면 빠른 쪽이 위다", () => {
+    const a = { completed: 17, hintsUsed: 2, elapsedMs: 50_000 };
+    const b = { completed: 17, hintsUsed: 2, elapsedMs: 90_000 };
+    expect(outranks(a, b)).toBe(true);
+  });
+
+  it("완주 수가 먼저다 — 힌트 없이 덜 끝낸 판이 위로 오지 않는다", () => {
+    const more = { completed: 17, hintsUsed: 5, elapsedMs: 90_000 };
+    const fewer = { completed: 16, hintsUsed: 0, elapsedMs: 50_000 };
+    expect(outranks(more, fewer)).toBe(true);
   });
 });

@@ -384,23 +384,18 @@ describe("초성 힌트", () => {
     expect(g.results[0].hinted).toBe(false);
   });
 
-  it("힌트는 기록에 시간으로 가산된다", () => {
+  it("힌트는 시간에 얹히지 않는다 — 시간은 벽시계와 같다", () => {
     const plain = score(start(createGame(ITEMS, MODES.map, 0, 1), 0), 10_000);
     let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
     g = revealHint(g);
-    const hinted = score(g, 10_000);
-    expect(hinted.elapsedMs).toBe(plain.elapsedMs + MODES.map.hintPenaltyMs!);
+    expect(score(g, 10_000).elapsedMs).toBe(plain.elapsedMs);
   });
 
-  it("힌트를 쓰면 같은 타수라도 타수/분이 낮아진다", () => {
-    const run = (useHint: boolean) => {
-      let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
-      if (useHint) g = revealHint(g);
-      const target = g.items[0].answer;
-      g = type(g, target, 0);
-      return score(g, 3_000);
-    };
-    expect(run(true).cpm).toBeLessThan(run(false).cpm);
+  it("대신 몇 번 봤는지가 기록에 남는다 — 그게 순위의 기준이다", () => {
+    let g = start(createGame(ITEMS, MODES.map, 0, 1), 0);
+    expect(score(g, 1_000).hintsUsed).toBe(0);
+    g = revealHint(g);
+    expect(score(g, 1_000).hintsUsed).toBe(1);
   });
 
   it("타임어택 오답은 기록을 늘리지 않는다 — 이중 처벌 방지", () => {

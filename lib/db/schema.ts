@@ -45,6 +45,14 @@ export const scores = pgTable(
     totalErrors: integer("total_errors").notNull(),
     completed: integer("completed").notNull(),
     total: integer("total").notNull(),
+    /**
+     * 초성 힌트를 몇 번 봤는가. **순위의 첫 기준이다.**
+     *
+     * 한때 힌트를 시간에 30초씩 얹어 하나의 숫자로 만들었다. 그러면 화면의
+     * 시간이 벽시계와 어긋나고, 그 30초의 무게가 코스 길이에 따라 널뛴다 —
+     * 제주 두 곳에서는 판을 끝장내고 전국 229곳에서는 티도 안 났다.
+     */
+    hintsUsed: integer("hints_used").notNull().default(0),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

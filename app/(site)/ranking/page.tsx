@@ -177,12 +177,15 @@ export default async function RankingPage({
                 <th scope="col" className="py-3 pr-4 font-normal">순위</th>
                 <th scope="col" className="py-3 pr-4 font-normal">이름</th>
                 {/*
-                  순위는 완주 수와 시간으로 매겨진다. 그래서 그 둘이 앞에 온다.
+                  순위는 완주 수 · 힌트 · 시간 순으로 매겨진다. 그래서 그 셋이 앞에 온다.
+                  힌트를 시간에 얹지 않는 이유는 lib/game/modes.ts에 적어 두었다 —
+                  한마디로 30초의 무게가 코스 길이에 따라 널뛰었다.
                   타수를 빼는 이유: 맞힌 타수가 완주한 지역들의 이름 길이 합으로
                   고정되므로, 다 돈 판끼리는 타수 순위가 곧 시간 순위다.
                   같은 말을 두 번 적을 이유가 없다.
                 */}
                 <th scope="col" className="py-3 pr-4 text-right font-normal">완주</th>
+                <th scope="col" className="py-3 pr-4 text-right font-normal">힌트</th>
                 <th scope="col" className="py-3 pr-4 text-right font-normal">기록</th>
                 <th scope="col" className="py-3 text-right font-normal">정확도</th>
               </tr>
@@ -196,6 +199,10 @@ export default async function RankingPage({
                   <td className="py-3 pr-4 font-medium">{entry.nickname}</td>
                   <td className="py-3 pr-4 text-right font-mono tabular-nums">
                     {entry.completed}/{entry.total}
+                  </td>
+                  {/* 안 본 판은 `-`다. `0회`보다 눈이 빨리 지나간다. */}
+                  <td className="py-3 pr-4 text-right font-mono tabular-nums text-dim">
+                    {entry.hintsUsed === 0 ? "-" : `${entry.hintsUsed}회`}
                   </td>
                   <td className="py-3 pr-4 text-right font-mono text-lg tabular-nums">
                     {formatClock(entry.elapsedMs)}

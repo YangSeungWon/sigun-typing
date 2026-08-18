@@ -113,6 +113,8 @@ export async function POST(request: Request) {
     totalErrors: score.totalErrors,
     completed: score.completed,
     total: score.total,
+    /* 순위의 두 번째 기준. 서버가 다시 계산한 값이지 클라이언트가 준 값이 아니다. */
+    hintsUsed: score.hintsUsed,
   });
 
   if (!stored) {

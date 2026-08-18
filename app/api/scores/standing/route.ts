@@ -33,7 +33,9 @@ export async function GET(request: Request) {
   ) {
     return NextResponse.json({ error: "잘못된 요청입니다" }, { status: 400 });
   }
-  const key = { completed, elapsedMs };
+  /* 힌트 횟수는 순위의 두 번째 기준이다. 안 주면 0으로 본다(안 본 판). */
+  const hintsUsed = Math.max(0, Math.floor(Number(url.searchParams.get("hintsUsed")) || 0));
+  const key = { completed, hintsUsed, elapsedMs };
 
   const repo = getScoreRepository();
   const [{ better, total }, around] = await Promise.all([

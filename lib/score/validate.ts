@@ -149,30 +149,24 @@ export function validateSubmission(
     Math.max(0, Math.floor(Number(submission.hintsUsed) || 0)),
     hintsAllowed,
   );
-  const hintPenaltyMs = hintsUsed * (config.hintPenaltyMs ?? 0);
-
   /*
-   * 두 개의 시간을 구분한다.
+   * 기록에 남는 시간은 **실제로 흐른 시간 하나뿐이다.**
    *
-   *   playedMs  — 실제로 흐른 시간. 벽시계와 견줄 수 있는 유일한 값이다.
-   *   elapsedMs — 기록에 남는 시간. 여기에는 힌트 페널티가 얹힌다.
-   *
-   * 하나로 뭉쳐 두었다가 힌트를 쓴 정직한 기록이 전부 거부됐다. 페널티는
-   * **흐른 적이 없는 시간**인데 그것을 더한 값을 벽시계와 비교했기 때문이다.
-   * 힌트 한 번이 30초이므로 두 번만 봐도 기록이 실제 경과를 1분 넘어선다.
+   * 한때 여기에 힌트 페널티를 얹었다. 그러면 흐른 적이 없는 시간이 섞이므로
+   * 벽시계와 견줄 수 없게 되고, 실제로 힌트를 쓴 정직한 기록이 전부 거부된
+   * 적이 있다. 지금은 힌트를 시간에 얹지 않으므로 그런 구분 자체가 없다.
    */
-  const playedMs = Math.max(
+  const elapsedMs = Math.max(
     results.reduce((a, r) => a + Math.max(0, r.elapsedMs), 0),
     timeline.span,
   );
-  const elapsedMs = playedMs + hintPenaltyMs;
 
   // 서버가 토큰을 발급한 뒤 실제로 흐른 시간보다 오래 플레이할 수는 없다.
   const wallclock = now - claims.issuedAt;
-  if (playedMs > wallclock + CLOCK_TOLERANCE_MS) {
+  if (elapsedMs > wallclock + CLOCK_TOLERANCE_MS) {
     reject(
       "elapsed_exceeds_wallclock",
-      `주장한 경과 ${playedMs}ms가 실제 경과 ${wallclock}ms보다 깁니다`,
+      `주장한 경과 ${elapsedMs}ms가 실제 경과 ${wallclock}ms보다 깁니다`,
     );
   }
 
@@ -185,7 +179,6 @@ export function validateSubmission(
    */
   const serverScore: Score = computeScore({
     correctKeystrokes: serverKeystrokes,
-    hintPenaltyMs,
     elapsedMs,
     totalErrors: results.reduce((a, r) => a + Math.max(0, r.errors), 0),
     completed: results.filter((r) => !r.skipped).length,

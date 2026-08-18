@@ -78,6 +78,13 @@
       "when": 1786333494835,
       "tag": "0010_workable_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787095334296,
+      "tag": "0011_crazy_doorman",
+      "breakpoints": true
     }
   ]
 }

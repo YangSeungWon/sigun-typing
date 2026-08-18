@@ -69,7 +69,6 @@ function makeRun(opts: RunOptions = {}) {
     completed: results.length,
     total: sidoCourse.regions.length,
     hintsUsed: 0,
-    hintPenaltyMs: 0,
     firstTry: results.length,
   };
 
@@ -278,7 +277,6 @@ describe("비인간 입력", () => {
 describe("초성 힌트 페널티", () => {
   /** 퀴즈는 시드로 섞이므로 엔진과 똑같은 순서로 만들어야 한다. */
   /** 값을 여기 박아 두면 페널티를 조정할 때마다 테스트가 거짓으로 깨진다. */
-  const HINT_MS = MODES.map.hintPenaltyMs!;
 
   function makeQuizRun(hintsUsed: number) {
     const items = createGame(
@@ -334,7 +332,6 @@ describe("초성 힌트 페널티", () => {
         firstTry: results.length,
         completed: results.length,
         total: sidoCourse.regions.length,
-        hintPenaltyMs: 0,
         hintsUsed,
       },
     };
@@ -345,18 +342,18 @@ describe("초성 힌트 페널티", () => {
      */
     return {
       submission,
-      arrivedAt: ISSUED_AT + t + hintsUsed * HINT_MS + 500,
-      /** 판이 끝나고 곧바로 제출한 시각. 페널티는 흐르지 않았다. */
+      arrivedAt: ISSUED_AT + t + 500,
       promptlyAt: ISSUED_AT + t + 500,
     };
   }
 
-  it("힌트를 쓰면 서버가 기록에 시간을 더한다", () => {
+  it("힌트를 써도 서버가 기록에 시간을 더하지 않는다", () => {
     const none = validateSubmission(makeQuizRun(0).submission, makeQuizRun(0).arrivedAt);
     const three = validateSubmission(makeQuizRun(3).submission, makeQuizRun(3).arrivedAt);
     if (!none.ok || !three.ok) throw new Error("둘 다 통과했어야 합니다");
-    expect(three.score.elapsedMs - none.score.elapsedMs).toBe(3 * HINT_MS);
-    expect(three.score.cpm).toBeLessThan(none.score.cpm);
+    expect(three.score.elapsedMs).toBe(none.score.elapsedMs);
+    expect(three.score.cpm).toBe(none.score.cpm);
+    // 대신 몇 번 봤는지가 남고, 그것이 순위의 기준이 된다.
     expect(three.score.hintsUsed).toBe(3);
   });
 
@@ -364,10 +361,9 @@ describe("초성 힌트 페널티", () => {
     /*
      * 실제로 깨졌던 자리다. 페널티를 더한 기록을 **벽시계와 비교**하는 바람에
      * 힌트를 쓴 정직한 판이 전부 elapsed_exceeds_wallclock으로 막혔다.
-     * 힌트 한 번이 30초이므로 두 번만 봐도 기록이 실제 경과를 1분 넘어선다.
      *
-     * 벽시계와 견줄 수 있는 것은 실제로 흐른 시간뿐이고, 페널티는 그 뒤에
-     * 기록에만 얹히는 값이다.
+     * 지금은 힌트를 시간에 얹지 않으므로 그런 어긋남 자체가 없다. 그래도 이
+     * 검사는 남긴다 — 다시 얹으려는 순간 여기서 걸린다.
      */
     const { submission, promptlyAt } = makeQuizRun(7);
     const result = validateSubmission(submission, promptlyAt);
@@ -388,7 +384,7 @@ describe("초성 힌트 페널티", () => {
   it("항목 수보다 많은 힌트는 잘라 낸다", () => {
     const { submission, arrivedAt } = makeQuizRun(0);
     const lying = { ...submission, hintsUsed: 9_999 };
-    const result = validateSubmission(lying, arrivedAt + 17 * HINT_MS);
+    const result = validateSubmission(lying, arrivedAt);
     if (!result.ok) throw new Error(JSON.stringify(result.rejections));
     expect(result.score.hintsUsed).toBe(sidoCourse.regions.length);
   });

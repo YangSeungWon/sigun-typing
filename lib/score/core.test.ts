@@ -11,7 +11,6 @@ describe("점수 규칙", () => {
       completed: 0,
       total: 17,
       hintsUsed: 0,
-      hintPenaltyMs: 0,
     firstTry: 0,
     });
     expect(s.accuracy).toBe(1);
@@ -26,7 +25,6 @@ describe("점수 규칙", () => {
       completed: 5,
       total: 17,
       hintsUsed: 0,
-      hintPenaltyMs: 0,
       firstTry: 4,
     });
     expect(s.accuracy).toBeCloseTo(4 / 5);
@@ -41,7 +39,6 @@ describe("점수 규칙", () => {
       completed: 5,
       total: 17,
       hintsUsed: 0,
-      hintPenaltyMs: 0,
       firstTry: 99,
     });
     expect(s.accuracy).toBe(1);
@@ -56,7 +53,6 @@ describe("점수 규칙", () => {
       completed: 0,
       total: 1,
       hintsUsed: 0,
-      hintPenaltyMs: 0,
     firstTry: 0,
     });
     expect(s.correctKeystrokes).toBe(0);

@@ -30,12 +30,14 @@ describe("모드 구성", () => {
     }
   });
 
-  it("힌트에는 값이 매겨져 있다", () => {
+  it("힌트에 시간을 물리지 않는다 — 횟수로 센다", () => {
+    /*
+     * 한때 한 번에 30초를 얹었다. 그 무게가 코스 길이에 따라 널뛰어서
+     * (제주 두 곳에서는 판이 끝장나고 전국 229곳에서는 티도 안 났다)
+     * 시간에서 떼어 냈다. 순위는 힌트 적은 순, 그다음이 시간이다.
+     */
     for (const mode of Object.values(MODES)) {
-      // 멀티는 예외다. 순위가 벽시계로 갈리므로 힌트를 읽는 동안
-      // 상대가 앞서 나가는 것이 이미 값이다.
-      if (!mode.allowHint || mode.id === "multi") continue;
-      expect(mode.hintPenaltyMs ?? 0, mode.id).toBeGreaterThan(0);
+      expect(mode.hintPenaltyMs ?? 0, mode.id).toBe(0);
     }
   });
 

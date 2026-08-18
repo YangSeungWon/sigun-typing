@@ -1,0 +1,1 @@
+ALTER TABLE "scores" ADD COLUMN "hints_used" integer DEFAULT 0 NOT NULL;

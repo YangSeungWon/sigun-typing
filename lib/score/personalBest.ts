@@ -43,6 +43,10 @@ export function isBetter(candidate: Score, current: PersonalBest): boolean {
   if (candidate.completed !== current.completed) {
     return candidate.completed > current.completed;
   }
+  /* 힌트를 덜 보고 낸 기록이 낫다. 순위표와 같은 규칙이다(lib/db/repo.ts). */
+  if (candidate.hintsUsed !== current.hintsUsed) {
+    return candidate.hintsUsed < current.hintsUsed;
+  }
   if (candidate.elapsedMs !== current.elapsedMs) {
     return candidate.elapsedMs < current.elapsedMs;
   }

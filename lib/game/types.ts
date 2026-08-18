@@ -195,14 +195,6 @@ export interface Score {
   total: number;
   /** 초성 힌트를 쓴 횟수 */
   hintsUsed: number;
-  /**
-   * 그중 기록에 얹힌 시간(ms).
-   *
-   * `elapsedMs`에 이미 들어 있다. 그런데도 따로 들고 다니는 이유는 **화면이
-   * 뺄셈을 보여 줘야 하기 때문**이다 — 1분 40초에 끝냈는데 4분 10초가 뜨면
-   * 읽을 방법이 없다.
-   */
-  hintPenaltyMs: number;
   /** 첫 제출에 맞힌 항목 수. 정확도는 이 값을 끝낸 곳 수로 나눈 것이다. */
   firstTry: number;
 }

@@ -45,22 +45,19 @@ function formatPrecise(ms: number): string {
 }
 
 /**
- * 힌트가 얹힌 만큼을 큰 숫자 바로 아래 적는다.
+ * 힌트를 몇 번 봤는가.
  *
- * 기록에는 힌트 한 번에 30초가 붙는다. 그런데 화면에는 그 합만 떠 있었고
- * 설명은 접힌 `자세히 보기` 안에 있었다 — 1분 40초에 끝낸 사람이 4분 10초를
- * 보고 무슨 일인지 알 방법이 없었다.
+ * 시간과 나란히 놓는다. 이 둘이 각자 순위를 가르기 때문이다 — 힌트 적은
+ * 쪽이 먼저이고, 같으면 빠른 쪽이다. 한때 힌트를 30초씩 시간에 얹었는데,
+ * 그러면 화면의 숫자가 벽시계와 어긋나고 그 무게가 코스 길이에 따라 널뛴다.
  *
- * 뺄셈을 보여 준다. 큰 숫자는 그대로 둔다 — 남과 겨루는 값이 그것이고, 실제로
- * 흐른 시간을 앞세우면 순위표의 내 기록과 화면의 숫자가 달라진다.
+ * 안 본 판에도 적는다. `힌트 없음`은 이 게임에서 자랑할 값이다.
  */
-function HintMath({ score }: { score: Score }) {
-  if (score.hintPenaltyMs <= 0) return null;
+function HintCount({ score }: { score: Score }) {
   return (
-    <p className="relative mt-1 font-mono text-xs text-on-sign/60">
-      {formatClock(score.elapsedMs - score.hintPenaltyMs)} + 힌트 {score.hintsUsed}회{" "}
-      {formatClock(score.hintPenaltyMs)}
-    </p>
+    <span className={score.hintsUsed === 0 ? "" : "text-on-sign/70"}>
+      {score.hintsUsed === 0 ? "힌트 없음" : `힌트 ${score.hintsUsed}회`}
+    </span>
   );
 }
 
@@ -220,7 +217,9 @@ export function ResultCard({
             <p className="relative mt-4 font-mono text-5xl font-bold tabular-nums text-on-sign">
               {formatPrecise(shown)}
             </p>
-            <HintMath score={score} />
+            <p className="relative mt-1 font-mono text-xs text-on-sign/60">
+              <HintCount score={score} />
+            </p>
           </>
         ) : (
           <p className="relative mt-4 text-5xl font-bold text-on-sign">
@@ -241,11 +240,16 @@ export function ResultCard({
           큰 숫자가 이미 말하고 있다.
         */}
         <p className="relative mt-3 font-mono text-sm text-on-sign/70">
-          {perfect
-            ? `한 번에 ${score.firstTry}곳`
-            : `${formatPrecise(score.elapsedMs)} · 한 번에 ${score.firstTry}곳`}
+          {/* 다 돈 판은 큰 숫자 아래에 이미 힌트가 적혀 있다. 두 번 적지 않는다. */}
+          {perfect ? (
+            `한 번에 ${score.firstTry}곳`
+          ) : (
+            <>
+              {`${formatPrecise(score.elapsedMs)} · 한 번에 ${score.firstTry}곳 · `}
+              <HintCount score={score} />
+            </>
+          )}
         </p>
-        {!perfect && <HintMath score={score} />}
 
         {/*
           기록 해석은 기록에 붙어 있어야 한다. 카드 밖에 한 줄로 떼어 놓았을
@@ -331,12 +335,10 @@ export function ResultCard({
           <div className="flex flex-col pt-2">
             <Row label="맞힌 타수" value={`${score.correctKeystrokes}타`} />
             <Row label="오타" value={`${score.totalErrors}회`} />
-            {score.hintsUsed > 0 && (
-              <Row
-                label="초성 힌트"
-                value={`${score.hintsUsed}회 · +${formatClock(score.hintPenaltyMs)}`}
-              />
-            )}
+            <Row
+              label="초성 힌트"
+              value={score.hintsUsed === 0 ? "없음" : `${score.hintsUsed}회`}
+            />
           </div>
         </details>
       </div>

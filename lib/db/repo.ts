@@ -19,6 +19,8 @@ export interface LeaderboardEntry {
   elapsedMs: number;
   completed: number;
   total: number;
+  /** 초성 힌트 횟수. 순위표가 시간과 나란히 보여 준다. */
+  hintsUsed: number;
   createdAt: Date;
 }
 
@@ -35,12 +37,20 @@ export interface LeaderboardEntry {
  */
 export interface RankKey {
   completed: number;
+  hintsUsed: number;
   elapsedMs: number;
 }
 
-/** a가 b보다 나은 기록인가. */
+/**
+ * a가 b보다 나은 기록인가.
+ *
+ * 많이 끝낸 쪽이 먼저, 그다음 **힌트 적게 본 쪽**, 그다음 빠른 쪽이다.
+ * 힌트를 시간에 얹지 않고 따로 세는 이유는 lib/game/modes.ts에 적어 두었다 —
+ * 한마디로 30초의 무게가 코스 길이에 따라 널뛰었다.
+ */
 export function outranks(a: RankKey, b: RankKey): boolean {
   if (a.completed !== b.completed) return a.completed > b.completed;
+  if (a.hintsUsed !== b.hintsUsed) return a.hintsUsed < b.hintsUsed;
   return a.elapsedMs < b.elapsedMs;
 }
 
@@ -106,6 +116,7 @@ export interface ScoreRepository {
 
 function toEntry(row: ScoreRow): LeaderboardEntry {
   return {
+    hintsUsed: row.hintsUsed,
     id: row.id,
     nickname: row.nickname,
     cpm: row.cpm,
@@ -275,7 +286,7 @@ export class PostgresScoreRepository implements ScoreRepository {
           ...(since ? [gte(scores.createdAt, since)] : []),
         ),
       )
-      .orderBy(desc(scores.completed), asc(scores.elapsedMs))
+      .orderBy(desc(scores.completed), asc(scores.hintsUsed), asc(scores.elapsedMs))
       .limit(limit);
     return rows.map(toEntry);
   }
@@ -362,9 +373,9 @@ export class PostgresScoreRepository implements ScoreRepository {
     const [above, below] = await Promise.all([
       // 나보다 나은 기록 중 가장 가까운 쪽. 거꾸로 뽑아야 바로 위가 나온다.
       this.db.select().from(scores).where(and(scope, better))
-        .orderBy(asc(scores.completed), desc(scores.elapsedMs)).limit(span),
+        .orderBy(asc(scores.completed), desc(scores.hintsUsed), desc(scores.elapsedMs)).limit(span),
       this.db.select().from(scores).where(and(scope, sql`not ${better}`))
-        .orderBy(desc(scores.completed), asc(scores.elapsedMs)).limit(span),
+        .orderBy(desc(scores.completed), asc(scores.hintsUsed), asc(scores.elapsedMs)).limit(span),
     ]);
     return { above: above.reverse().map(toEntry), below: below.map(toEntry) };
   }
@@ -400,7 +411,7 @@ export class PostgresScoreRepository implements ScoreRepository {
           sql`(${pairs})`,
         ),
       )
-      .orderBy(desc(scores.completed), asc(scores.elapsedMs));
+      .orderBy(desc(scores.completed), asc(scores.hintsUsed), asc(scores.elapsedMs));
 
     for (const row of rows) {
       if (!best.has(row.courseId)) best.set(row.courseId, toEntry(row));

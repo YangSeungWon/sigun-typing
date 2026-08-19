@@ -79,6 +79,13 @@ export function DailyQuiz({
 
   const [input, setInput] = useState("");
   const [note, setNote] = useState<string | null>(null);
+  /*
+   * 없는 이름을 냈을 때 남은 횟수를 한 번 튀게 하는 표시.
+   *
+   * 값이 바뀔 때마다 React가 그 노드를 새로 만들도록 key로 쓴다 — 같은 클래스를
+   * 다시 붙이는 것만으로는 CSS 애니메이션이 두 번째부터 안 돈다.
+   */
+  const [rejected, setRejected] = useState(0);
 
   const put = (next: QuizState) => {
     setState(next);
@@ -116,7 +123,8 @@ export function DailyQuiz({
       (r) => r.name === typed || r.aliases?.includes(typed),
     );
     if (matches.length === 0) {
-      setNote("그런 이름의 시군구가 없습니다");
+      setNote("없는 이름입니다");
+      setRejected((n) => n + 1);
       return;
     }
 
@@ -203,7 +211,13 @@ export function DailyQuiz({
         <section className="flex flex-col gap-3">
           <h2 className="flex items-baseline justify-between gap-4 font-mono text-sm text-dim">
             <span>어느 시군구입니까</span>
-            <span>{left}번 남음</span>
+            {/*
+              규칙을 문장으로 설명하지 않는다. 없는 이름을 냈을 때 이 숫자가
+              잠깐 반응하고, 그대로인 것을 사람이 스스로 본다.
+            */}
+            <span key={rejected} className={rejected > 0 ? "tally-hold" : undefined}>
+              {left}번 남음
+            </span>
           </h2>
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="guess">

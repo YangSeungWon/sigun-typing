@@ -107,7 +107,14 @@ export const RegionMap = memo(function RegionMap({
    * 라벨 글자 크기. 지도마다 viewBox가 다르므로 비율로 잡는다 —
    * 고정값으로 두면 서울에서 알맞은 크기가 전국 지도에서는 깨알이 된다.
    */
-  const fontSize = Math.round(geo.width * 0.055);
+  /*
+   * 이름표 크기.
+   *
+   * 지역이 스물다섯쯤인 지도에서는 0.055가 맞는데, 전국 229곳에 같은 값을 쓰면
+   * 판 하나가 경기도를 통째로 덮는다. 지역이 많다는 것은 하나가 작다는 뜻이고,
+   * 이름표는 그 하나를 가리키는 물건이라 함께 작아져야 한다.
+   */
+  const fontSize = Math.round(geo.width * (geo.regions.length > 60 ? 0.03 : 0.055));
 
   const transform = useMemo(
     () => (focus ? focusTransform(camera, geo) : ""),

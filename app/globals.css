@@ -312,6 +312,7 @@ body {
     "map"
     "actions"
     "confuse"
+    "daily"
     "friends";
 }
 
@@ -319,6 +320,7 @@ body {
 .home-map-slot { grid-area: map; }
 .home-actions { grid-area: actions; }
 .home-confuse { grid-area: confuse; }
+.home-daily { grid-area: daily; }
 .home-friends { grid-area: friends; }
 
 /*
@@ -335,6 +337,7 @@ body {
       "copy    map"
       "actions map"
       "confuse confuse"
+      "daily   daily"
       "friends friends";
   }
 

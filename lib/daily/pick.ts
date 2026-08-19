@@ -21,8 +21,13 @@ import { KST_OFFSET_MS } from "@/lib/score/period";
  * 곳이 사흘 만에 또 나오기도 하고 어떤 곳은 반년째 안 나오기도 한다.
  */
 
-/** 첫날. 이 날짜가 0일차다. KST 자정 기준. */
-export const EPOCH_KST = Date.UTC(2026, 7, 20);
+/**
+ * 첫날. 이 날짜가 0일차다. KST 자정 기준.
+ *
+ * 앞으로 당기면 회차 번호가 어긋나고, 뒤로 밀면 그날까지 음수 일차가 나온다.
+ * 한 번 정하면 안 건드리는 값이다.
+ */
+export const EPOCH_KST = Date.UTC(2026, 7, 19);
 
 /** KST 벽시계로 며칠째인가. */
 export function dayIndex(now: number): number {

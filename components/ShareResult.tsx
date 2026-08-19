@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ItemResult, ModeId, Score } from "@/lib/game/types";
 import {
   marksFor,
@@ -60,9 +60,6 @@ export function ShareResult({
   const hydrated = useIsHydrated();
   const canShare = hydrated && typeof navigator.share === "function";
 
-  // 완주하지 못한 판은 도전장이 되지 않는다.
-  if (score.completed === 0) return null;
-
   /**
    * 주소는 눌렀을 때 만든다. 렌더 중에 window를 읽으면 서버 렌더와 어긋난다.
    *
@@ -71,7 +68,7 @@ export function ShareResult({
    * `/play/...` 807개가 통째로 정적 생성에서 빠진다. 자세한 사정은 그 경로의
    * page.tsx에 적어 두었다.
    */
-  const challengeUrl = () => {
+  const challengePath = () => {
     const nickname = getSavedNickname().trim().slice(0, 12);
     /*
      * 기록 뒤에 `~`로 상태 꾸러미를 붙인다. 그래야 카드 그림의 지도도 이모지
@@ -85,8 +82,50 @@ export function ShareResult({
     const beat = String(Math.round(score.elapsedMs)) + (marks ? `~${marks}` : "");
     const parts = [mode, courseId, beat];
     if (nickname) parts.push(encodeURIComponent(nickname));
-    return `${window.location.origin}/c/${parts.join("/")}?from=challenge`;
+    return `/c/${parts.join("/")}`;
   };
+
+  const challengeUrl = () => `${window.location.origin}${challengePath()}?from=challenge`;
+
+  /**
+   * 넘길 그림. **미리 받아 둔다.**
+   *
+   * 사파리는 `navigator.share`를 사용자 제스처 안에서 부르라고 요구한다. 누른
+   * 뒤에 그림을 받아 오면 그 사이에 활성화 창이 지나 거부된다 — 눌렀는데
+   * 아무 일도 안 일어나는 화면이 된다. 그래서 결과가 뜨는 순간 받아 두고,
+   * 누를 때는 이미 손에 있는 것을 넘긴다.
+   *
+   * 새로 그리지 않는다. 도전장 링크의 미리보기 카드가 정확히 이 그림이다 —
+   * 표지판에 코스명과 기록, 옆에 이 판이 색칠된 지도. 링크를 펼쳤을 때 뜨는
+   * 것과 공유 시트로 넘어가는 것이 같은 그림이어야 한다.
+   *
+   * 못 받아도 조용히 넘어간다. 그림 없이 글만 가는 것이 아무것도 못 보내는
+   * 것보다 낫다.
+   */
+  const [card, setCard] = useState<File | null>(null);
+  useEffect(() => {
+    if (!canShare || !grid || typeof navigator.canShare !== "function") return;
+    let alive = true;
+    void fetch(`${challengePath()}/opengraph-image`)
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((blob) => {
+        if (!alive || !blob) return;
+        const file = new File([blob], "sigun-typing.png", { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) setCard(file);
+      })
+      .catch(() => {
+        // 망이 끊겼거나 서버가 늦다. 글만 보낸다.
+      });
+    return () => {
+      alive = false;
+    };
+    // challengePath는 렌더마다 새로 만들어지지만 값은 이 판에서 고정이다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canShare, grid, courseId, mode, score.elapsedMs]);
+
+  // 완주하지 못한 판은 도전장이 되지 않는다.
+  if (score.completed === 0) return null;
+
 
   /*
    * 숫자만 적던 자리다. 정확도 소수점 한 자리는 보내는 사람도 받는 사람도
@@ -125,8 +164,9 @@ export function ShareResult({
    */
   const share = async () => {
     mark();
+    const payload = { title: "시군 타이핑", text, url: challengeUrl() };
     try {
-      await navigator.share({ title: "시군 타이핑", text, url: challengeUrl() });
+      await navigator.share(card ? { ...payload, files: [card] } : payload);
     } catch {
       // 공유창을 닫은 것이다. 복사로 떨어뜨릴 이유는 없다.
     }

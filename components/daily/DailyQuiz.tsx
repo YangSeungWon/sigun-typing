@@ -15,6 +15,7 @@ import {
 import { cardCode, quizShareText } from "@/lib/daily/quiz";
 import { loadQuiz, saveQuiz } from "@/lib/daily/store";
 import { ShareCard } from "@/components/share/ShareCard";
+import { aliveOn, loadStreak, recordDay, type Streak } from "@/lib/daily/streak";
 
 export interface QuizRegion {
   code: string;
@@ -71,10 +72,17 @@ export function DailyQuiz({
     guesses: [],
     solved: false,
   }));
+  const [streak, setStreak] = useState<Streak | null>(null);
   const [loaded, setLoaded] = useState(false);
   if (hydrated && !loaded) {
     setLoaded(true);
-    setState(loadQuiz(day));
+    const saved = loadQuiz(day);
+    setState(saved);
+    /*
+     * 이미 끝난 판을 들고 왔으면 그날치는 벌써 세어져 있다. `recordDay`가 같은
+     * 날을 두 번 안 세므로 그냥 부르면 되고, 그래야 새로고침해도 숫자가 남는다.
+     */
+    setStreak(isOver(saved) ? recordDay(day, saved.solved) : loadStreak());
   }
 
   const [input, setInput] = useState("");
@@ -90,6 +98,8 @@ export function DailyQuiz({
   const put = (next: QuizState) => {
     setState(next);
     saveQuiz(next);
+    // 끝나는 순간 하루치를 센다. 같은 날 두 번 불러도 한 번만 세어진다.
+    if (isOver(next)) setStreak(recordDay(next.day, next.solved));
   };
 
   const stage: "sido" | "region" | "done" = isOver(state)
@@ -152,8 +162,23 @@ export function DailyQuiz({
   const left = MAX_TRIES - state.guesses.length;
   const text = quizShareText(state);
 
+  /*
+   * 아직 안 푼 사람에게 보이는 숫자.
+   *
+   * 끝난 뒤에 보여 주는 것은 결과지만, 시작 전에 보여 주는 것은 **오늘 풀 이유**다.
+   * 어제까지 이어 온 사람이 그 숫자를 보고 들어온다.
+   *
+   * 저장된 값이 아니라 오늘 기준으로 살아 있는지를 본다 — 이틀 쉬었으면 저장된
+   * 숫자는 그대로여도 지금은 끊긴 상태다.
+   */
+  const alive = streak ? aliveOn(streak, day) : 0;
+
   return (
     <div className="flex w-full flex-col gap-5">
+      {stage !== "done" && alive > 1 && (
+        <p className="font-mono text-sm text-sign">연속 {alive}일</p>
+      )}
+
       <RegionMap
         geo={geo}
         variant="hint"
@@ -319,8 +344,17 @@ export function DailyQuiz({
           {/*
             내일 다시 온다는 것을 알려 준다. 하루에 한 번인 게임에서 "끝"만
             적으면 오늘 여기서 관계가 끊긴다.
+
+            연속 일수가 그 말을 더 세게 한다 — 오늘 푼 이유는 문제가 궁금해서지만
+            내일 올 이유는 끊고 싶지 않은 숫자가 만든다. 첫날에는 안 적는다.
+            `연속 1일`은 아무 말도 아니다.
           */}
-          <p className="font-mono text-sm text-dim">내일 새 문제가 나옵니다</p>
+          <p className="flex flex-wrap items-baseline gap-x-4 font-mono text-sm text-dim">
+            {streak && streak.current > 1 && (
+              <span className="text-sign">연속 {streak.current}일</span>
+            )}
+            <span>내일 새 문제가 나옵니다</span>
+          </p>
         </section>
       )}
     </div>

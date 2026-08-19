@@ -22,6 +22,8 @@ interface ResultCardProps {
   geo?: CourseGeo | null;
   /** 실제로 맞힌 지역 코드 */
   passedCodes?: string[];
+  /** 맞히긴 했지만 헤맨 곳. 지도에서 노랑으로 뜬다. */
+  struggledCodes?: string[];
   /** 못 맞혔거나 틀린 채로 지나온 항목 */
   missed?: ItemResult[];
   /** 랭킹 등록 영역. 결과 카드는 제출 방식을 몰라도 된다. */
@@ -87,6 +89,7 @@ export function ResultCard({
   emphasis = "time",
   geo,
   passedCodes = [],
+  struggledCodes = [],
   missed = [],
   submitSlot,
   shareSlot,
@@ -117,6 +120,7 @@ export function ResultCard({
             <RegionMap
               geo={geo}
               passedCodes={passedCodes}
+              struggledCodes={struggledCodes}
               missedCodes={missed.filter((r) => r.skipped).map((r) => r.id)}
               variant="route"
               /*
@@ -132,14 +136,25 @@ export function ResultCard({
               섞였을 때만, 두 상태를 나란히 놓는다. 색만으로 가르면 색을
               구분하기 어려운 사람에게는 아무 말도 아니므로 빗금도 함께 쓴다.
             */}
-            {missed.some((r) => r.skipped) && (
+            {(missed.some((r) => r.skipped) || struggledCodes.length > 0) && (
               <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-sm text-dim">
-                <Legend color="var(--color-sign)" label={`맞힘 ${score.completed}`} />
                 <Legend
-                  hatched
-                  color="var(--color-alert)"
-                  label={`다시 볼 곳 ${missed.filter((r) => r.skipped).length}`}
+                  color="var(--color-sign)"
+                  label={`한 번에 ${score.completed - struggledCodes.length}`}
                 />
+                {struggledCodes.length > 0 && (
+                  <Legend
+                    color="var(--color-centerline)"
+                    label={`헤맨 곳 ${struggledCodes.length}`}
+                  />
+                )}
+                {missed.some((r) => r.skipped) && (
+                  <Legend
+                    hatched
+                    color="var(--color-alert)"
+                    label={`다시 볼 곳 ${missed.filter((r) => r.skipped).length}`}
+                  />
+                )}
               </span>
             )}
           </div>

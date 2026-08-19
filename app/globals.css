@@ -30,6 +30,7 @@
   --color-sign-deep: var(--sig-sign-deep);
   --color-sign-hi: var(--sig-sign-hi);
   --color-expressway: var(--sig-expressway);
+  --color-expressway-hi: var(--sig-expressway-hi);
   --color-centerline: var(--sig-centerline);
   --color-paint: var(--sig-paint);
   --color-on-sign: var(--sig-on-sign);
@@ -80,6 +81,11 @@
   --sig-sign-deep: #06522e;
   --sig-sign-hi: #0f8b4f;
   --sig-expressway: #10417e;
+  /*
+   * 지금 묻는 곳. 표지판 파랑을 그대로 쓰니 밝은 지도 위에서 먹처럼 무거웠다 —
+   * 한 곳만 칠하는 색이라 진할 이유가 없고, 오히려 그 무게가 지도를 눌렀다.
+   */
+  --sig-expressway-hi: #2f6fce;
   --sig-centerline: #f0c420;
   /** 떠 있는 판면 — 카드·입력칸. */
   --sig-paint: #f7f9f5;
@@ -123,6 +129,7 @@
     --sig-sign-deep: #169b72;
     --sig-sign-hi: #5cf2c0;
     --sig-expressway: #4b9dff;
+    --sig-expressway-hi: #7fc0ff;
     --sig-centerline: #ffd84d;
     --sig-paint: #16242e;
     --sig-on-sign: #05161c;
@@ -161,6 +168,11 @@
   --sig-sign-deep: #06522e;
   --sig-sign-hi: #0f8b4f;
   --sig-expressway: #10417e;
+  /*
+   * 지금 묻는 곳. 표지판 파랑을 그대로 쓰니 밝은 지도 위에서 먹처럼 무거웠다 —
+   * 한 곳만 칠하는 색이라 진할 이유가 없고, 오히려 그 무게가 지도를 눌렀다.
+   */
+  --sig-expressway-hi: #2f6fce;
   --sig-centerline: #f0c420;
   --sig-paint: #f7f9f5;
   --sig-on-sign: #f7f9f5;
@@ -182,6 +194,7 @@
   --sig-sign-deep: #169b72;
   --sig-sign-hi: #5cf2c0;
   --sig-expressway: #4b9dff;
+  --sig-expressway-hi: #7fc0ff;
   --sig-centerline: #ffd84d;
   --sig-paint: #16242e;
   --sig-on-sign: #05161c;

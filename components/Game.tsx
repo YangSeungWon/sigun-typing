@@ -567,6 +567,7 @@ export function Game({
           hintsUsed={score.hintsUsed}
           geo={geo}
           passedCodes={passedCodes}
+          struggledCodes={struggledCodes}
         />
       </main>
     );
@@ -594,6 +595,7 @@ export function Game({
           emphasis={config.timeLimitMs === undefined ? "time" : "count"}
           geo={geo}
           passedCodes={passedCodes}
+          struggledCodes={struggledCodes}
           missed={missedItems}
           coursesHref="/courses"
           nextSlot={

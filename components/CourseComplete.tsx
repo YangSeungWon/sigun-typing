@@ -11,6 +11,8 @@ interface CourseCompleteProps {
   hintsUsed?: number;
   geo?: CourseGeo | null;
   passedCodes: string[];
+  /** 맞히긴 했지만 헤맨 곳. 지도에서 노랑으로 뜬다. */
+  struggledCodes?: string[];
 }
 
 /**
@@ -29,6 +31,7 @@ export function CourseComplete({
   hintsUsed = 0,
   geo,
   passedCodes,
+  struggledCodes = [],
 }: CourseCompleteProps) {
   return (
     <div className="course-done flex flex-col items-center gap-6 text-center">
@@ -56,6 +59,7 @@ export function CourseComplete({
         <RegionMap
           geo={geo}
           passedCodes={passedCodes}
+          struggledCodes={struggledCodes}
           variant="route"
           className="h-56 w-auto sm:h-72"
         />

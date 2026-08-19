@@ -200,7 +200,18 @@ export const RegionMap = memo(function RegionMap({
           안티앨리어싱하면서 생기는 틈이기도 하다. 지도에 구멍이 난 것처럼
           보이는 쪽이 문제이므로, 그 자리에 배경 대신 지도색이 오게 한다.
         */}
-        <path d={silhouette} fill="var(--color-map-idle)" />
+        {/*
+          아직 안 간 곳의 바탕.
+          판이 도는 동안에는 연하게 깐다. 진하게 두면 칠한 곳과 안 칠한 곳의
+          명도가 비슷해져서, 지도가 "어디를 했고 어디가 남았나"를 말하지 않고
+          그냥 회색 덩어리로 보인다. 끝난 뒤(explore)에는 되돌린다 — 거기서는
+          짚어 보는 것이 일이라 바탕도 또렷해야 한다.
+        */}
+        <path
+          d={silhouette}
+          fill="var(--color-map-idle)"
+          opacity={explore ? 1 : 0.55}
+        />
 
         {/*
           고도 띠. 낮은 쪽부터 겹쳐 쌓아 높은 곳일수록 진해진다.
@@ -220,7 +231,12 @@ export const RegionMap = memo(function RegionMap({
               장수가 늘 때 한 장의 농도를 낮춰야 층계가 고르게 남는다.
             */}
             {geo.terrain.map((d, i) => (
-              <path key={i} d={d} fill="var(--color-relief)" opacity={0.4} />
+              <path
+                key={i}
+                d={d}
+                fill="var(--color-relief)"
+                opacity={explore ? 0.4 : 0.22}
+              />
             ))}
           </g>
         )}
@@ -252,7 +268,7 @@ export const RegionMap = memo(function RegionMap({
               fill={
                 isCurrent
                   ? variant === "hint"
-                    ? "var(--color-expressway)"
+                    ? "var(--color-expressway-hi)"
                     : "var(--color-sign-hi)"
                   : isStruggled
                     ? "var(--color-centerline)"

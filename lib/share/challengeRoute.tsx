@@ -10,6 +10,8 @@ import { isModeId, MODE_LABELS } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
 import { loadCourseGeo } from "@/lib/geo";
 import { loadCourseGrid } from "./courseGrid";
+import { seatOrder } from "./grid";
+import { decodeMarks, MARK, type Mark } from "@/lib/game/marks";
 
 /**
  * 도전장 한 장을 이루는 것들 — 화면, 카드 문구, 카드 그림.
@@ -35,12 +37,15 @@ const COLOR = {
   paint: "#f7f9f5",
   dim: "#586353",
   centerline: "#f0c420",
+  alert: "#c7452b",
 };
 
 interface Resolved {
   course: Course;
   mode: ModeId;
   challenge: Challenge;
+  /** 칸 순서대로의 지역별 결과. 옛 링크에는 없다. */
+  marks: Mark[] | null;
 }
 
 export function resolve(
@@ -51,8 +56,19 @@ export function resolve(
 ): Resolved | null {
   const course = getCourse(courseId);
   if (!course || !isModeId(mode)) return null;
-  const challenge = toChallenge(beat, by === null ? null : decodeURIComponent(by));
-  return challenge ? { course, mode, challenge } : null;
+
+  /*
+   * 기록 칸은 `41080` 또는 `41080~<꾸러미>`다. 뒤엣것이 지역별 결과이고,
+   * 이 장치가 생기기 전에 나간 링크에는 없다. 없으면 지도를 한 색으로 그린다.
+   */
+  const [ms, packed] = beat.split("~");
+  const challenge = toChallenge(ms, by === null ? null : decodeURIComponent(by));
+  if (!challenge) return null;
+
+  const grid = loadCourseGrid(course.id);
+  const marks =
+    grid && packed ? decodeMarks(packed, seatOrder(grid).length) : null;
+  return { course, mode, challenge, marks };
 }
 
 /** 사람이 읽는 기록. 공유 메시지와 같은 말투여야 한다. */
@@ -146,9 +162,21 @@ export async function card(found: Resolved | null) {
     );
   }
 
-  const { course, challenge } = found;
+  const { course, challenge, marks } = found;
   const grid = loadCourseGrid(course.id);
   const time = spoken(challenge.beatMs);
+  /*
+   * 이모지 격자와 같은 색으로 칠한다. 같은 판의 두 그림이 서로 다른 말을 하면
+   * 안 된다. 꾸러미가 없는 옛 링크에서는 전부 초록으로 세운다 — 그때는 모양만
+   * 말하는 지도다.
+   */
+  const seats = grid ? seatOrder(grid) : [];
+  const markAt = new Map(seats.map((code, i) => [code, marks?.[i] ?? MARK.clean]));
+  const FILL: Record<Mark, string> = {
+    [MARK.clean]: COLOR.sign,
+    [MARK.struggled]: COLOR.centerline,
+    [MARK.missed]: COLOR.alert,
+  };
   /*
    * 칸 크기는 격자에 맞춘다. 전국은 19×19라 칸이 작아지고 제주는 2×1이라
    * 커진다. 어느 쪽이든 오른쪽 자리 안에 들어와야 글자와 부딪히지 않는다.
@@ -221,9 +249,10 @@ export async function card(found: Resolved | null) {
                         width: cell,
                         height: cell,
                         borderRadius: Math.max(1, Math.floor(cell / 6)),
-                        background: grid.cells[y * grid.cols + x]
-                          ? COLOR.sign
-                          : COLOR.concreteDeep,
+                        background: (() => {
+                          const code = grid.cells[y * grid.cols + x];
+                          return code ? FILL[markAt.get(code)!] : COLOR.concreteDeep;
+                        })(),
                       }}
                     />
                   ))}

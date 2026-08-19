@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { ItemResult, ModeId, Score } from "@/lib/game/types";
-import { shareText, spokenDuration, type CourseGrid } from "@/lib/share/grid";
+import { marksFor, shareText, spokenDuration, type CourseGrid } from "@/lib/share/grid";
+import { encodeMarks } from "@/lib/game/marks";
 import { KAKAO_KEY, sendKakao } from "@/lib/share/kakao";
 import { fitsTweet, tweetUrl } from "@/lib/share/x";
 import { track } from "@/lib/analytics/track";
@@ -57,7 +58,17 @@ export function ShareResult({
    */
   const challengeUrl = () => {
     const nickname = getSavedNickname().trim().slice(0, 12);
-    const parts = [mode, courseId, String(Math.round(score.elapsedMs))];
+    /*
+     * 기록 뒤에 `~`로 상태 꾸러미를 붙인다. 그래야 카드 그림의 지도도 이모지
+     * 격자와 같은 색으로 칠해진다 — 서버가 아는 것은 주소뿐이다.
+     *
+     * 세그먼트를 새로 만들지 않고 기록 칸에 붙이는 이유는 경로 모양을 그대로
+     * 두기 위해서다. 이미 나간 링크(`.../41080/승원`)에는 `~`가 없고, 그것도
+     * 그대로 열린다. base64url에 `~`가 없어서 갈라도 안전하다.
+     */
+    const marks = grid ? encodeMarks(marksFor(grid, results)) : "";
+    const beat = String(Math.round(score.elapsedMs)) + (marks ? `~${marks}` : "");
+    const parts = [mode, courseId, beat];
     if (nickname) parts.push(encodeURIComponent(nickname));
     return `${window.location.origin}/c/${parts.join("/")}?from=challenge`;
   };

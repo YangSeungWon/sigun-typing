@@ -1,4 +1,5 @@
 import type { ItemResult } from "@/lib/game/types";
+import { MARK, markOf, type Mark } from "@/lib/game/marks";
 
 /**
  * 결과를 이모지 격자로.
@@ -27,18 +28,26 @@ export interface CourseGrid {
  * 노랑은 "헤맸다"이지 "힌트를 봤다"가 아니다. 초성을 본 것과 한 번 틀리고
  * 고쳐 맞힌 것은 같은 일이다 — 둘 다 바로 안 떠올랐다는 뜻이다.
  */
-const EMOJI = {
-  clean: "🟩",
-  struggled: "🟨",
-  missed: "🟥",
-  empty: "⬜",
-} as const;
+export const EMOJI: Record<Mark, string> = {
+  [MARK.clean]: "🟩",
+  [MARK.struggled]: "🟨",
+  [MARK.missed]: "🟥",
+};
+const EMPTY = "⬜";
 
-function mark(r: ItemResult | undefined): string {
-  // 판을 도중에 접으면 뒤쪽 지역은 결과 자체가 없다. 못 맞힌 것으로 친다.
-  if (!r || r.skipped) return EMOJI.missed;
-  if (r.hinted || r.errors > 0 || r.attempts > 1) return EMOJI.struggled;
-  return EMOJI.clean;
+/**
+ * 격자에 앉은 지역 코드를 칸 순서대로.
+ *
+ * 주소에 실어 보내는 상태 꾸러미도 이 순서를 따른다. 양쪽이 같은 자리표를
+ * 들고 있으므로 순서를 따로 보낼 필요가 없다.
+ */
+export function seatOrder(grid: CourseGrid): string[] {
+  return grid.cells.filter((c): c is string => c !== null);
+}
+
+export function marksFor(grid: CourseGrid, results: ItemResult[]): Mark[] {
+  const byId = new Map(results.map((r) => [r.id, r]));
+  return seatOrder(grid).map((code) => markOf(byId.get(code)));
 }
 
 export function renderGrid(grid: CourseGrid, results: ItemResult[]): string {
@@ -48,7 +57,7 @@ export function renderGrid(grid: CourseGrid, results: ItemResult[]): string {
     let line = "";
     for (let x = 0; x < grid.cols; x++) {
       const code = grid.cells[y * grid.cols + x];
-      line += code === null ? EMOJI.empty : mark(byId.get(code));
+      line += code === null ? EMPTY : EMOJI[markOf(byId.get(code))];
     }
     lines.push(line);
   }

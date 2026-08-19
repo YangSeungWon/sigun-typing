@@ -163,6 +163,14 @@ export function DailyQuiz({
          * 판이 끝나면 이름을 짚어 볼 수 있게 연다. 그 전에는 안 된다 —
          * 짚는 순간 이름이 뜨고 그게 곧 답이다.
          */
+        /*
+         * 못 맞히고 끝난 판에서는 정답을 **빨강으로** 칠한다.
+         *
+         * 현재 지역 색(밝은 초록)으로 두면 화면이 "여기가 정답이고 너는 맞혔다"로
+         * 읽힌다. 빨강과 빗금은 이 사이트에서 이미 `다시 볼 곳`이라는 뜻이고,
+         * 못 맞힌 판의 정답이 정확히 그것이다.
+         */
+        missedCodes={stage === "done" && !state.solved ? [answerCode] : undefined}
         explore={stage === "done"}
         className="mx-auto h-[38vh] max-h-[26rem] w-auto"
       />
@@ -251,8 +259,20 @@ export function DailyQuiz({
 
       {stage === "done" && (
         <section className="flex flex-col gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+          {/*
+            맞힌 판과 못 맞힌 판이 같은 모양이면, 이름만 보고 자기가 맞혔는지를
+            다시 헤아려야 한다. 못 맞혔을 때만 `정답`이라는 딱지를 앞에 붙인다.
+
+            위로도 설명도 안 붙인다. `아쉽네요, 다시 도전해보세요`는 숫자가 이미
+            하는 말을 문장으로 한 번 더 하는 것이고, 그 문장은 아무도 안 읽는다.
+          */}
           <div className="flex items-baseline justify-between gap-4">
-            <p className="text-2xl font-bold">{answer.name}</p>
+            <p className="flex items-baseline gap-2.5">
+              {!state.solved && (
+                <span className="font-mono text-sm text-alert">정답</span>
+              )}
+              <span className="text-2xl font-bold">{answer.name}</span>
+            </p>
             <p className="font-mono text-sm text-dim">
               {state.solved
                 ? `${state.guesses.length} / ${MAX_TRIES}`

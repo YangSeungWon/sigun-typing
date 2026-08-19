@@ -67,28 +67,33 @@ describe("공유 덩어리", () => {
   };
 
   it("회차와 성적과 격자가 들어간다", () => {
-    const t = quizShareText(solved, "경기");
+    const t = quizShareText(solved);
     expect(t).toContain("오늘의 퀴즈 3일차");
-    expect(t).toContain("경기 3 / 6");
+    expect(t).toContain("3 / 6");
     expect(t).toContain("🟥🟨🟩");
   });
 
   it("정답을 적지 않는다", () => {
     // 아직 안 푼 사람에게 보내면 그날 문제가 통째로 사라진다.
-    const t = quizShareText(solved, "경기");
+    const t = quizShareText(solved);
     for (const g of solved.guesses) expect(t).not.toContain(g.name);
   });
 
+  it("시도도 적지 않는다", () => {
+    // `경기 3 / 6`을 받으면 첫 질문의 답을 알고 시작한다 — 반쯤 풀린 판이다.
+    expect(quizShareText(solved)).not.toContain("경기");
+  });
+
   it("못 맞힌 판은 X로 적는다", () => {
-    const t = quizShareText({ ...solved, solved: false }, "경기");
-    expect(t).toContain("경기 X / 6");
+    const t = quizShareText({ ...solved, solved: false });
+    expect(t).toContain("X / 6");
   });
 
   it("가운데점을 쓰지 않는다", () => {
-    expect(quizShareText(solved, "경기")).not.toContain("·");
+    expect(quizShareText(solved)).not.toContain("·");
   });
 
   it("마지막 줄은 초대다", () => {
-    expect(quizShareText(solved, "경기").trimEnd().endsWith("같이 한 판?")).toBe(true);
+    expect(quizShareText(solved).trimEnd().endsWith("같이 한 판?")).toBe(true);
   });
 });

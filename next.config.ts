@@ -47,6 +47,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/c/[mode]/[course]/[beat]": ["./assets/**"],
     "/c/[mode]/[course]/[beat]/[by]": ["./assets/**"],
+    "/api/today-card/[code]": ["./assets/**"],
   },
 
   async redirects() {

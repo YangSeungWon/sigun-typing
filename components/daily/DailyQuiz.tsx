@@ -12,7 +12,7 @@ import {
   sidoCleared,
   type QuizState,
 } from "@/lib/daily/quiz";
-import { quizShareText } from "@/lib/daily/quiz";
+import { cardCode, quizShareText } from "@/lib/daily/quiz";
 import { loadQuiz, saveQuiz } from "@/lib/daily/store";
 import { ShareCard } from "@/components/share/ShareCard";
 
@@ -150,7 +150,7 @@ export function DailyQuiz({
   };
 
   const left = MAX_TRIES - state.guesses.length;
-  const text = quizShareText(state, sidoName);
+  const text = quizShareText(state);
 
   return (
     <div className="flex w-full flex-col gap-5">
@@ -271,6 +271,13 @@ export function DailyQuiz({
               {!state.solved && (
                 <span className="font-mono text-sm text-alert">정답</span>
               )}
+              {/*
+                시도는 여기서만 적는다. 공유에는 안 나간다 — 받는 사람이 첫
+                질문의 답을 알고 시작하면 반쯤 풀린 판을 물려받는 셈이다.
+              */}
+              {sidoName && (
+                <span className="font-mono text-sm text-dim">{sidoName}</span>
+              )}
               <span className="text-2xl font-bold">{answer.name}</span>
             </p>
             <p className="font-mono text-sm text-dim">
@@ -288,6 +295,12 @@ export function DailyQuiz({
           <ShareCard
             text={text}
             path="/today"
+            /*
+              그림은 지도를 안 싣는다. 결과 화면의 도전장 카드를 재활용하면 그림
+              한 장이 오늘 문제를 통째로 알려 준다 — 받은 사람이 풀 거리가
+              사라지면 오늘의 퀴즈라는 형식이 무너진다. 색 블록만 나간다.
+            */
+            imagePath={`/api/today-card/${cardCode(state)}`}
             preview={
               <pre className="text-center text-lg leading-none whitespace-pre">
                 {state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("")}
@@ -296,7 +309,8 @@ export function DailyQuiz({
             tweet={text}
             kakao={{
               title: `오늘의 퀴즈 ${day + 1}일차`,
-              description: `${sidoName ? `${sidoName} ` : ""}${
+              // 카드에도 시도를 안 적는다. 받는 사람이 첫 질문의 답을 알고 시작한다.
+              description: `${
                 state.solved ? `${state.guesses.length} / ${MAX_TRIES}` : `X / ${MAX_TRIES}`
               }, 같이 한 판?`,
             }}

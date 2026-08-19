@@ -55,6 +55,20 @@ export const QUIZ_EMOJI: Record<Closeness, string> = {
   far: "🟥",
 };
 
+/**
+ * 결과를 주소 한 조각으로.
+ *
+ * 공유 그림은 서버가 그리므로 주소 말고는 아는 것이 없다. 색이 셋뿐이라 글자
+ * 하나면 되고, 회차와 붙여 `2-nffh` 꼴이 된다.
+ *
+ * 이모지를 주소에 실을 수는 없다 — 퍼센트 인코딩으로 한 칸에 열두 자가 된다.
+ */
+const LETTER: Record<Closeness, string> = { hit: "h", near: "n", far: "f" };
+
+export function cardCode(state: QuizState): string {
+  return `${state.day}-${state.guesses.map((g) => LETTER[g.closeness]).join("")}`;
+}
+
 export interface QuizState {
   /** 며칠째 문제인가. 날이 바뀌면 저장된 판을 버리는 기준이다. */
   day: number;
@@ -87,11 +101,21 @@ export function isOver(state: QuizState): boolean {
  * 초대다. 정답은 적지 않는다. 아직 안 푼 사람에게 그걸 보내면 그날 문제가
  * 통째로 사라진다.
  */
-export function quizShareText(state: QuizState, sidoName: string | null): string {
+export function quizShareText(state: QuizState): string {
   const lines = ["시군 타이핑", `오늘의 퀴즈 ${state.day + 1}일차`];
 
-  const score = state.solved ? `${state.guesses.length} / ${MAX_TRIES}` : `X / ${MAX_TRIES}`;
-  lines.push(sidoName ? `${sidoName} ${score}` : score);
+  /*
+   * **시도는 안 적는다.**
+   *
+   * 점수로는 문제가 없다 — 시도 맞히기는 횟수를 안 깎으니 공정성이 안 걸린다.
+   * 걸리는 것은 받는 사람이다. `경기 3 / 6`을 받으면 첫 질문의 답을 알고
+   * 시작하므로, 같은 판을 푸는 것이 아니라 반쯤 풀린 판을 물려받는다.
+   *
+   * 화면 안에서는 보여 준다. 거기서는 자기가 짚은 것이라 스포일러가 아니다.
+   */
+  lines.push(
+    state.solved ? `${state.guesses.length} / ${MAX_TRIES}` : `X / ${MAX_TRIES}`,
+  );
 
   if (state.guesses.length > 0) {
     lines.push("", state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join(""));

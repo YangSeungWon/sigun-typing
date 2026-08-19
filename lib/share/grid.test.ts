@@ -96,6 +96,45 @@ describe("구운 자리표", () => {
     }
   });
 
+  /**
+   * 먼바다 지역은 빌드 스크립트가 이름으로 골라 떼어 놓는다(OFFSHORE).
+   * 코드가 바뀌면 조용히 육지에 붙어 버리므로 여기서 잡는다.
+   */
+  it("먼바다 지역은 육지와 대각선으로도 닿지 않는다", () => {
+    const cases: [course: string, offshore: string[]][] = [
+      ["sido", ["50"]],
+      ["incheon", ["28720"]],
+      ["gyeongbuk", ["47940"]],
+      ["nationwide", ["28720", "47940", "50110", "50130"]],
+    ];
+    for (const [courseId, codes] of cases) {
+      const g = grids[courseId];
+      const at = new Map<string, [number, number]>();
+      g.cells.forEach((c, i) => {
+        if (c) at.set(c, [i % g.cols, Math.floor(i / g.cols)]);
+      });
+      const island = new Set(codes);
+      for (const code of codes) {
+        const seat = at.get(code);
+        expect(seat, `${courseId}의 ${code}`).toBeDefined();
+        for (const [other, o] of at) {
+          if (island.has(other)) continue;
+          const touching =
+            Math.abs(o[0] - seat![0]) <= 1 && Math.abs(o[1] - seat![1]) <= 1;
+          expect(touching, `${courseId}: ${code}가 ${other}에 붙었다`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("제주 코스는 통째로 섬이라 떼어 낼 것이 없다", () => {
+    // 제주시·서귀포시 둘 다 먼바다 목록에 있지만, 여기서는 그 둘이 전부다.
+    // 떼어 내면 남는 육지가 없어 격자가 사라진다.
+    const g = grids.jeju;
+    expect(g.cells.filter(Boolean)).toHaveLength(2);
+    expect(g.rows).toBe(1);
+  });
+
   it("cells 길이가 cols×rows다", () => {
     for (const course of COURSES) {
       const g = grids[course.id];

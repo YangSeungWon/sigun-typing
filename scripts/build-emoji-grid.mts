@@ -47,6 +47,29 @@ const SLACK = 1.5;
 /** 칸 안을 이만큼 촘촘히 훑어 덮인 비율을 잰다. */
 const SUB = 4;
 
+/**
+ * 육지에서 떼어 놓을 지역.
+ *
+ * 격자 행 하나가 실좌표 50 단위쯤인데 남해안과 제주 사이 바다가 그보다 좁다.
+ * 그래서 반올림하면 바다가 통째로 사라지고, 제주가 전라남도 옆에 붙어 버린다.
+ * 섬이라는 사실이 격자에서 아예 안 보인다.
+ *
+ * **연결 요소를 자동으로 찾는 방법은 버렸다.** 해안 코스마다 갯바위가 다
+ * 걸린다 — 부산 남구는 덩어리가 스물넷이고 그 스물셋이 용호동 앞바다의
+ * 바위섬이다. 그것들까지 떼어 놓으면 격자가 산산조각 난다.
+ *
+ * 떼어 놓을 값이 있는 것은 **지역 전체가 먼바다에 있는 경우**뿐이고, 실제로
+ * 셋이다. 자동 규칙으로 이 셋만 고르려다 임계값 놀음이 되느니 이름을 적는다.
+ * 코드가 사라지면 grid.test.ts가 잡는다.
+ */
+const OFFSHORE = new Set([
+  "28720", // 인천 옹진군 — 백령·연평
+  "47940", // 경북 울릉군
+  "50", // 제주특별자치도 (시도 코스)
+  "50110", // 제주시 (전국 코스)
+  "50130", // 서귀포시 (전국 코스)
+]);
+
 type Point = [number, number];
 
 interface Region {
@@ -176,7 +199,18 @@ export function buildGrid(geo: GeoFile): CourseGrid {
     return { code: r.code, name: r.name, rings, centroid: centroidOf(rings) };
   });
 
-  const pts = regions.flatMap((r) => r.rings.flat());
+  /*
+   * 섬은 육지 배치에서 빼고 나중에 따로 앉힌다. 함께 넣으면 경계 상자가
+   * 제주까지 늘어나 육지 해상도가 낮아지고, 정작 바다는 사라진다.
+   *
+   * 코스가 통째로 섬이면(제주 2 행정시) 떼어 낼 육지가 없다. 그때는 평소대로.
+   */
+  const offshore = regions.filter((r) => OFFSHORE.has(r.code));
+  const mainland = regions.filter((r) => !OFFSHORE.has(r.code));
+  const seated = offshore.length > 0 && mainland.length > 0 ? mainland : regions;
+  const detached = seated === mainland ? offshore : [];
+
+  const pts = seated.flatMap((r) => r.rings.flat());
   const xs = pts.map((p) => p[0]);
   const ys = pts.map((p) => p[1]);
   const x0 = Math.min(...xs);
@@ -189,24 +223,25 @@ export function buildGrid(geo: GeoFile): CourseGrid {
   };
 
   // 땅 칸이 지역 수보다 넉넉해지는 첫 해상도. 못 찾으면 자리라도 나오는 것으로.
-  let pick: { cols: number; rows: number; land: Cell[] } | null = null;
-  let fallback: typeof pick = null;
+  type Pick = { cols: number; rows: number; land: Cell[] };
+  let pick: Pick | null = null;
+  let fallback: Pick | null = null;
   for (let cols = 2; cols <= 64; cols++) {
-    const { rows, land } = landCells(regions, box, cols);
-    if (land.length < regions.length) continue;
+    const { rows, land } = landCells(seated, box, cols);
+    if (land.length < seated.length) continue;
     fallback ??= { cols, rows, land };
-    if (land.length >= regions.length * SLACK) {
+    if (land.length >= seated.length * SLACK) {
       pick = { cols, rows, land };
       break;
     }
   }
   const chosen = pick ?? fallback;
-  if (!chosen) throw new Error(`${geo.id}: 지역 ${regions.length}곳을 앉힐 격자를 못 찾았다`);
+  if (!chosen) throw new Error(`${geo.id}: 지역 ${seated.length}곳을 앉힐 격자를 못 찾았다`);
 
   // 남는 칸은 가장자리에서만 버린다.
   const seats = [...chosen.land]
     .sort((a, b) => b.cover - a.cover)
-    .slice(0, regions.length);
+    .slice(0, seated.length);
 
   const cw = box.w / chosen.cols;
   const chh = box.h / chosen.rows;
@@ -225,7 +260,7 @@ export function buildGrid(geo: GeoFile): CourseGrid {
    */
   const free = [...seats];
   const seatOf = new Map<string, Cell>();
-  for (const r of [...regions].sort((a, b) => a.centroid[1] - b.centroid[1])) {
+  for (const r of [...seated].sort((a, b) => a.centroid[1] - b.centroid[1])) {
     let bi = 0;
     let bc = Infinity;
     free.forEach((c, i) => {
@@ -237,7 +272,7 @@ export function buildGrid(geo: GeoFile): CourseGrid {
     });
     seatOf.set(r.code, free.splice(bi, 1)[0]);
   }
-  const byCode = new Map(regions.map((r) => [r.code, r]));
+  const byCode = new Map(seated.map((r) => [r.code, r]));
   for (let pass = 0; pass < 80; pass++) {
     let moved = false;
     const codes = [...seatOf.keys()];
@@ -255,6 +290,62 @@ export function buildGrid(geo: GeoFile): CourseGrid {
       }
     }
     if (!moved) break;
+  }
+
+  /*
+   * 섬을 앉힌다.
+   *
+   * 먼저 실제 좌표가 가리키는 칸에 놓는다. 육지 격자 밖으로 나가도 된다 —
+   * 아래에서 경계를 넓힌다. 그다음 육지에서 멀어지는 쪽으로 한 칸씩 밀어,
+   * 어느 육지 칸과도 대각선으로조차 닿지 않을 때까지 보낸다. 그래야 그 사이가
+   * 바다로 읽힌다.
+   *
+   * 미는 방향은 실제 방위다. 제주는 남쪽, 울릉은 동쪽, 옹진은 서쪽으로 간다.
+   * 방향을 고정하지 않는 이유는 셋의 방위가 다르기 때문이고, 그래서 전국
+   * 코스에서 셋이 각자 제자리로 흩어진다.
+   */
+  if (detached.length > 0) {
+    const mainCells = [...seatOf.values()];
+    const mx = mainCells.reduce((a, c) => a + c.x, 0) / mainCells.length;
+    const my = mainCells.reduce((a, c) => a + c.y, 0) / mainCells.length;
+    const taken = new Set(mainCells.map((c) => `${c.x},${c.y}`));
+
+    // 남쪽 섬부터. 여럿이 같은 쪽으로 갈 때 먼 것이 먼저 자리를 잡아야
+    // 가까운 것이 그 안쪽에 앉는다(제주시와 서귀포시가 붙어 있어야 한다).
+    const ordered = [...detached].sort(
+      (a, b) => (b.centroid[1] - a.centroid[1]) || (a.centroid[0] - b.centroid[0]),
+    );
+    const lo = (v: number[]) => Math.min(...v);
+    const hi = (v: number[]) => Math.max(...v);
+    const bx = [lo(mainCells.map((c) => c.x)), hi(mainCells.map((c) => c.x))];
+    const by = [lo(mainCells.map((c) => c.y)), hi(mainCells.map((c) => c.y))];
+    const clamp = (v: number, [a, b]: number[]) => Math.min(b + 2, Math.max(a - 2, v));
+
+    for (const r of ordered) {
+      /*
+       * 실제 거리만큼 보내면 격자가 바다로 뒤덮인다 — 전국이 36칸 폭이 됐고
+       * 인천은 열아홉 칸 중 열일곱이 빈칸이었다. 방향만 살리고 거리는 버린다.
+       * 섬이라는 사실을 말하는 데 필요한 것은 한 칸의 바다지 실제 해리가 아니다.
+       */
+      let x = clamp(Math.round((r.centroid[0] - box.x0) / cw - 0.5), bx);
+      let y = clamp(Math.round((r.centroid[1] - box.y0) / chh - 0.5), by);
+      const dx = Math.sign(x - mx) || 0;
+      const dy = Math.sign(y - my) || 1;
+      // 방위가 뚜렷한 축으로만 민다. 둘 다 밀면 대각선으로 흘러 엉뚱한 데 간다.
+      const [stepX, stepY] =
+        Math.abs(x - mx) * CELL_ASPECT > Math.abs(y - my) ? [dx, 0] : [0, dy];
+      // 육지와 대각선으로도 닿으면 안 되고, 먼저 앉은 섬과 겹쳐도 안 된다.
+      const clash = () =>
+        mainCells.some((c) => Math.abs(c.x - x) <= 1 && Math.abs(c.y - y) <= 1) ||
+        taken.has(`${x},${y}`);
+      let guard = 0;
+      while (clash() && guard++ < 64) {
+        x += stepX;
+        y += stepY;
+      }
+      taken.add(`${x},${y}`);
+      seatOf.set(r.code, { x, y, cover: 1 });
+    }
   }
 
   // 가장자리 빈 줄·빈 열은 잘라 낸다. 제주가 4×4 한복판에 두 칸으로 뜨지 않게.

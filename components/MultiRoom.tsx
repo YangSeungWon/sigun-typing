@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
 import { COURSE_PICKER_GROUPS } from "@/lib/courses/picker";
 import { useRoom } from "@/lib/multiplayer/useRoom";
@@ -26,6 +25,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     selfId,
     create,
     join,
+    leave,
     setReady,
     setRules,
     start,
@@ -323,7 +323,12 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
     if (!course) return null;
     return (
       <div className="flex w-full max-w-xl flex-col gap-6">
-        <RoomHeader code={room.id} courseName={course.name} round={room.round} />
+        <RoomHeader
+          code={room.id}
+          courseName={course.name}
+          round={room.round}
+          onLeave={leave}
+        />
         <MultiRace
           course={course}
           geo={geo}
@@ -354,6 +359,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         code={room.id}
         courseName={course?.name ?? room.courseId}
         round={room.round}
+        onLeave={leave}
       />
 
       <InviteLink code={room.id} />
@@ -554,18 +560,48 @@ function NextRound({
   );
 }
 
+/**
+ * 방 윗줄. 나가는 문과 방 코드, 그리고 몇 판째 무슨 코스인지.
+ *
+ * 나가는 문이 `← 시군 타이핑`이었다. 누르면 실제로 방에서 빠지긴 했다 —
+ * 화면이 바뀌면서 소켓이 끊기니까. 다만 그렇게 읽히지 않았다. 홈으로 가는
+ * 링크의 생김새를 하고 있었고 목적지도 홈이었다.
+ *
+ * 링크가 아니라 단추다. 주소를 옮기는 일이 아니라 방에서 빠지는 일이고, 둘은
+ * 눌렀을 때 일어나는 일이 다르다. 나가면 대결 첫 화면에 그대로 선다.
+ */
 function RoomHeader({
   code,
   courseName,
   round,
+  onLeave,
 }: {
   code: string;
   courseName: string;
   round: number;
+  onLeave: () => void;
 }) {
   return (
     <header className="flex flex-col gap-2">
-      <BackLink href="/">시군 타이핑</BackLink>
+      {/*
+        판이 도는 중이라고 가리거나 다시 묻지 않는다. 지금까지도 이 자리를
+        누르면 아무것도 안 묻고 방에서 빠졌고, 이번에 바꾸는 것은 그 동작이
+        아니라 이름과 목적지다. 판 도중에 그만두는 문은 판 안에 따로 있다 —
+        `여기까지 하기`는 방에 남는다.
+      */}
+      <button
+        type="button"
+        onClick={onLeave}
+        className="group inline-flex w-fit items-center gap-2 font-sans text-base font-medium text-ink/70 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        <span
+          aria-hidden="true"
+          className="transition-transform duration-150 group-hover:-translate-x-0.5"
+        >
+          ←
+        </span>
+        나가기
+      </button>
       <div className="flex items-baseline justify-between gap-4">
         <span className="font-mono text-3xl font-semibold tracking-[0.2em]">
           {code}

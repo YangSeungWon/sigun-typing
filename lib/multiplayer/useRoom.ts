@@ -25,6 +25,15 @@ export function useRoom() {
   const [room, setRoom] = useState<RoomState | null>(null);
   const [raceStart, setRaceStart] = useState<RaceStart | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * 연결 회차.
+   *
+   * 이 값이 바뀌면 아래 effect가 다시 돌면서 헌 소켓을 끊고 새것을 연다.
+   * 방에서 나가는 유일한 방법이 연결을 끊는 것이라(서버는 소켓이 사라지는
+   * 것으로 퇴장을 안다) 나갔다가 다시 만들거나 들어가려면 연결이 새로
+   * 필요하다.
+   */
+  const [session, setSession] = useState(0);
 
   useEffect(() => {
     const socket = connectSocket();
@@ -43,6 +52,26 @@ export function useRoom() {
       socket.disconnect();
       socketRef.current = null;
     };
+  }, [session]);
+
+  /**
+   * 방에서 나간다.
+   *
+   * 여태 이 자리에 있던 것은 홈으로 가는 링크였다. 실제로 방에서 빠지긴 했다 —
+   * 화면을 옮기면 이 훅을 쥔 컴포넌트가 사라지고 소켓이 끊기니까. 다만 그게
+   * 나가는 문이라는 것이 이름에도 목적지에도 안 적혀 있었다. `← 시군 타이핑`은
+   * 한 칸 위로 가는 링크의 문법이고, 대결에서 한 칸 위는 홈이 아니라 대결이다.
+   *
+   * 화면을 옮기지 않고 연결만 새로 연다. 서버가 보는 것은 전과 똑같은 퇴장이고,
+   * 나간 사람은 대결 첫 화면(방 만들기·들어가기)에 그대로 선다 — 한 판 더
+   * 하려는 사람이 가장 자주 원하는 자리다.
+   */
+  const leave = useCallback(() => {
+    setRoom(null);
+    setRaceStart(null);
+    setError(null);
+    setSelfId(null);
+    setSession((n) => n + 1);
   }, []);
 
   const create = useCallback(
@@ -130,6 +159,7 @@ export function useRoom() {
     selfId,
     create,
     join,
+    leave,
     setReady,
     setRules,
     start,

@@ -63,7 +63,7 @@ export default async function RankingPage({
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-14">
       {/*
         검증 이야기는 여기 있지 않다.
 

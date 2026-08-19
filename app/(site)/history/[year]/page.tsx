@@ -31,7 +31,7 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
   const next = EVENTS[i + 1];
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
       <BackLink href="/history">행정구역 변천사</BackLink>
 
       {/* 연도와 사건이 제목이다. 그 위에 설명을 얹지 않는다. */}

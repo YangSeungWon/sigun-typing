@@ -86,7 +86,7 @@ export default async function CoursesPage() {
   })).filter((g) => g.courses.length > 0);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-10">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-10">
       {/*
         제목과 설명은 한 덩어리다. 사이를 카드 간격만큼 벌리면 설명이 첫
         권역에 딸린 것처럼 읽힌다.

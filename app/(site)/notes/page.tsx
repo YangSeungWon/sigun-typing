@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function NotesPage() {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
       <header className="flex flex-col gap-3">
         {/*
           "오답노트"는 학교 시험의 말이고, 규칙(2번 연속 정답)은 시스템의 말이다.

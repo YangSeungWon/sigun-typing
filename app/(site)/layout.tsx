@@ -29,6 +29,24 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
      * 탭 바가 없으므로 md에서 0으로 되돌린다.
      */
     <div className="app-shell flex min-h-full flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      {/*
+        본문 바로가기.
+        헤더 링크가 여섯이라, 키보드로 다니는 사람은 화면을 옮길 때마다 그
+        여섯을 지나야 본문에 닿는다. 눈에는 안 보이다가 탭이 처음 닿는 순간
+        나타난다 — 마우스를 쓰는 사람에게는 없는 것과 같고, 필요한 사람에게는
+        첫 번째로 잡히는 것이 이 링크다.
+
+        `<main>` 쪽에 tabIndex={-1}이 있어야 한다. 그게 없으면 브라우저가
+        화면만 내리고 포커스는 헤더에 남아, 다음 탭이 본문이 아니라 두 번째
+        메뉴로 간다 — 건너뛴 것처럼 보이지만 아무것도 안 건너뛴 상태다.
+      */}
+      <a
+        href="#main"
+        className="sr-only rounded bg-sign px-4 py-2 font-medium text-on-sign focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50"
+      >
+        본문 바로가기
+      </a>
+
       <DesktopHeader />
       <MobileHeader />
       {children}

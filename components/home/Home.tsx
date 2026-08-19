@@ -145,6 +145,8 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
 
   return (
     <main
+      id="main"
+      tabIndex={-1}
       className="home-grid mx-auto w-full max-w-5xl flex-1 px-5 py-5 md:px-6 md:py-8"
       data-confuse={hasConfusion ? "on" : "off"}
     >

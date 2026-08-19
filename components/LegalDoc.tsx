@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 interface LegalDocProps {
@@ -11,7 +10,7 @@ interface LegalDocProps {
 /** 약관·방침처럼 길게 읽는 문서의 공통 틀. */
 export function LegalDoc({ title, effectiveDate, children }: LegalDocProps) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
       <header className="flex flex-col gap-3">
         <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
         <p className="font-mono text-xs text-dim">시행일 {effectiveDate}</p>
@@ -19,17 +18,6 @@ export function LegalDoc({ title, effectiveDate, children }: LegalDocProps) {
 
       <div className="flex flex-col gap-8 leading-relaxed">{children}</div>
 
-      <footer className="mt-auto flex gap-4 border-t border-concrete-deep pt-6 font-mono text-xs text-dim">
-        <Link href="/guide" className="transition-colors hover:text-ink">
-          이용안내
-        </Link>
-        <Link href="/privacy" className="transition-colors hover:text-ink">
-          개인정보 처리방침
-        </Link>
-        <Link href="/terms" className="transition-colors hover:text-ink">
-          이용약관
-        </Link>
-      </footer>
     </main>
   );
 }

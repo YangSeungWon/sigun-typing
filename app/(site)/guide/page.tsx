@@ -26,7 +26,7 @@ export default function GuidePage() {
   const hintSeconds = (MODES.map.hintPenaltyMs ?? 0) / 1000;
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
       <header className="flex flex-col gap-3">
         <h1 className="text-4xl font-bold tracking-tight">이용안내</h1>
         <p className="text-lg text-dim">
@@ -170,14 +170,6 @@ export default function GuidePage() {
         </Link>
       </nav>
 
-      <footer className="mt-auto flex gap-4 border-t border-concrete-deep pt-6 font-mono text-xs text-dim">
-        <Link href="/privacy" className="transition-colors hover:text-ink">
-          개인정보 처리방침
-        </Link>
-        <Link href="/terms" className="transition-colors hover:text-ink">
-          이용약관
-        </Link>
-      </footer>
     </main>
   );
 }

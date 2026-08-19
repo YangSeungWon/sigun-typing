@@ -73,7 +73,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
       : (COURSE_GROUPS.find((g) => g.id === course.group)?.name ?? "다른 코스");
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
       <header className="flex flex-col gap-3">
         {/* 이 화면의 부모는 이제 첫 화면이 아니라 목록이다. */}
         <BackLink href="/courses">코스</BackLink>

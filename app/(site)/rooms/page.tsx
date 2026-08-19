@@ -10,7 +10,7 @@ export default async function RoomsPage({ searchParams }: PageProps<"/rooms">) {
   const code = typeof params.code === "string" ? params.code : undefined;
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center px-6 py-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center px-6 py-14">
       <MultiRoom initialCode={code} />
     </main>
   );

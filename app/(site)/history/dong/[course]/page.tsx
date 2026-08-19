@@ -31,7 +31,7 @@ export default async function DongHistoryPage({
   const last = story.states[story.states.length - 1];
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
+    <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
       <BackLink href={`/courses/${course}`}>{story.name}</BackLink>
 
       {/* 개수의 변화가 이 화면의 제목이다. */}

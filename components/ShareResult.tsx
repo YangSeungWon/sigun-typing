@@ -6,8 +6,11 @@ import { marksFor, shareText, spokenDuration, type CourseGrid } from "@/lib/shar
 import { encodeMarks } from "@/lib/game/marks";
 import { KAKAO_KEY, sendKakao } from "@/lib/share/kakao";
 import { fitsTweet, tweetUrl } from "@/lib/share/x";
+import { BrandMark, ShareOption } from "./share/ShareOption";
+import { BRAND_PATH } from "./share/brandPaths";
 import { track } from "@/lib/analytics/track";
 import { getSavedNickname } from "@/lib/score/client";
+import { useIsHydrated } from "@/lib/useIsHydrated";
 
 interface ShareResultProps {
   courseId: string;
@@ -44,6 +47,12 @@ export function ShareResult({
   results,
 }: ShareResultProps) {
   const [copied, setCopied] = useState(false);
+  /*
+   * 공유 시트가 있는 기기인가. 서버는 모르는 값이라 하이드레이션 뒤에 본다 —
+   * 렌더 중에 navigator를 읽으면 서버가 그린 것과 어긋난다.
+   */
+  const hydrated = useIsHydrated();
+  const canShare = hydrated && typeof navigator.share === "function";
 
   // 완주하지 못한 판은 도전장이 되지 않는다.
   if (score.completed === 0) return null;
@@ -88,27 +97,32 @@ export function ShareResult({
   };
   const text = shareText(body);
 
-  const share = async () => {
+  const mark = () =>
     track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs });
-    const url = challengeUrl();
 
-    // 모바일에서는 공유 시트가 카톡·메시지로 바로 간다. 데스크톱에는 없다.
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "시군 타이핑", text, url });
-        return;
-      } catch {
-        // 사용자가 공유창을 닫은 것이다. 복사로 떨어뜨릴 이유는 없다.
-        return;
-      }
-    }
-
+  const copy = async (payload: string) => {
     try {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
+      await navigator.clipboard.writeText(payload);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
       // 클립보드가 막힌 환경. 주소창에서 직접 복사하는 수밖에 없다.
+    }
+  };
+
+  /**
+   * 기기가 주는 공유 시트.
+   *
+   * 여기서만 카톡·문자·인스타가 한꺼번에 뜬다. 데스크톱 브라우저에는 이 API가
+   * 없어서 아예 칸을 안 낸다 — 여태 이 자리가 `결과 보내기`라는 이름으로
+   * 데스크톱에서는 복사를 하고 있었고, 누르는 사람은 무슨 일이 날지 몰랐다.
+   */
+  const share = async () => {
+    mark();
+    try {
+      await navigator.share({ title: "시군 타이핑", text, url: challengeUrl() });
+    } catch {
+      // 공유창을 닫은 것이다. 복사로 떨어뜨릴 이유는 없다.
     }
   };
 
@@ -123,7 +137,7 @@ export function ShareResult({
    * 누르면 SDK가 거절하는데, 그때는 조용히 위의 길로 떨어진다.
    */
   const kakao = async () => {
-    track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs });
+    mark();
     const ok = await sendKakao({
       title: `${courseName} ${spokenDuration(score.elapsedMs)}`,
       description:
@@ -133,7 +147,8 @@ export function ShareResult({
       url: challengeUrl(),
       imageUrl: `${window.location.origin}/og.png`,
     });
-    if (!ok) await share();
+    // 도메인 미등록이나 SDK 실패. 조용히 붙여 넣을 수 있게 떨어뜨린다.
+    if (!ok) await copy(`${text}\n${challengeUrl()}`);
   };
 
   /*
@@ -145,7 +160,7 @@ export function ShareResult({
    * 사람에게 가장 나쁜 결과다. 링크를 펼치면 카드에 지도가 있다.
    */
   const postToX = () => {
-    track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs });
+    mark();
     const lean = { ...body, grid: null };
     const full = shareText(body);
     window.open(
@@ -157,44 +172,76 @@ export function ShareResult({
 
   return (
     /*
-     * 선 아래에서는 아무것도 "한 번 더"와 경쟁하지 않아야 한다. 초록 테두리는
-     * 이 화면에서 주 행동의 표시고, 여기 것들은 테두리만 두른다.
+     * 큰 단추 하나가 아니라 카드 하나에 모은 **평평한 선택지들**이다.
+     *
+     * 어디로 보낼지는 사람마다 다르다. `결과 보내기` 하나를 크게 두었더니 그것이
+     * 무슨 일을 하는지가 기기마다 달랐고(모바일은 공유 시트, 데스크톱은 복사)
+     * 나머지 길은 곁다리로 보였다. 같은 무게로 늘어놓고 고르게 한다.
+     *
+     * 모달로 띄우는 사이트가 많지만 여기서는 카드로 충분하다. 결과 화면은
+     * 이미 세로로 흐르는 판이고, 한 겹을 더 얹을 만큼 고를 것이 많지 않다.
      */
-    <div className="flex flex-col gap-3">
-      {/*
-        `결과 보내기`가 넓은 것은 그게 어디로든 가는 길이기 때문이다 — 모바일에서
-        공유 시트를 열면 설치된 앱이 전부 뜬다. 아래 둘은 그 시트가 없거나
-        (데스크톱) 시트로는 못 하는 일(카카오 카드)을 맡는 보조라, 한 줄에 나눠
-        놓아 세로로 쌓이지 않게 한다.
-      */}
-      <button
-        type="button"
-        onClick={share}
-        className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        {copied ? "복사했습니다 — 붙여 넣어 보내세요" : "결과 보내기"}
-      </button>
+    <div className="flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-3">
+      <div className="flex items-stretch">
+        {/*
+          기기 공유 시트. 이 API가 없는 데스크톱에서는 칸 자체를 안 낸다 —
+          있지도 않은 길을 그려 두면 눌러 본 사람만 손해다.
+        */}
+        {canShare && (
+          <ShareOption label="공유" onClick={share}>
+            {/* 어느 앱으로 갈지 모르는 자리라 브랜드가 없다. 일반 공유 기호를 쓴다. */}
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="18" cy="5" r="2.6" />
+              <circle cx="6" cy="12" r="2.6" />
+              <circle cx="18" cy="19" r="2.6" />
+              <path d="M8.4 10.8 15.6 6.9M8.4 13.2l7.2 3.9" />
+            </svg>
+          </ShareOption>
+        )}
 
-      <div className="flex gap-3">
+        {KAKAO_KEY && (
+          <ShareOption label="카카오톡" onClick={kakao}>
+            <BrandMark d={BRAND_PATH.kakaotalk} className="size-5 text-[#191600]" />
+          </ShareOption>
+        )}
 
-      {KAKAO_KEY && (
-        <button
-          type="button"
-          onClick={kakao}
-          className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          카카오톡
-        </button>
-      )}
+        <ShareOption label="X" onClick={postToX}>
+          <BrandMark d={BRAND_PATH.x} className="size-4 text-ink" />
+        </ShareOption>
 
-        <button
-          type="button"
-          onClick={postToX}
-          className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          X
-        </button>
+        {/*
+          링크만 보내고 싶은 사람이 있다. 격자까지 붙으면 길어서 트위터 답글이나
+          디스코드 한 줄에는 안 맞는다.
+        */}
+        <ShareOption label="링크 복사" onClick={() => { mark(); void copy(challengeUrl()); }}>
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 1 0-5.7-5.7l-1.3 1.3" />
+            <path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 1 0 5.7 5.7l1.3-1.3" />
+          </svg>
+        </ShareOption>
       </div>
+
+      {/* 복사는 아무 화면 변화가 없다. 눌린 것을 알려 주지 않으면 다시 누른다. */}
+      <p className="text-center font-mono text-xs text-dim" role="status" aria-live="polite">
+        {copied ? "복사했습니다 — 붙여 넣어 보내세요" : "\u00a0"}
+      </p>
     </div>
   );
 }

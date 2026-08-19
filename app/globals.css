@@ -384,6 +384,17 @@ body {
 }
 
 /*
+ * 푸터만 걷는 자리(lib/useImmersive.ts의 useHideFooter).
+ *
+ * 대결 대기실이 여기 걸린다. 헤더와 탭 바는 남는다 — 기다리는 동안 다른 데
+ * 다녀오는 것이 이상하지 않은 화면이고, 나갔다 와도 방은 살아 있다.
+ * dataset의 `hideFooter`가 속성으로는 `data-hide-footer`가 된다.
+ */
+:root[data-hide-footer] .app-shell > footer {
+  display: none;
+}
+
+/*
  * 짧은 가로 화면에서는 탭 바를 접는다.
  *
  * 세로 380px에서 탭 바가 56px이면 화면의 15%가 메뉴다. 그 자리에서는 넓은

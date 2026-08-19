@@ -23,3 +23,28 @@ export function useImmersive(active = true) {
     };
   }, [active]);
 }
+
+/**
+ * 푸터만 걷는다.
+ *
+ * 대기실은 판이 도는 화면이 아니라 친구를 기다리는 빈 시간이다. 헤더도 탭
+ * 바도 그대로 있어야 하고(잠깐 다른 데 다녀올 수 있는 자리다), 실제로 나갔다
+ * 와도 방은 안 죽는다. 걷어 낼 것은 푸터 하나뿐이다 — 방 코드를 친구에게
+ * 부르는 화면 아래에 행정구역 데이터 출처가 붙어 있을 이유가 없다.
+ *
+ * `useImmersive`와 표시를 따로 쓴다. 하나로 묶고 단계를 나누면 둘 중 하나가
+ * 풀릴 때 다른 하나까지 같이 풀리는 자리가 생긴다. 대결에서는 대기실(이것)과
+ * 경주(저것)가 잇따라 켜졌다 꺼지므로 그 얽힘이 실제로 일어난다.
+ *
+ * 정리를 effect의 반환값에 두는 이유는 위와 같다. 표시가 낀 채로 남으면
+ * 사이트 전체에서 푸터가 사라진다.
+ */
+export function useHideFooter(active = true) {
+  useEffect(() => {
+    if (!active) return;
+    document.documentElement.dataset.hideFooter = "1";
+    return () => {
+      delete document.documentElement.dataset.hideFooter;
+    };
+  }, [active]);
+}

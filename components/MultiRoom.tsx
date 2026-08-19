@@ -6,6 +6,7 @@ import { COURSES, getCourse } from "@/data/courses";
 import { COURSE_PICKER_GROUPS } from "@/lib/courses/picker";
 import { useRoom } from "@/lib/multiplayer/useRoom";
 import { useCourseGeo } from "@/lib/useCourseGeo";
+import { useHideFooter } from "@/lib/useImmersive";
 import { getSavedNickname, saveNickname } from "@/lib/score/client";
 import { track } from "@/lib/analytics/track";
 import { MultiRace } from "./MultiRace";
@@ -89,6 +90,16 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
   // 대기실에 있는 동안 지도를 받아 둔다. 출발 신호를 받고 부르면
   // 첫 문제에서만 지도가 비는데, 회상 게임에서는 문제가 안 보이는 것과 같다.
   const geo = useCourseGeo(room?.courseId);
+  /*
+   * 방에 들어간 순간부터 푸터를 걷는다. 방 코드를 부르는 화면 아래에
+   * 행정구역 데이터 출처가 붙어 있을 이유가 없다. 방을 고르는 첫 화면은
+   * 여느 화면과 같으므로 그대로 둔다 — 조건이 `room`인 이유다.
+   *
+   * 경주 중에는 useImmersive가 어차피 다 걷는다. 겹쳐도 하는 일이 같아
+   * 문제가 없고, 표시를 따로 두었으므로 경주가 끝나 immersive가 풀려도
+   * 이쪽은 방에 남아 있는 동안 유지된다.
+   */
+  useHideFooter(Boolean(room));
 
   // 저장해 둔 이름은 ref로 직접 넣는다. 상태로 들면 서버 렌더 결과와 달라
   // 하이드레이션이 어긋난다.

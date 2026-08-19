@@ -114,13 +114,12 @@ export const MiniMap = memo(function MiniMap({
           }}
         >
           {/*
-            큰 지도와 같은 색이어야 한다. 노랑이던 때가 있었는데, 큰 지도에서
-            노랑이 "헤맨 곳"으로 옮겨 가면서 두 지도가 같은 순간을 가리키며
-            다른 말을 하게 됐다.
+            큰 지도와 같은 색이어야 한다. 두 지도가 같은 순간을 가리키면서 다른
+            말을 하면 안 된다 — 노랑이던 때가 있었고 파랑이던 때가 있었다.
           */}
           <circle
             r={Math.max(geo.width, geo.height) * 0.06}
-            fill="var(--color-expressway-hi)"
+            fill="var(--color-sign-hi)"
           />
           <circle
             r={Math.max(geo.width, geo.height) * 0.06}

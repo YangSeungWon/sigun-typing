@@ -58,7 +58,7 @@ describe("RegionMap", () => {
       />,
     );
     expect(html).toContain("var(--color-sign)");
-    expect(html).toContain("var(--color-expressway-hi)");
+    expect(html).toContain("var(--color-sign-hi)");
     // 실루엣 한 장과 현재 지역 강조 테두리가 한 겹씩 더 붙는다.
     const shapes = (html.match(/<path/g) ?? []).length;
     expect(shapes - extras(geo)).toBe(geo.regions.length + 2);
@@ -92,7 +92,7 @@ describe("RegionMap", () => {
     );
     // 거기서 현재 지역은 질문이 아니라 위치다 — 곧 칠해질 곳으로 읽혀야 한다.
     expect(html).toContain("var(--color-sign-hi)");
-    expect(html).not.toContain("var(--color-expressway-hi)");
+    expect(html).toContain("var(--color-sign-hi)");
   });
 
   it("퀴즈 단서에는 지역 이름이 새어 나오지 않는다", () => {

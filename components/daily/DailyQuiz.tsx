@@ -14,6 +14,7 @@ import {
 } from "@/lib/daily/quiz";
 import { quizShareText } from "@/lib/daily/quiz";
 import { loadQuiz, saveQuiz } from "@/lib/daily/store";
+import { ShareCard } from "@/components/share/ShareCard";
 
 export interface QuizRegion {
   code: string;
@@ -141,32 +142,7 @@ export function DailyQuiz({
   };
 
   const left = MAX_TRIES - state.guesses.length;
-
-  const [copied, setCopied] = useState(false);
-  const canShare = hydrated && typeof navigator.share === "function";
   const text = quizShareText(state, sidoName);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(`${text}\n${window.location.origin}/today`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // 클립보드가 막힌 환경. 주소창에서 직접 복사하는 수밖에 없다.
-    }
-  };
-
-  const share = async () => {
-    try {
-      await navigator.share({
-        title: "시군 타이핑",
-        text,
-        url: `${window.location.origin}/today`,
-      });
-    } catch {
-      // 공유창을 닫은 것이다.
-    }
-  };
 
   return (
     <div className="flex w-full flex-col gap-5">
@@ -270,31 +246,26 @@ export function DailyQuiz({
           </div>
 
           {/*
-            보낼 것을 보여 준다. 결과 화면의 공유 카드와 같은 문법이다 —
-            주인공은 단추가 아니라 이 격자다.
+            보내는 길은 결과 화면과 같은 것을 쓴다. 그림은 아직 없다 —
+            도전장 카드는 기록을 실어 나르는 물건이라 오늘의 퀴즈용으로는
+            따로 그려야 한다.
           */}
-          <pre className="text-center text-lg leading-none whitespace-pre">
-            {state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("")}
-          </pre>
-
-          <div className="flex gap-2">
-            {canShare && (
-              <button
-                type="button"
-                onClick={share}
-                className="flex-1 rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-              >
-                공유
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={copy}
-              className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              {copied ? "복사했습니다" : "결과 복사"}
-            </button>
-          </div>
+          <ShareCard
+            text={text}
+            path="/today"
+            preview={
+              <pre className="text-center text-lg leading-none whitespace-pre">
+                {state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("")}
+              </pre>
+            }
+            tweet={text}
+            kakao={{
+              title: `오늘의 퀴즈 ${day + 1}일차`,
+              description: `${sidoName ? `${sidoName} ` : ""}${
+                state.solved ? `${state.guesses.length} / ${MAX_TRIES}` : `X / ${MAX_TRIES}`
+              }, 같이 한 판?`,
+            }}
+          />
 
           {/*
             내일 다시 온다는 것을 알려 준다. 하루에 한 번인 게임에서 "끝"만

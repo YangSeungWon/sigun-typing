@@ -18,6 +18,11 @@ ARG UI_REVISION=dev
 ENV NEXT_PUBLIC_UI_REVISION=$UI_REVISION
 # 같은 값을 배포 판번호로도 쓴다 — 옛 탭이 새 서버를 만나면 통째로 새로고침한다.
 ENV NEXT_DEPLOYMENT_ID=$UI_REVISION
+# 카카오 공유용 JavaScript 키. 브라우저에 드러나는 것이 정상인 값이고,
+# 막는 것은 키가 아니라 카카오 콘솔에 등록한 도메인이다. 비어 있으면
+# 카카오톡 단추가 아예 안 그려진다.
+ARG NEXT_PUBLIC_KAKAO_JS_KEY=
+ENV NEXT_PUBLIC_KAKAO_JS_KEY=$NEXT_PUBLIC_KAKAO_JS_KEY
 # DATABASE_URL은 일부러 주지 않는다.
 #
 # 빌드 시점에 DB가 없는 것은 고장이 아니라 정상이다. 코스 목록은 1위를

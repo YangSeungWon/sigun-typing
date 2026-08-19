@@ -36,6 +36,8 @@ services:
         SITE_URL: ${SITE_URL:-https://sigun-typing.ysw.kr}
         # UI_REVISION=$(git rev-parse --short HEAD) docker compose build web
         UI_REVISION: ${UI_REVISION:-dev}
+        # 빌드 시점에 번들에 박힌다. 바꾸면 이미지를 다시 빌드해야 한다.
+        NEXT_PUBLIC_KAKAO_JS_KEY: ${NEXT_PUBLIC_KAKAO_JS_KEY:-}
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-sigun}:${POSTGRES_PASSWORD:-sigun}@db:5432/${POSTGRES_DB:-sigun}
       SCORE_SECRET: ${SCORE_SECRET:?SCORE_SECRET을 설정하세요}

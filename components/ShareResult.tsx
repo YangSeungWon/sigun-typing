@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { ItemResult, ModeId, Score } from "@/lib/game/types";
-import { shareText, type CourseGrid } from "@/lib/share/grid";
+import { shareText, spokenDuration, type CourseGrid } from "@/lib/share/grid";
+import { KAKAO_KEY, sendKakao } from "@/lib/share/kakao";
 import { track } from "@/lib/analytics/track";
 import { getSavedNickname } from "@/lib/score/client";
 
@@ -91,17 +92,53 @@ export function ShareResult({
     }
   };
 
+  /*
+   * 카카오톡은 다른 물건을 보낸다.
+   *
+   * 위의 공유는 **격자**를 보낸다 — 내 판이 어떻게 생겼는지. 카카오 카드는
+   * 격자를 담을 수 없어서(설명이 두 줄에서 잘린다) 대신 제목에 기록을 박은
+   * 초대장을 보낸다. 둘 다 남겨 두는 이유가 이것이다.
+   *
+   * 키가 없으면 단추가 아예 없다. 카카오 콘솔에 도메인을 등록하지 않은 채
+   * 누르면 SDK가 거절하는데, 그때는 조용히 위의 길로 떨어진다.
+   */
+  const kakao = async () => {
+    track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs });
+    const ok = await sendKakao({
+      title: `${courseName} ${spokenDuration(score.elapsedMs)}`,
+      description:
+        score.completed === score.total
+          ? `${score.total}곳 전부, 같이 한 판?`
+          : `${score.total}곳 중 ${score.completed}곳, 같이 한 판?`,
+      url: challengeUrl(),
+      imageUrl: `${window.location.origin}/og.png`,
+    });
+    if (!ok) await share();
+  };
+
   return (
-    <button
-      type="button"
-      onClick={share}
-      /*
-       * 선 아래에서는 아무것도 "한 번 더"와 경쟁하지 않아야 한다. 초록 테두리는
-       * 이 화면에서 주 행동의 표시다.
-       */
-      className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-    >
-      {copied ? "복사했습니다 — 붙여 넣어 보내세요" : "내 기록으로 도전장 보내기"}
-    </button>
+    /*
+     * 선 아래에서는 아무것도 "한 번 더"와 경쟁하지 않아야 한다. 초록 테두리는
+     * 이 화면에서 주 행동의 표시고, 여기 것들은 테두리만 두른다.
+     */
+    <div className="flex flex-col gap-3 sm:flex-row">
+      <button
+        type="button"
+        onClick={share}
+        className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        {copied ? "복사했습니다 — 붙여 넣어 보내세요" : "결과 보내기"}
+      </button>
+
+      {KAKAO_KEY && (
+        <button
+          type="button"
+          onClick={kakao}
+          className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          카카오톡
+        </button>
+      )}
+    </div>
   );
 }

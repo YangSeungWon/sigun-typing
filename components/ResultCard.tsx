@@ -307,13 +307,22 @@ export function ResultCard({
           `정확도 91.3%`보다 정확하고 빨리 읽힌다 — 분모(끝낸 곳)는 바로 위의
           큰 숫자가 이미 말하고 있다.
         */}
+        {/*
+          `한 번에 2곳`이었다. 두 곳을 동시에 맞혔다는 뜻으로 읽힌다는 지적을
+          받았고, 실제로 그렇게 읽힌다 — `한 번에`가 시점(첫 입력)인지 개수인지를
+          문장이 안 정해 준다.
+
+          `첫 입력 2 / 2`로 적는다. 분모가 끝낸 곳이라는 것은 바로 위의 큰 숫자가
+          이미 말하고 있고, 값으로 적으면 읽는 사람이 문장을 해석할 일이 없다.
+          퍼센트로 안 적는 이유는 그대로다 — 이 게임의 단위는 곳이다.
+        */}
         <p className="relative mt-3 font-mono text-sm text-on-sign/70">
           {/* 다 돈 판은 큰 숫자 아래에 이미 힌트가 적혀 있다. 두 번 적지 않는다. */}
           {perfect ? (
-            `한 번에 ${score.firstTry}곳`
+            `첫 입력 ${score.firstTry} / ${score.completed}`
           ) : (
             <>
-              {`${formatPrecise(score.elapsedMs)} · 한 번에 ${score.firstTry}곳 · `}
+              {`${formatPrecise(score.elapsedMs)} · 첫 입력 ${score.firstTry} / ${score.completed} · `}
               <HintCount score={score} />
             </>
           )}
@@ -393,16 +402,23 @@ export function ResultCard({
               <span className="flex flex-col gap-0.5 text-left">
                 자세히 보기
                 <span className="text-xs text-dim/80">
-                  총 타수 · 오타 · 한 번에 맞힌 곳
-                  {score.hintsUsed > 0 && " · 힌트"}
+                  맞힌 타수 · 오타 · 첫 입력 · 힌트
                 </span>
               </span>
               <span className="transition-transform group-open:rotate-90">›</span>
             </span>
           </summary>
+          {/*
+            미리보기에 `한 번에 맞힌 곳`이라 적어 두고 정작 열면 그 줄이 없었다.
+            열어 본 사람이 찾던 것을 못 찾는 것이 접어 둔 것보다 나쁘다.
+          */}
           <div className="flex flex-col pt-2">
             <Row label="맞힌 타수" value={`${score.correctKeystrokes}타`} />
             <Row label="오타" value={`${score.totalErrors}회`} />
+            <Row
+              label="첫 입력 정답"
+              value={`${score.firstTry} / ${score.completed}`}
+            />
             <Row
               label="초성 힌트"
               value={score.hintsUsed === 0 ? "없음" : `${score.hintsUsed}회`}

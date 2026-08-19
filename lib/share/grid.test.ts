@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderGrid, shareText, type CourseGrid } from "./grid";
+import { fitsTweet, tweetWeight } from "./x";
 import type { ItemResult } from "@/lib/game/types";
 import GRIDS from "@/data/emoji-grid.json";
 import { COURSES } from "@/data/courses";
@@ -171,5 +172,39 @@ describe("구운 자리표", () => {
       const g = grids[course.id];
       expect(g.cells.length, `${course.id}`).toBe(g.cols * g.rows);
     }
+  });
+});
+
+describe("X로 보내기", () => {
+  const grids = GRIDS as Record<string, CourseGrid>;
+
+  const body = (courseId: string, courseName: string, withGrid: boolean) => {
+    const course = COURSES.find((c) => c.id === courseId)!;
+    return shareText({
+      courseName,
+      grid: withGrid ? grids[courseId] : null,
+      results: course.regions.map((r) => result(r.code)),
+      completed: course.regions.length,
+      total: course.regions.length,
+      elapsedMs: 41_080,
+      hintsUsed: 0,
+    });
+  };
+
+  it("한글은 2로, 라틴은 1로 센다", () => {
+    // length로 재면 한글이 1로 세어져 실제 무게보다 한참 작게 나온다.
+    expect(tweetWeight("abc")).toBe(3);
+    expect(tweetWeight("가나다")).toBe(6);
+    expect(tweetWeight("🟩")).toBe(2);
+  });
+
+  it("서울은 격자를 실은 채로 들어간다", () => {
+    expect(fitsTweet(body("seoul", "서울 25개 구", true))).toBe(true);
+  });
+
+  it("전국은 격자를 실으면 못 들어간다", () => {
+    // 19×19 격자만으로 741이다. 자르지 않고 격자를 뺀다.
+    expect(fitsTweet(body("nationwide", "전국 229 시군구", true))).toBe(false);
+    expect(fitsTweet(body("nationwide", "전국 229 시군구", false))).toBe(true);
   });
 });

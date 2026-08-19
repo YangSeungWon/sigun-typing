@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ItemResult, ModeId, Score } from "@/lib/game/types";
 import { shareText, spokenDuration, type CourseGrid } from "@/lib/share/grid";
 import { KAKAO_KEY, sendKakao } from "@/lib/share/kakao";
+import { fitsTweet, tweetUrl } from "@/lib/share/x";
 import { track } from "@/lib/analytics/track";
 import { getSavedNickname } from "@/lib/score/client";
 
@@ -65,7 +66,7 @@ export function ShareResult({
    * 숫자만 적던 자리다. 정확도 소수점 한 자리는 보내는 사람도 받는 사람도
    * 읽지 않는데, 격자는 한눈에 읽힌다 — 어디서 막혔는지가 모양으로 보인다.
    */
-  const text = shareText({
+  const body = {
     courseName,
     grid,
     results,
@@ -73,7 +74,8 @@ export function ShareResult({
     total: score.total,
     elapsedMs: score.elapsedMs,
     hintsUsed: score.hintsUsed,
-  });
+  };
+  const text = shareText(body);
 
   const share = async () => {
     track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs });
@@ -123,29 +125,65 @@ export function ShareResult({
     if (!ok) await share();
   };
 
+  /*
+   * X는 작성창을 채운 채로 연다.
+   *
+   * 데스크톱에는 공유 시트가 없어서, 이것 없이는 복사하고 X를 열고 붙여넣는
+   * 세 단계다. 280자에 격자가 안 들어가는 코스(전국 229 시군구는 격자만으로
+   * 741이다)에서는 격자를 뺀다 — 자르면 반쯤 잘린 지도가 되고, 그건 자랑하려던
+   * 사람에게 가장 나쁜 결과다. 링크를 펼치면 카드에 지도가 있다.
+   */
+  const postToX = () => {
+    track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs });
+    const lean = { ...body, grid: null };
+    const full = shareText(body);
+    window.open(
+      tweetUrl(fitsTweet(full) ? full : shareText(lean), challengeUrl()),
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
   return (
     /*
      * 선 아래에서는 아무것도 "한 번 더"와 경쟁하지 않아야 한다. 초록 테두리는
      * 이 화면에서 주 행동의 표시고, 여기 것들은 테두리만 두른다.
      */
-    <div className="flex flex-col gap-3 sm:flex-row">
+    <div className="flex flex-col gap-3">
+      {/*
+        `결과 보내기`가 넓은 것은 그게 어디로든 가는 길이기 때문이다 — 모바일에서
+        공유 시트를 열면 설치된 앱이 전부 뜬다. 아래 둘은 그 시트가 없거나
+        (데스크톱) 시트로는 못 하는 일(카카오 카드)을 맡는 보조라, 한 줄에 나눠
+        놓아 세로로 쌓이지 않게 한다.
+      */}
       <button
         type="button"
         onClick={share}
-        className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         {copied ? "복사했습니다 — 붙여 넣어 보내세요" : "결과 보내기"}
       </button>
+
+      <div className="flex gap-3">
 
       {KAKAO_KEY && (
         <button
           type="button"
           onClick={kakao}
-          className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           카카오톡
         </button>
       )}
+
+        <button
+          type="button"
+          onClick={postToX}
+          className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          X
+        </button>
+      </div>
     </div>
   );
 }

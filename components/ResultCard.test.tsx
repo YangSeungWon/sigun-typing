@@ -33,6 +33,78 @@ function skipped(code: string): ItemResult {
   };
 }
 
+describe("도전장 대조", () => {
+  const done = { ...score, completed: 25, elapsedMs: 38_950 };
+
+  it("이기면 얼마나 앞섰는지 적는다", () => {
+    const html = renderToStaticMarkup(
+      <ResultCard
+        courseName="서울 25개 구"
+        modeLabel="지도 타이핑"
+        score={done}
+        geo={geo}
+        passedCodes={codes}
+        challenge={{ beatMs: 41_080, by: "승원" }}
+        coursesHref="/courses"
+        onRestart={() => {}}
+      />,
+    );
+    expect(html).toContain("승원님을 2.13초 앞섰습니다");
+  });
+
+  it("져도 적는다", () => {
+    // 얼마나 모자랐는지가 다시 할 이유다. 숨기면 그냥 안 알려 주는 화면이 된다.
+    const html = renderToStaticMarkup(
+      <ResultCard
+        courseName="서울 25개 구"
+        modeLabel="지도 타이핑"
+        score={done}
+        geo={geo}
+        passedCodes={codes}
+        challenge={{ beatMs: 30_000, by: "승원" }}
+        coursesHref="/courses"
+        onRestart={() => {}}
+      />,
+    );
+    expect(html).toContain("승원님에게 8.95초 뒤졌습니다");
+  });
+
+  it("이름이 없으면 기록끼리 견준다", () => {
+    const html = renderToStaticMarkup(
+      <ResultCard
+        courseName="서울 25개 구"
+        modeLabel="지도 타이핑"
+        score={done}
+        geo={geo}
+        passedCodes={codes}
+        challenge={{ beatMs: 41_080, by: null }}
+        coursesHref="/courses"
+        onRestart={() => {}}
+      />,
+    );
+    expect(html).toContain("받은 기록보다 2.13초 빠릅니다");
+  });
+
+  it("다 돌지 못한 판에는 승패를 매기지 않는다", () => {
+    // 스물다섯 중 스물만 치고 빨랐다고 이겼다고 하면 그건 거짓말이다.
+    const html = renderToStaticMarkup(
+      <ResultCard
+        courseName="서울 25개 구"
+        modeLabel="지도 타이핑"
+        score={{ ...score, completed: 20, elapsedMs: 20_000 }}
+        geo={geo}
+        passedCodes={codes.slice(0, 20)}
+        challenge={{ beatMs: 41_080, by: "승원" }}
+        missed={[skipped(codes[24])]}
+        coursesHref="/courses"
+        onRestart={() => {}}
+      />,
+    );
+    expect(html).not.toContain("앞섰습니다");
+    expect(html).toContain("목표 00:41.08");
+  });
+});
+
 describe("결과 화면의 지도", () => {
   /**
    * 판이 끝난 뒤에도 색이 갈려야 한다.

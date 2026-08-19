@@ -596,6 +596,7 @@ export function Game({
           geo={geo}
           passedCodes={passedCodes}
           struggledCodes={struggledCodes}
+          challenge={challenge}
           missed={missedItems}
           coursesHref="/courses"
           nextSlot={

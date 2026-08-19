@@ -6,6 +6,8 @@ import type { CourseGeo } from "@/data/geo/types";
 import type { ItemResult, Score } from "@/lib/game/types";
 import { formatClock } from "./Odometer";
 import { RegionMap } from "./RegionMap";
+import type { Challenge } from "@/lib/game/challenge";
+import { spokenDuration } from "@/lib/share/grid";
 
 interface ResultCardProps {
   courseName: string;
@@ -24,6 +26,8 @@ interface ResultCardProps {
   passedCodes?: string[];
   /** 맞히긴 했지만 헤맨 곳. 지도에서 노랑으로 뜬다. */
   struggledCodes?: string[];
+  /** 도전장을 받고 온 판이면 그 기록. 끝난 자리에서 대조한다. */
+  challenge?: Challenge | null;
   /** 못 맞혔거나 틀린 채로 지나온 항목 */
   missed?: ItemResult[];
   /** 랭킹 등록 영역. 결과 카드는 제출 방식을 몰라도 된다. */
@@ -55,6 +59,41 @@ function formatPrecise(ms: number): string {
  *
  * 안 본 판에도 적는다. `힌트 없음`은 이 게임에서 자랑할 값이다.
  */
+/**
+ * 도전장을 이겼는가.
+ *
+ * 여태 도전 정보는 카운트다운까지만 살아 있었다. 목표를 보며 시작했는데
+ * 끝나고 나면 화면이 아무 말도 안 했다 — 이겼는지 졌는지를 사람이 직접 두
+ * 숫자를 빼서 알아내야 했다.
+ *
+ * 공유가 한 방향에서 왕복이 되는 자리가 여기다. 이겼다는 한 줄이 있어야 받은
+ * 사람이 되쏘고, 그 아래에 공유 단추가 이미 있다. 진 경우에도 적는다 — 얼마나
+ * 모자랐는지가 다시 할 이유이고, 숨기면 그냥 안 알려 주는 화면이 된다.
+ */
+function Verdict({ challenge, score }: { challenge: Challenge; score: Score }) {
+  const diff = challenge.beatMs - score.elapsedMs;
+  const won = diff > 0;
+  const gap = spokenDuration(Math.abs(diff));
+  const who = challenge.by;
+
+  return (
+    <p
+      className={`relative mt-3 font-mono text-sm ${
+        won ? "font-semibold text-centerline" : "text-on-sign/70"
+      }`}
+      role="status"
+    >
+      {who
+        ? won
+          ? `${who}님을 ${gap} 앞섰습니다`
+          : `${who}님에게 ${gap} 뒤졌습니다`
+        : won
+          ? `받은 기록보다 ${gap} 빠릅니다`
+          : `받은 기록보다 ${gap} 느립니다`}
+    </p>
+  );
+}
+
 function HintCount({ score }: { score: Score }) {
   return (
     <span className={score.hintsUsed === 0 ? "" : "text-on-sign/70"}>
@@ -90,6 +129,7 @@ export function ResultCard({
   geo,
   passedCodes = [],
   struggledCodes = [],
+  challenge = null,
   missed = [],
   submitSlot,
   shareSlot,
@@ -235,14 +275,26 @@ export function ResultCard({
             <p className="relative mt-1 font-mono text-xs text-on-sign/60">
               <HintCount score={score} />
             </p>
+            {challenge && <Verdict challenge={challenge} score={score} />}
           </>
         ) : (
-          <p className="relative mt-4 text-5xl font-bold text-on-sign">
-            {score.completed}
-            <span className="ml-1 text-2xl font-medium text-on-sign/70">
-              / {score.total}
-            </span>
-          </p>
+          <>
+            <p className="relative mt-4 text-5xl font-bold text-on-sign">
+              {score.completed}
+              <span className="ml-1 text-2xl font-medium text-on-sign/70">
+                / {score.total}
+              </span>
+            </p>
+            {/*
+              다 돌지 못한 판에서는 승패를 매기지 않는다. 스물다섯 중 스무 곳만
+              치고 빨랐다고 이겼다고 하면 그건 거짓말이다. 목표만 남겨 둔다.
+            */}
+            {challenge && (
+              <p className="relative mt-2 font-mono text-sm text-on-sign/60">
+                목표 {formatPrecise(challenge.beatMs)}
+              </p>
+            )}
+          </>
         )}
         {/*
           타수를 뺐다. 맞힌 타수가 완주한 지역들의 이름 길이 합으로 고정되므로,

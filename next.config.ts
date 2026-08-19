@@ -37,6 +37,18 @@ const nextConfig: NextConfig = {
    */
   deploymentId: process.env.NEXT_DEPLOYMENT_ID,
 
+  /**
+   * 도전장 카드가 읽는 폰트를 standalone 산출물에 함께 담는다.
+   *
+   * `output: "standalone"`은 코드에서 import한 것만 따라간다. 폰트는 실행
+   * 중에 `readFile`로 여는 파일이라 그 추적에 안 걸리고, 빠지면 카드가
+   * 그려지는 순간 터진다 — 개발에서는 저장소가 통째로 있어 안 드러난다.
+   */
+  outputFileTracingIncludes: {
+    "/c/[mode]/[course]/[beat]": ["./assets/**"],
+    "/c/[mode]/[course]/[beat]/[by]": ["./assets/**"],
+  },
+
   async redirects() {
     return MODE_MOVES.flatMap(([from, to]) => [
       { source: `/play/${from}`, destination: `/play/${to}`, permanent: true },

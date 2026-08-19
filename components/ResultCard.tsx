@@ -252,16 +252,20 @@ export function ResultCard({
       <div className="result-card sign-face relative order-1 rounded-2xl px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)] md:order-none md:col-start-2 md:row-start-1">
         <div className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-on-sign/80" />
         {/*
-          "완주"를 키웠다. 숫자만 크면 기록은 읽히는데 **끝냈다는 감정**이
-          남지 않는다. 이 화면이 먼저 해야 할 말은 몇 초가 아니라 해냈다는
-          것이다.
+          코스명이 맨 위다.
+          한때 `완주`가 이 자리에서 제일 컸다 — 숫자만 크면 끝냈다는 감정이
+          안 남는다는 이유였다. 그때는 이 판을 견줄 것이 화면에 없었다. 지금은
+          개인 기록 비교와 도전장 대조가 감정을 대신 만들어 주므로, `완주`는
+          상태 줄로 내려가도 된다. 결과에서 먼저 알고 싶은 것은 무엇을 얼마에
+          했는가다.
+
+          작은 글씨를 없앴다. 코스명이 text-sm, 힌트가 text-xs로 표지판 위에
+          깨알처럼 얹혀 있었다 — 표지판은 멀리서 읽는 물건이다.
         */}
-        <p className="relative text-2xl font-bold tracking-[0.1em] text-on-sign">
-          {perfect ? "완주" : "도착"}
+        <p className="relative text-2xl font-bold tracking-tight text-on-sign">
+          {courseName}
         </p>
-        <p className="relative mt-1 font-mono text-sm text-on-sign/60">
-          {courseName} · {modeLabel}
-        </p>
+
         {/*
           다 맞히지 못한 판에서는 시간이 성적이 아니다.
           열일곱 중 열여섯을 맞힌 사람에게 필요한 말은 "몇 초"가 아니라
@@ -269,64 +273,60 @@ export function ResultCard({
           않는다 — 성취를 무효로 만들면 다시 할 이유도 함께 사라진다.
         */}
         {emphasis === "time" && perfect ? (
-          <>
-            <p className="relative mt-4 font-mono text-5xl font-bold tabular-nums text-on-sign">
-              {formatPrecise(shown)}
-            </p>
-            <p className="relative mt-1 font-mono text-xs text-on-sign/60">
-              <HintCount score={score} />
-            </p>
-            {challenge && <Verdict challenge={challenge} score={score} />}
-          </>
+          <p className="relative mt-3 font-mono text-5xl font-bold tabular-nums text-on-sign">
+            {formatPrecise(shown)}
+          </p>
         ) : (
-          <>
-            <p className="relative mt-4 text-5xl font-bold text-on-sign">
-              {score.completed}
-              <span className="ml-1 text-2xl font-medium text-on-sign/70">
-                / {score.total}
-              </span>
-            </p>
-            {/*
-              다 돌지 못한 판에서는 승패를 매기지 않는다. 스물다섯 중 스무 곳만
-              치고 빨랐다고 이겼다고 하면 그건 거짓말이다. 목표만 남겨 둔다.
-            */}
-            {challenge && (
-              <p className="relative mt-2 font-mono text-sm text-on-sign/60">
-                목표 {formatPrecise(challenge.beatMs)}
-              </p>
-            )}
-          </>
+          <p className="relative mt-3 text-5xl font-bold text-on-sign">
+            {score.completed}
+            <span className="ml-1 text-2xl font-medium text-on-sign/70">
+              / {score.total}
+            </span>
+          </p>
         )}
-        {/*
-          타수를 뺐다. 맞힌 타수가 완주한 지역들의 이름 길이 합으로 고정되므로,
-          다 돈 판끼리는 타수가 시간의 다른 표현일 뿐이다. 겨루는 값(완주 수와
-          시간)과 손을 재는 값(정확도)만 남긴다.
-        */}
-        {/*
-          정확도를 퍼센트로 적지 않는다. 이 게임의 단위는 곳이라 `한 번에 22곳`이
-          `정확도 91.3%`보다 정확하고 빨리 읽힌다 — 분모(끝낸 곳)는 바로 위의
-          큰 숫자가 이미 말하고 있다.
-        */}
-        {/*
-          `한 번에 2곳`이었다. 두 곳을 동시에 맞혔다는 뜻으로 읽힌다는 지적을
-          받았고, 실제로 그렇게 읽힌다 — `한 번에`가 시점(첫 입력)인지 개수인지를
-          문장이 안 정해 준다.
 
-          `첫 입력 2 / 2`로 적는다. 분모가 끝낸 곳이라는 것은 바로 위의 큰 숫자가
-          이미 말하고 있고, 값으로 적으면 읽는 사람이 문장을 해석할 일이 없다.
-          퍼센트로 안 적는 이유는 그대로다 — 이 게임의 단위는 곳이다.
+        {/*
+          상태 한 줄. 무엇을 어떻게 끝냈는가.
+
+          모드를 남겨 둔다. `이름 보고 익히기`로 낸 기록은 랭킹에도 개인 기록에도
+          안 올라가므로, 같은 숫자라도 다른 판이다.
         */}
-        <p className="relative mt-3 font-mono text-sm text-on-sign/70">
-          {/* 다 돈 판은 큰 숫자 아래에 이미 힌트가 적혀 있다. 두 번 적지 않는다. */}
-          {perfect ? (
-            `첫 입력 ${score.firstTry} / ${score.completed}`
-          ) : (
-            <>
-              {`${formatPrecise(score.elapsedMs)} · 첫 입력 ${score.firstTry} / ${score.completed} · `}
-              <HintCount score={score} />
-            </>
-          )}
+        <p className="relative mt-3 font-mono text-base text-on-sign/75">
+          {perfect ? "완주" : "도착"} · {modeLabel}
         </p>
+
+        {/*
+          손을 잰 값들.
+
+          `한 번에 2곳`이었다. 두 곳을 동시에 맞혔다는 뜻으로 읽힌다 —
+          `한 번에`가 시점(첫 입력)인지 개수인지를 문장이 안 정해 준다. 값으로
+          적으면 읽는 사람이 해석할 일이 없다. 퍼센트로 안 적는 이유는 그대로다 —
+          이 게임의 단위는 곳이다.
+        */}
+        <p className="relative mt-1 font-mono text-base text-on-sign/75">
+          {`첫 입력 ${score.firstTry} / ${score.completed} · `}
+          <HintCount score={score} />
+        </p>
+
+        {/* 다 돌지 못한 판에서는 시간이 위에 없으므로 여기 적는다. */}
+        {!(emphasis === "time" && perfect) && (
+          <p className="relative mt-1 font-mono text-base text-on-sign/75">
+            {formatPrecise(score.elapsedMs)}
+          </p>
+        )}
+
+        {challenge &&
+          (emphasis === "time" && perfect ? (
+            <Verdict challenge={challenge} score={score} />
+          ) : (
+            /*
+              다 돌지 못한 판에는 승패를 매기지 않는다. 스물다섯 중 스물만 치고
+              빨랐다고 이겼다고 하면 그건 거짓말이다. 목표만 남긴다.
+            */
+            <p className="relative mt-3 font-mono text-base text-on-sign/70">
+              목표 {formatPrecise(challenge.beatMs)}
+            </p>
+          ))}
 
         {/*
           기록 해석은 기록에 붙어 있어야 한다. 카드 밖에 한 줄로 떼어 놓았을

@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import type { ItemResult, ModeId, Score } from "@/lib/game/types";
-import { marksFor, shareText, spokenDuration, type CourseGrid } from "@/lib/share/grid";
+import {
+  marksFor,
+  renderGrid,
+  shareText,
+  spokenDuration,
+  type CourseGrid,
+} from "@/lib/share/grid";
 import { encodeMarks } from "@/lib/game/marks";
 import { KAKAO_KEY, sendKakao } from "@/lib/share/kakao";
 import { fitsTweet, tweetUrl } from "@/lib/share/x";
@@ -182,6 +188,23 @@ export function ShareResult({
      * 이미 세로로 흐르는 판이고, 한 겹을 더 얹을 만큼 고를 것이 많지 않다.
      */
     <div className="flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-3">
+      {/*
+        보낼 것을 보여 준다.
+        여태 이 자리에는 단추만 있었고, 누르기 전에는 무엇이 나가는지 볼 방법이
+        없었다. 이 게임의 공유물은 링크가 아니라 **이 그림**이다 — 주인공이
+        카카오톡이나 X가 아니라 자기 판이어야 한다.
+
+        코스명과 기록은 안 적는다. 바로 위 표지판이 이미 그 말을 하고 있다.
+      */}
+      {grid && (
+        <pre
+          aria-hidden
+          className="overflow-hidden text-center text-[10px] leading-[1.15] break-keep whitespace-pre sm:text-xs"
+        >
+          {renderGrid(grid, results)}
+        </pre>
+      )}
+
       <div className="flex items-stretch">
         {/*
           기기 공유 시트. 이 API가 없는 데스크톱에서는 칸 자체를 안 낸다 —
@@ -214,9 +237,17 @@ export function ShareResult({
           </ShareOption>
         )}
 
-        <ShareOption label="X" onClick={postToX}>
-          <BrandMark d={BRAND_PATH.x} className="size-4 text-ink" />
-        </ShareOption>
+        {/*
+          X는 공유 시트가 없는 곳에만 낸다.
+          시트가 있으면 거기 이미 X가 뜨고, 게다가 시트에는 그 사람이 실제로
+          쓰는 앱들(메시지·디스코드·텔레그램)이 함께 나온다. 우리가 고른 두어
+          개를 늘어놓는 것보다 그쪽이 넓고 정확하다.
+        */}
+        {!canShare && (
+          <ShareOption label="X" onClick={postToX}>
+            <BrandMark d={BRAND_PATH.x} className="size-4 text-ink" />
+          </ShareOption>
+        )}
 
         {/*
           링크만 보내고 싶은 사람이 있다. 격자까지 붙으면 길어서 트위터 답글이나

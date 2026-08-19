@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DailyLine } from "./DailyLine";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { CourseGeo } from "@/data/geo/types";
@@ -386,21 +387,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         아래 탭 바는 넷으로 고정이라(홈·도전·대결·기록) 거기에는 못 넣는다.
         첫 화면에서 시작 버튼 다음에 오는 것이 지금은 대결뿐이라 그 위에 둔다.
       */}
-      <section className="home-daily flex items-center justify-between gap-4 rounded-xl border border-concrete-deep px-5 py-3">
-        <span className="flex items-baseline gap-3">
-          <span className="font-medium">오늘의 퀴즈</span>
-          <span className="hidden items-baseline gap-3 font-mono text-sm text-dim sm:flex">
-            <span>하루 한 곳</span>
-            <span>여섯 번</span>
-          </span>
-        </span>
-        <Link
-          href="/today"
-          className="rounded-lg border border-concrete-deep px-5 py-2 font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          풀기
-        </Link>
-      </section>
+      <DailyLine />
 
       <section className="home-friends flex items-center justify-between gap-4 rounded-xl border border-concrete-deep px-5 py-3">
         {/*

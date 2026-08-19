@@ -5,7 +5,6 @@ import type { ItemResult, ModeId, Score } from "@/lib/game/types";
 import { shareText, type CourseGrid } from "@/lib/share/grid";
 import { track } from "@/lib/analytics/track";
 import { getSavedNickname } from "@/lib/score/client";
-import { formatClock } from "./Odometer";
 
 interface ShareResultProps {
   courseId: string;
@@ -16,10 +15,6 @@ interface ShareResultProps {
   grid: CourseGrid | null;
   /** 지역별 결과. 어느 칸을 무슨 색으로 칠할지가 여기서 나온다. */
   results: ItemResult[];
-}
-
-function formatPrecise(ms: number): string {
-  return `${formatClock(ms)}.${String(Math.floor((ms % 1000) / 10)).padStart(2, "0")}`;
 }
 
 /**
@@ -68,7 +63,7 @@ export function ShareResult({
     results,
     completed: score.completed,
     total: score.total,
-    time: formatPrecise(score.elapsedMs),
+    elapsedMs: score.elapsedMs,
     hintsUsed: score.hintsUsed,
   });
 

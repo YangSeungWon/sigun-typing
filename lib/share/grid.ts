@@ -61,24 +61,54 @@ export interface ShareTextInput {
   results: ItemResult[];
   completed: number;
   total: number;
-  /** 이미 다듬어진 기록 문자열 (`01:03.00`) */
-  time: string;
+  elapsedMs: number;
   hintsUsed: number;
+}
+
+/**
+ * 사람이 읽는 기록.
+ *
+ * `01:03.00`은 계기판의 문법이다. 채팅방에 붙는 문장에서는 사람이 입으로 말하는
+ * 대로 적는다 — 41.08초, 1분 12.44초.
+ */
+export function spokenDuration(ms: number): string {
+  const total = Math.max(0, ms) / 1000;
+  const minutes = Math.floor(total / 60);
+  const seconds = (total % 60).toFixed(2);
+  return minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
 }
 
 /**
  * 붙여넣을 덩어리.
  *
+ * ── 가운데점을 쓰지 않는다 ──────────────────────────────────
+ * 값과 값을 `·`로 잇는 것은 대시보드의 문법이다. 남에게 보내는 메시지에서는
+ * 구분자가 아니라 잡음으로 읽히고, 기계가 뱉은 것처럼 보인다. 줄바꿈으로 나눈다.
+ * 그러면 덩어리 전체가 문장이 아니라 **결과판**으로 보인다.
+ *
+ * ── 마지막 줄은 초대다 ────────────────────────────────────
+ * `너는 나보다 빠름?`이었다. 도발은 이미 이긴 사람만 즐겁고, 받은 사람에게는
+ * 자랑으로 읽힌다. `같이 한 판?`은 자랑도 설명도 아니고 다음 차례를 넘긴다 —
+ * 방 초대에서 이미 쓰는 말이기도 하다(MultiRoom의 `같이 한 판 하자`).
+ *
+ * 도전할 값은 이 줄이 아니라 링크가 들고 간다. 주소에 기록이 실려 있어서 받은
+ * 사람은 그 기록이 목표로 박힌 판에 떨어진다. 그러니 문장이 "몇 초 안에
+ * 해보세요"라고 다시 말할 이유가 없다.
+ *
  * 주소는 여기 넣지 않는다. `navigator.share`가 url을 따로 받고, 그걸 본문에도
  * 적으면 카톡에서 주소가 두 번 뜬다. 클립보드로 떨어질 때만 부르는 쪽에서 붙인다.
  */
 export function shareText(input: ShareTextInput): string {
-  const { courseName, grid, results, completed, total, time, hintsUsed } = input;
-  const head = [
-    `시군 타이핑 · ${courseName}`,
-    `${completed}/${total} · ${time}${hintsUsed > 0 ? ` · 힌트 ${hintsUsed}` : ""}`,
-  ];
-  // 격자가 없는 코스도 자랑은 할 수 있어야 한다. 숫자만 남는다.
-  const body = grid ? ["", renderGrid(grid, results)] : [];
-  return [...head, ...body, "", "너는 나보다 빠름?"].join("\n");
+  const { courseName, grid, results, completed, total, elapsedMs, hintsUsed } = input;
+
+  const lines = ["시군 타이핑", `${courseName} ${spokenDuration(elapsedMs)}`];
+
+  // 격자가 없는 코스도 자랑은 할 수 있어야 한다. 그때는 숫자만 남는다.
+  if (grid) lines.push("", renderGrid(grid, results));
+
+  lines.push("", completed === total ? `${total}곳 전부` : `${total}곳 중 ${completed}곳`);
+  if (hintsUsed > 0) lines.push(`힌트 ${hintsUsed}번`);
+
+  lines.push("", "같이 한 판?");
+  return lines.join("\n");
 }

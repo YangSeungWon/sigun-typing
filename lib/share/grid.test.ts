@@ -51,24 +51,55 @@ describe("이모지 격자", () => {
       results: [],
       completed: 25,
       total: 25,
-      time: "00:41.08",
+      elapsedMs: 41_080,
       hintsUsed: 0,
     });
-    expect(t).toContain("25/25 · 00:41.08");
+    expect(t).toContain("서울 25개 구 41.08초");
+    expect(t).toContain("25곳 전부");
     expect(t).not.toContain("🟩");
   });
 
-  it("힌트를 안 봤으면 힌트 칸을 적지 않는다", () => {
+  it("힌트를 안 봤으면 힌트 줄이 없다", () => {
     const t = shareText({
       courseName: "제주 2 행정시",
       grid: null,
       results: [],
       completed: 2,
       total: 2,
-      time: "00:05.00",
+      elapsedMs: 5_000,
       hintsUsed: 0,
     });
     expect(t).not.toContain("힌트");
+  });
+
+  it("가운데점을 쓰지 않는다", () => {
+    // 값을 `·`로 잇는 것은 대시보드 문법이다. 채팅방에서는 잡음으로 읽힌다.
+    const t = shareText({
+      courseName: "서울 25개 구",
+      grid: GRID,
+      results: [result("a"), result("b", { hinted: true }), result("c", { skipped: true })],
+      completed: 24,
+      total: 25,
+      elapsedMs: 41_080,
+      hintsUsed: 3,
+    });
+    expect(t).not.toContain("·");
+    expect(t).toContain("25곳 중 24곳");
+    expect(t).toContain("힌트 3번");
+    expect(t.trimEnd().endsWith("같이 한 판?")).toBe(true);
+  });
+
+  it("1분이 넘으면 분으로 말한다", () => {
+    const t = shareText({
+      courseName: "경기도 31 시군",
+      grid: null,
+      results: [],
+      completed: 31,
+      total: 31,
+      elapsedMs: 72_440,
+      hintsUsed: 0,
+    });
+    expect(t).toContain("경기도 31 시군 1분 12.44초");
   });
 });
 

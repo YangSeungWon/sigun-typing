@@ -184,6 +184,7 @@ export function ResultCard({
                 />
                 {struggledCodes.length > 0 && (
                   <Legend
+                    dotted
                     color="var(--color-centerline)"
                     label={`헤맨 곳 ${struggledCodes.length}`}
                   />
@@ -453,15 +454,17 @@ function Legend({
   color,
   label,
   hatched = false,
+  dotted = false,
 }: {
   color: string;
   label: string;
   hatched?: boolean;
+  dotted?: boolean;
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       {/*
-        색 견본에도 지도와 같은 빗금을 넣는다. 범례와 지도가 다른 그림이면
+        색 견본에도 지도와 같은 무늬를 넣는다. 범례와 지도가 다른 그림이면
         범례가 오히려 헷갈리게 한다.
       */}
       <span
@@ -470,7 +473,10 @@ function Legend({
           backgroundColor: color,
           backgroundImage: hatched
             ? "repeating-linear-gradient(45deg, transparent 0 2px, var(--color-paint) 2px 4px)"
-            : undefined,
+            : dotted
+              ? "radial-gradient(var(--color-paint) 0.9px, transparent 1px)"
+              : undefined,
+          backgroundSize: dotted ? "4px 4px" : undefined,
         }}
         aria-hidden="true"
       />

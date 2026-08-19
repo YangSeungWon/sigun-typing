@@ -301,7 +301,12 @@ body {
  */
 .home-grid {
   display: grid;
-  gap: 1rem;
+  /*
+   * 좁은 화면에서는 칸 사이를 좁힌다. 다섯 구역이 세로로 쌓이므로 간격
+   * 하나를 4px 줄이면 시작 버튼이 16px 올라온다 — 첫 화면에 버튼이 들어오냐
+   * 마느냐가 걸린 자리라 그 16px이 값을 한다.
+   */
+  gap: 0.75rem;
   grid-template-areas:
     "copy"
     "map"

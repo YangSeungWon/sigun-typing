@@ -185,6 +185,24 @@ export const RegionMap = memo(function RegionMap({
           초록과 빨강은 색각 이상에서 가장 흔히 겹치는 짝이다. 색만으로 가르면
           어떤 사람에게는 두 상태가 같은 그림이 된다.
         */}
+        {/*
+          헤맨 곳에는 옅은 점을 뿌린다.
+
+          빗금과 같은 이유다 — 색만으로 가르면 적록색약인 사람에게 초록·노랑·
+          빨강이 서로 가까워진다. 빨강에는 빗금이 있었는데 노랑이 나중에
+          생기면서 비색 채널이 없는 상태로 남아 있었다.
+
+          빗금보다 약하게 둔다. 헤맨 곳은 **맞힌 곳**이라 다시 볼 곳만큼
+          손을 부를 이유가 없고, 두 무늬가 같은 세기면 지도가 부산해진다.
+        */}
+        <pattern
+          id="struggled-dots"
+          width={9}
+          height={9}
+          patternUnits="userSpaceOnUse"
+        >
+          <circle cx={4.5} cy={4.5} r={1.5} fill="var(--color-paint)" opacity={0.55} />
+        </pattern>
         <pattern
           id="missed-hatch"
           width={10}
@@ -450,9 +468,14 @@ export const RegionMap = memo(function RegionMap({
         aria-hidden="true"
         pointerEvents="none"
         style={{ ...PAN, transform }}
-        // 채우기와 같은 만큼 물린다. 빗금만 진하면 못 맞힌 곳이 되레 튄다.
-        opacity={explore ? 1 : 0.62}
+        // 채우기와 같은 만큼 물린다. 무늬만 진하면 지나간 곳이 되레 튄다.
+        opacity={explore ? 1 : 0.5}
       >
+        {geo.regions
+          .filter((r) => struggled.has(r.code) && !missed.has(r.code))
+          .map((r) => (
+            <path key={`dot-${r.code}`} d={r.d} fill="url(#struggled-dots)" />
+          ))}
         {geo.regions
           .filter((r) => missed.has(r.code))
           .map((r) => (

@@ -89,7 +89,9 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
    * 하던 코스보다 최근이다.
    */
   const pickedRegion = picked ? mapRegions.get(picked) : undefined;
-  const pickedCourse = pickedRegion?.courseId ? byId.get(pickedRegion.courseId) : undefined;
+  const pickedCourse = pickedRegion?.courseId
+    ? byId.get(pickedRegion.courseId)
+    : undefined;
 
   const target = pickedCourse
     ? {
@@ -106,7 +108,8 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       };
 
   /** 처음 여는 코스면 `시작`, 하다 만 코스면 `이어하기`. */
-  const verb = target.known > 0 && target.known < target.total ? "이어하기" : "시작";
+  const verb =
+    target.known > 0 && target.known < target.total ? "이어하기" : "시작";
 
   /*
    * 계기판에 무엇을 올릴 것인가.
@@ -190,7 +193,9 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           글자에서 네 글자까지 오가므로, 옆자리는 애초에 폭을 장담할 수 없는
           자리다. 위는 몇 글자가 오든 흔들리지 않는다.
         */}
-        <h1 aria-label={`${primary.label} ${primary.total}곳 중 ${primary.known}곳`}>
+        <h1
+          aria-label={`${primary.label} ${primary.total}곳 중 ${primary.known}곳`}
+        >
           <span aria-hidden className="block font-mono text-sm text-dim">
             {primary.label}
           </span>
@@ -232,8 +237,25 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         그만큼 세로를 돌려받아 첫 화면 아래에 다음 카드가 보인다.
       */}
       <div className="home-map-slot flex flex-col items-center justify-center gap-3 lg:flex-row lg:items-center lg:gap-5">
+        {/*
+            좁은 화면에서는 **폭이 아니라 화면 높이**로 잡는다.
+            (지도 자체가 `w-full`이라 높이를 직접 물리면 폭만 남아 편지지가
+            된다. 폭 상한으로 거는 편이 확실하다 — 이 지도는 세로가 조금 길어
+            높이가 폭의 1.06배쯤이다.)
+
+            폭으로만 잡으면 짧은 폰에서 잘렸다. 아이폰 SE는 세로가 667px인데
+            사파리 툴바를 빼면 550px대만 보이고, 그 안에 제목·지도·시도 칩 세
+            줄이 다 들어간 뒤에야 `전국 시작`이 온다. 처음 온 사람이 이 게임을
+            시작하는 유일한 문이 첫 화면에서 안 보이는 것이다.
+
+            `svh`를 쓴다. `vh`는 iOS에서 툴바가 없는 상태를 기준으로 잡아
+            정작 툴바가 있을 때 더 커진다 — 고치려는 문제를 그대로 남긴다.
+
+            줄여도 되는 이유는 아래 주석과 같다. 작은 시도는 이름으로 고르므로
+            지도가 정밀한 과녁일 필요가 없다.
+        */}
         {geo && (
-          <div className="w-full max-w-[17rem] sm:max-w-sm lg:min-w-0 lg:flex-1">
+          <div className="w-full max-w-[min(17rem,21svh)] sm:max-w-sm lg:min-w-0 lg:flex-1">
             <NationalMap
               geo={geo}
               regions={mapRegions}
@@ -336,7 +358,8 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         <section className="home-confuse flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-4">
           <h2 className="font-mono text-sm text-dim">자꾸 헷갈리는 곳</h2>
           <p className="text-2xl font-semibold">
-            {data.confusion.a} <span className="text-dim">↔</span> {data.confusion.b}
+            {data.confusion.a} <span className="text-dim">↔</span>{" "}
+            {data.confusion.b}
           </p>
           <p className="font-mono text-sm text-alert tabular-nums">
             최근 오답 {data.confusion.count}회

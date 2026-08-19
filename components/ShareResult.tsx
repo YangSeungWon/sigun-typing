@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { ModeId, Score } from "@/lib/game/types";
+import type { ItemResult, ModeId, Score } from "@/lib/game/types";
+import { shareText, type CourseGrid } from "@/lib/share/grid";
 import { track } from "@/lib/analytics/track";
 import { getSavedNickname } from "@/lib/score/client";
 import { formatClock } from "./Odometer";
@@ -11,6 +12,10 @@ interface ShareResultProps {
   courseName: string;
   mode: ModeId;
   score: Score;
+  /** 이모지 격자 자리표. 없는 코스면 null이고 숫자만 나간다. */
+  grid: CourseGrid | null;
+  /** 지역별 결과. 어느 칸을 무슨 색으로 칠할지가 여기서 나온다. */
+  results: ItemResult[];
 }
 
 function formatPrecise(ms: number): string {
@@ -32,7 +37,14 @@ function formatPrecise(ms: number): string {
  * 문구일 뿐 순위에는 아무 영향도 주지 않으므로, 남이 고쳐 봐야 자기 화면의
  * 목표 시간만 바뀐다.
  */
-export function ShareResult({ courseId, courseName, mode, score }: ShareResultProps) {
+export function ShareResult({
+  courseId,
+  courseName,
+  mode,
+  score,
+  grid,
+  results,
+}: ShareResultProps) {
   const [copied, setCopied] = useState(false);
 
   // 완주하지 못한 판은 도전장이 되지 않는다.
@@ -46,10 +58,19 @@ export function ShareResult({ courseId, courseName, mode, score }: ShareResultPr
     return `${window.location.origin}/play/${mode}/${courseId}?${params}&from=challenge`;
   };
 
-  const text =
-    `${courseName} ${formatPrecise(score.elapsedMs)}\n` +
-    `${score.completed}/${score.total} · 정확도 ${(score.accuracy * 100).toFixed(1)}%\n\n` +
-    `너는 나보다 빠름?`;
+  /*
+   * 숫자만 적던 자리다. 정확도 소수점 한 자리는 보내는 사람도 받는 사람도
+   * 읽지 않는데, 격자는 한눈에 읽힌다 — 어디서 막혔는지가 모양으로 보인다.
+   */
+  const text = shareText({
+    courseName,
+    grid,
+    results,
+    completed: score.completed,
+    total: score.total,
+    time: formatPrecise(score.elapsedMs),
+    hintsUsed: score.hintsUsed,
+  });
 
   const share = async () => {
     track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs });

@@ -4,6 +4,7 @@ import { CourseView } from "@/components/CourseView";
 import { Game } from "@/components/Game";
 import { COURSES, getCourse } from "@/data/courses";
 import { loadCourseGeo } from "@/lib/geo";
+import { loadCourseGrid } from "@/lib/share/courseGrid";
 import { isModeId, MODES, MODE_LABELS } from "@/lib/game/modes";
 
 export function generateStaticParams() {
@@ -28,10 +29,15 @@ export default async function PlayPage({ params }: PageProps<"/play/[mode]/[cour
   if (!course || !isModeId(mode)) notFound();
 
   const geo = await loadCourseGeo(course.id);
+  /*
+   * 자랑용 격자는 여기서 꺼낸다. 자리표 전체는 70KB가 넘어 브라우저로 보낼
+   * 물건이 아니고, 필요한 것은 이 코스 한 줄이다(lib/share/courseGrid.ts).
+   */
+  const grid = loadCourseGrid(course.id);
   return (
     <>
       <CourseView courseId={course.id} mode={mode} />
-      <Game course={course} mode={mode} geo={geo} />
+      <Game course={course} mode={mode} geo={geo} grid={grid} />
     </>
   );
 }

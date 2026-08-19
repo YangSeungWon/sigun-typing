@@ -37,6 +37,7 @@ import { SoundToggle } from "./SoundToggle";
 import { RegionMap } from "./RegionMap";
 import { PersonalBestPanel } from "./PersonalBestPanel";
 import { ShareResult } from "./ShareResult";
+import type { CourseGrid } from "@/lib/share/grid";
 import { ResultCard } from "./ResultCard";
 import { SubmitScore } from "./SubmitScore";
 import { SignPlate } from "./SignPlate";
@@ -47,6 +48,11 @@ interface GameProps {
   mode: ModeId;
   /** 코스 지도. 아직 지도가 없는 코스면 null. */
   geo?: CourseGeo | null;
+  /**
+   * 자랑용 이모지 격자의 자리표. 서버가 이 코스 것만 꺼내 넘긴다.
+   * 자리표가 없는 코스면 null이고, 그때 공유는 숫자만 나간다.
+   */
+  grid?: CourseGrid | null;
   seed?: number;
   /**
    * 연습 판. 랭킹에도 개인 최고 기록에도 남기지 않는다.
@@ -69,7 +75,7 @@ function formatChallengeTime(ms: number): string {
   return `${mm}:${ss}.${String(Math.floor((ms % 1000) / 10)).padStart(2, "0")}`;
 }
 
-export function Game({ course, mode, geo, seed = 1, practice = false }: GameProps) {
+export function Game({ course, mode, geo, grid = null, seed = 1, practice = false }: GameProps) {
   const config = MODES[mode];
   /**
    * 이 판의 기록이 남는가.
@@ -577,6 +583,8 @@ export function Game({ course, mode, geo, seed = 1, practice = false }: GameProp
                 courseName={course.name}
                 mode={mode}
                 score={score}
+                grid={grid}
+                results={state.results}
               />
             )
           }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MistakeNotes } from "@/components/MistakeNotes";
+import { RunTrend } from "@/components/RunTrend";
 
 export const metadata = {
   title: "헷갈리는 지역",
@@ -41,6 +42,15 @@ export default function NotesPage() {
           </span>
         </p>
       </header>
+
+      {/*
+        늘고 있는지가 먼저다.
+
+        이 탭의 이름은 `기록`인데 여태 헷갈리는 곳만 있었다. 다시 오게 만드는
+        것은 "내가 무엇을 못하나"보다 "내가 나아지고 있나"이고, 후자가 위에
+        있어야 한다. 판을 세 번 넘게 돈 코스가 없으면 아무것도 안 뜬다.
+      */}
+      <RunTrend />
 
       <MistakeNotes />
     </main>

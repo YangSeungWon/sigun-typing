@@ -623,7 +623,25 @@ export function Game({
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-16">
         {/* 붙었다는 것 자체가 판이 끝났다는 뜻이다. */}
-        <RunRecorder courseId={course.id} mode={mode} notebooks={notebooks} />
+        <RunRecorder
+          courseId={course.id}
+          mode={mode}
+          notebooks={notebooks}
+          /*
+           * 연습 판은 곡선에 안 넣는다. 오답만 골라 푸는 판은 코스 전체와
+           * 견줄 수 없어서, 섞이면 어제보다 빨라진 것처럼 보인다.
+           */
+          run={
+            practice
+              ? undefined
+              : {
+                  elapsedMs: score.elapsedMs,
+                  completed: score.completed,
+                  total: score.total,
+                  hintsUsed: score.hintsUsed,
+                }
+          }
+        />
         <RunLifecycle
           courseId={course.id}
           mode={mode}

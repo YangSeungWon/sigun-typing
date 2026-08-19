@@ -24,6 +24,7 @@ import { romanizeRegion } from "@/lib/hangul/romanize";
 import { requestToken } from "@/lib/score/client";
 import { useIsHydrated } from "@/lib/useIsHydrated";
 import { beginGame, entrySource, readChallenge, track } from "@/lib/analytics/track";
+import type { Challenge } from "@/lib/game/challenge";
 import { NextChallenge } from "./NextChallenge";
 import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
@@ -53,6 +54,8 @@ interface GameProps {
    * 자리표가 없는 코스면 null이고, 그때 공유는 숫자만 나간다.
    */
   grid?: CourseGrid | null;
+  /** 경로에 담겨 온 도전장(`/c/...`). 주소 쿼리보다 우선한다. */
+  challenge?: Challenge | null;
   seed?: number;
   /**
    * 연습 판. 랭킹에도 개인 최고 기록에도 남기지 않는다.
@@ -75,7 +78,15 @@ function formatChallengeTime(ms: number): string {
   return `${mm}:${ss}.${String(Math.floor((ms % 1000) / 10)).padStart(2, "0")}`;
 }
 
-export function Game({ course, mode, geo, grid = null, seed = 1, practice = false }: GameProps) {
+export function Game({
+  course,
+  mode,
+  geo,
+  grid = null,
+  challenge: fromRoute = null,
+  seed = 1,
+  practice = false,
+}: GameProps) {
   const config = MODES[mode];
   /**
    * 이 판의 기록이 남는가.
@@ -136,7 +147,13 @@ export function Game({ course, mode, geo, grid = null, seed = 1, practice = fals
    * 목표 시간만 바뀐다.
    */
   const hydrated = useIsHydrated();
-  const [challenge] = useState(() => readChallenge());
+  /*
+   * 도전장이 들어오는 문이 둘이다. `/play/...?beat=`는 이미 나간 링크들이 쓰고,
+   * `/c/...`는 경로에 값을 담아 서버가 미리 읽는다 — 그래야 카톡·디스코드
+   * 미리보기 카드에 기록을 실을 수 있다. 서버가 읽어 넘겨준 것이 있으면 그것을
+   * 쓰고, 없으면 주소에서 찾는다.
+   */
+  const [challenge] = useState(() => fromRoute ?? readChallenge());
 
   const startRun = useCallback(() => {
     /*

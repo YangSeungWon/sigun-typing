@@ -1,6 +1,7 @@
 "use client";
 
 import { getDeviceId } from "../score/client";
+import { type Challenge, toChallenge } from "../game/challenge";
 import { ENTRY_SOURCES, EXPERIMENT, REVISION, type GameEvent } from "./events";
 
 /**
@@ -168,22 +169,9 @@ export function entrySource(): string {
   return from && (ENTRY_SOURCES as readonly string[]).includes(from) ? from : "direct";
 }
 
-/**
- * 주소에 실려 온 도전 정보. `?beat=<ms>&by=<이름>`
- *
- * 서버에 남기지 않는 이유: 도전 카드 하나 만들자고 남의 기록과 이름을 쌓을
- * 이유가 없다. 이 값은 화면 문구일 뿐 순위에 관여하지 않으므로, 고쳐 봐야
- * 자기 화면의 목표 시간만 바뀐다.
- */
-export function readChallenge(): { beatMs: number; by: string | null } | null {
+/** 주소 쿼리에 실려 온 도전 정보. `?beat=<ms>&by=<이름>` */
+export function readChallenge(): Challenge | null {
   if (typeof window === "undefined") return null;
   const q = new URLSearchParams(window.location.search);
-  const beat = Number(q.get("beat"));
-  // 하루가 넘는 기록은 장난이다.
-  if (!Number.isFinite(beat) || beat <= 0 || beat > 86_400_000) return null;
-  const by = q.get("by");
-  return {
-    beatMs: Math.floor(beat),
-    by: by ? by.replace(/[\p{C}]/gu, "").trim().slice(0, 12) || null : null,
-  };
+  return toChallenge(q.get("beat"), q.get("by"));
 }

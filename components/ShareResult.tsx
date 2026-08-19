@@ -46,12 +46,19 @@ export function ShareResult({
   // 완주하지 못한 판은 도전장이 되지 않는다.
   if (score.completed === 0) return null;
 
-  /** 주소는 눌렀을 때 만든다. 렌더 중에 window를 읽으면 서버 렌더와 어긋난다. */
+  /**
+   * 주소는 눌렀을 때 만든다. 렌더 중에 window를 읽으면 서버 렌더와 어긋난다.
+   *
+   * 기록을 쿼리가 아니라 **경로**에 담는다(`/c/map/seoul/41080/승원`). 그래야
+   * 서버가 링크만 보고 미리보기 카드에 기록을 실을 수 있다 — 쿼리로 두면
+   * `/play/...` 807개가 통째로 정적 생성에서 빠진다. 자세한 사정은 그 경로의
+   * page.tsx에 적어 두었다.
+   */
   const challengeUrl = () => {
-    const nickname = getSavedNickname().trim();
-    const params = new URLSearchParams({ beat: String(Math.round(score.elapsedMs)) });
-    if (nickname) params.set("by", nickname.slice(0, 12));
-    return `${window.location.origin}/play/${mode}/${courseId}?${params}&from=challenge`;
+    const nickname = getSavedNickname().trim().slice(0, 12);
+    const parts = [mode, courseId, String(Math.round(score.elapsedMs))];
+    if (nickname) parts.push(encodeURIComponent(nickname));
+    return `${window.location.origin}/c/${parts.join("/")}?from=challenge`;
   };
 
   /*

@@ -47,7 +47,11 @@ export async function generateMetadata({ params }: PageProps<"/play/[mode]/[cour
   const course = getCourse(courseId);
   if (!course || !isModeId(mode)) return {};
   // 뒤의 "— 시군 타이핑"은 루트 layout의 template이 붙인다.
-  const title = `${course.name} · ${MODE_LABELS[mode]}`;
+  /*
+   * 가운데점을 쓰지 않는다. 카드 제목은 밖으로 나가는 문장이고, 거기서 `·`는
+   * 구분자가 아니라 잡음으로 읽힌다. 공백으로 이으면 그대로 한 덩이 이름이 된다.
+   */
+  const title = `${course.name} ${MODE_LABELS[mode]}`;
   /*
    * 공유 카드의 제목도 함께 바꾼다. openGraph를 아예 안 적으면 루트의 것을
    * 그대로 물려받아, 어떤 코스를 공유하든 카드에는 "시군 타이핑"만 뜬다.

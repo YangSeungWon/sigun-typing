@@ -227,7 +227,7 @@ export async function generateMetadata({ params }: PageProps<"/courses/[course]"
    * 이름을 외우려는 사람과 지도 게임을 찾는 사람이 같은 페이지에 닿게 한다.
    * 뒤의 "— 시군 타이핑"은 루트 layout의 template이 붙인다.
    */
-  const title = `${course.name} 외우기 · 지도 게임`;
+  const title = `${course.name} 외우기 지도 게임`;
   const description = `${course.name} ${course.regions.length}곳을 지도로 익히고 타이핑으로 맞혀 보세요. ${names}`;
 
   return {

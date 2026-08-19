@@ -734,7 +734,15 @@ export function Game({
                           : current?.id
                     }
                     passedCodes={passedCodes}
-                    className="h-9 w-auto sm:h-11"
+                    /*
+                     * 36px이었다. 전국 코스에서 반도 모양이 겨우 읽히고 구 단위
+                     * 코스에서는 회색 얼룩이었다 — 실루엣과 점 하나만 남긴 지도라
+                     * 작아지면 남는 것이 없다.
+                     *
+                     * 계기판이 그만큼 높아져 아래가 밀리지만, 메인 지도는 vh로
+                     * 잡혀 있어 줄어들지 않는다. 밀리는 것은 16px이다.
+                     */
+                    className="h-13 w-auto sm:h-16"
                   />
                 </span>
               )}

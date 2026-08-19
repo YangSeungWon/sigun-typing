@@ -303,12 +303,22 @@ export function Game({
      */
     const target = current?.answer;
     if (!target || state.itemWrong.length === 0) return NO_CODES;
-    const codeOf = new Map(course.regions.map((r) => [r.name, r.code]));
+    /*
+     * 이름 하나에 곳이 여럿일 수 있다. 전국에서 `중구`는 여섯, `동구`도 여섯,
+     * `북구`는 넷이다 — 광역시마다 있다.
+     *
+     * 그래서 이름 → 코드를 1:1로 잡으면 안 된다. 맵으로 만들면 중복이 마지막
+     * 하나로 뭉개져 엉뚱한 북구가 켜진다. **전부 켠다** — `북구`라고 답한
+     * 사람에게 정직한 답은 "북구는 여기, 여기, 여기 있다"이고, 그게 왜 그
+     * 이름만으로는 부족한지도 함께 말해 준다.
+     */
     const found: string[] = [];
     for (const wrong of state.itemWrong) {
       const peer = classifyWrongAnswer(wrong, target, course.regions);
-      const code = peer ? codeOf.get(peer) : undefined;
-      if (code && !found.includes(code)) found.push(code);
+      if (!peer) continue;
+      for (const r of course.regions) {
+        if (r.name === peer && !found.includes(r.code)) found.push(r.code);
+      }
     }
     return found;
   }, [state.itemWrong, current, course.regions]);

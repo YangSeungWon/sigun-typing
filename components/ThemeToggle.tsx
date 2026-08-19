@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { setThemeChoice, themeChoice, type ThemeChoice } from "@/lib/theme";
 import { useIsHydrated } from "@/lib/useIsHydrated";
 
@@ -20,16 +20,57 @@ const LABEL: Record<ThemeChoice, string> = {
 /**
  * 무엇을 뜻하는 표시인지 보이게.
  *
- * ○ ● ◐ 세 개를 썼는데 셋 다 그냥 동그라미라, 화면 밝기와 이어지지 않았다.
- * 해와 달은 설명 없이 읽힌다. U+FE0E를 붙여 그림문자가 아니라 **글자**로
- * 그리게 한다 — 안 붙이면 플랫폼에 따라 알록달록한 이모지가 나와서
- * 이 헤더에서 혼자 튄다. 시스템 설정은 둘의 가운데라 반달로 둔다.
+ * 그림은 셋이다 — 해(밝게), 달(어둡게), 반달(시스템 설정). 해와 달은 설명 없이
+ * 읽히고, 시스템 설정은 둘의 가운데라 반달로 둔다.
+ *
+ * **글자가 아니라 그림이다.** 한때 이 셋을 글자로 찍었다. 이모지로 번지는 것까지
+ * U+FE0E로 막아 뒀는데도, 결국 폰트가 가진 글자에 기대는 방식이라는 게 남았다 —
+ * 본문 폰트에 없으면 폴백으로 넘어가고, 그러면 획 굵기도 크기도 옆의 것들과
+ * 어긋난다. 실제로 반달이 그랬다. 얇은 조각으로 그려졌다.
+ *
+ * 인라인 SVG에는 그 의존이 없다. 어디서든 같은 획으로 그려지고, `currentColor`라
+ * 버튼의 색 상태(쉼·호버)를 그대로 물려받는다.
  */
-const GLYPH: Record<ThemeChoice, string> = {
-  system: "◐",
-  dark: "\u263E\uFE0E",
-  light: "\u2600\uFE0E",
-};
+function ThemeIcon({ choice }: { choice: ThemeChoice }) {
+  const common: ComponentProps<"svg"> = {
+    viewBox: "0 0 24 24",
+    className: "size-5",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": true,
+    focusable: "false",
+  };
+
+  if (choice === "light") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="4.25" />
+        {/* 빛살 여덟. 네 방향과 그 사이 네 방향. */}
+        <path d="M12 2.25v2.1M12 19.65v2.1M2.25 12h2.1M19.65 12h2.1M5.11 5.11l1.49 1.49M17.4 17.4l1.49 1.49M18.89 5.11L17.4 6.6M6.6 17.4l-1.49 1.49" />
+      </svg>
+    );
+  }
+
+  if (choice === "dark") {
+    return (
+      <svg {...common}>
+        {/* 초승달. 원 하나에서 원 하나를 베어 낸 모양이다. */}
+        <path d="M20.5 14.4A8.7 8.7 0 0 1 9.6 3.5a8.7 8.7 0 1 0 10.9 10.9Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      {/* 반달. 왼쪽은 비고 오른쪽은 찼다 — 밝음과 어두움의 가운데. */}
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 /**
  * 밝게 볼지 어둡게 볼지.
@@ -68,9 +109,9 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         setChoice(next);
       }}
       aria-label={`화면 밝기 — 지금 ${LABEL[choice]}. 누르면 ${LABEL[next]}`}
-      className={`inline-flex size-8 items-center justify-center rounded text-base leading-none text-ink/75 transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${className}`}
+      className={`inline-flex size-8 items-center justify-center rounded text-ink/75 transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${className}`}
     >
-      <span aria-hidden>{GLYPH[choice]}</span>
+      <ThemeIcon choice={choice} />
     </button>
   );
 }

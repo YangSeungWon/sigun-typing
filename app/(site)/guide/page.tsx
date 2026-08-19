@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BackLink } from "@/components/BackLink";
 import { Keycap } from "@/components/Keycap";
 import { COURSES } from "@/data/courses";
 import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
@@ -29,7 +28,6 @@ export default function GuidePage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-14">
       <header className="flex flex-col gap-3">
-        <BackLink href="/">시군 타이핑</BackLink>
         <h1 className="text-4xl font-bold tracking-tight">이용안내</h1>
         <p className="text-lg text-dim">
           지도에 표시된 지역이 어디인지 떠올려, 이름을 직접 입력하는 게임입니다.

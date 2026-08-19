@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SignMark } from "@/components/nav/SignMark";
 
 /**
  * 좁은 화면의 윗줄.
@@ -13,9 +14,10 @@ export function MobileHeader() {
     <header className="flex items-center justify-between border-b border-concrete-deep px-5 py-3 md:hidden">
       <Link
         href="/"
-        className="font-mono text-base font-medium tracking-[0.2em] transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="flex items-center gap-2 text-base font-semibold transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
-        SIGUN
+        <SignMark className="size-5 shrink-0" />
+        시군 타이핑
       </Link>
       <ThemeToggle className="-my-1" />
     </header>

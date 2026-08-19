@@ -215,6 +215,41 @@ body {
   background-color: var(--color-sign);
 }
 
+/**
+ * 헤더의 표지판 마크.
+ *
+ * 형태는 `app/icon.svg`와 같다 — 녹색 판면, 흰 내곽선, 가운데 중앙선 화살표.
+ * 색만 토큰으로 다시 칠한다. 파비콘은 브라우저 크롬 위에 놓여 우리 테마 밖에
+ * 있으니 값이 굳어 있어도 되지만, 이 마크는 페이지 안이라 밝기를 따라가야 한다.
+ *
+ * 화살표만 규칙이 하나 더 붙는다. 밝은 판에서는 중앙선 노랑이 맞다 — 초록
+ * 판면 위 노랑이 실제 도로표지의 배색이다. 어두운 판에서는 판면이 민트로
+ * 밝아지면서 그 위의 노랑이 대비 1.5:1로 뭉갠다. 거기서는 판면 위 글자색으로
+ * 바꾼다 — 색은 잃어도 형태는 남고, 안 보이는 노랑보다 보이는 화살표가 낫다.
+ */
+.sign-mark-plate {
+  fill: var(--color-sign);
+}
+
+.sign-mark-edge {
+  stroke: var(--color-on-sign);
+}
+
+.sign-mark-arrow {
+  stroke: var(--color-centerline);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sign-mark-arrow {
+    stroke: var(--color-on-sign);
+  }
+}
+
+:root[data-theme="dark"] .sign-mark-arrow {
+  stroke: var(--color-on-sign);
+}
+
+
 /*
  * 코스 카드의 여정선.
  *

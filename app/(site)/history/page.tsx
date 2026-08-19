@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BackLink } from "@/components/BackLink";
 import { Timelapse, type TimelapseData } from "@/components/Timelapse";
 import timelapse from "@/data/timelapse/sido.json";
 import changes from "@/data/reference/boundary-changes.json";
@@ -68,8 +67,6 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
-      <BackLink href="/">시군 타이핑</BackLink>
-
       <Timelapse data={DATA} />
 
       {/*

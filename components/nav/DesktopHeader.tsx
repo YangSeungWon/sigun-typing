@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HEADER_LINKS, isActivePath } from "@/lib/nav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SignMark } from "@/components/nav/SignMark";
 
 /**
  * 넓은 화면의 윗줄.
@@ -18,14 +19,30 @@ export function DesktopHeader() {
   return (
     <header className="hidden border-b border-concrete-deep md:block">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-6 px-6 py-3">
+        {/*
+          이름은 하나여야 한다. 여기만 `SIGUN`이었고 나머지 전부 — 제목 template,
+          og:siteName, 화면마다의 BackLink — 는 `시군 타이핑`이었다. 그래서 안쪽
+          화면에서는 홈으로 가는 문이 위아래로 둘, 이름이 서로 다른 채로 놓였다.
+
+          모노스페이스와 넓은 자간도 걷어낸다. BackLink가 같은 이유로 이미
+          걷어낸 것들이다 — 0.2em 자간은 한글을 `시 군 타 이 핑`으로 흩어 놓고,
+          이 사이트에서 가장 중요한 것(이름)을 가장 읽기 어렵게 만든다.
+          모노는 계기판의 숫자 몫으로 남겨 둔다.
+        */}
         <Link
           href="/"
-          className="font-mono text-lg font-medium tracking-[0.2em] transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="flex items-center gap-2.5 text-lg font-semibold transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          SIGUN
+          <SignMark className="size-6 shrink-0" />
+          시군 타이핑
         </Link>
 
-        <nav aria-label="주요 메뉴" className="flex items-center gap-5 font-mono text-sm">
+        {/*
+          text-sm이었다. 본문이 16px이고 제목이 48px인 화면에서 14px 메뉴는
+          누르는 것이 아니라 주석처럼 읽힌다. 본문과 같아지지는 않을 만큼만
+          올린다 — 메뉴는 본문보다 조용해야 하되 안 보여서는 안 된다.
+        */}
+        <nav aria-label="주요 메뉴" className="flex items-center gap-5 font-mono text-[0.9375rem]">
           {HEADER_LINKS.map((item) => {
             const active = isActivePath(pathname, item.href);
             return (

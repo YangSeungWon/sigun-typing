@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BackLink } from "@/components/BackLink";
 import { COURSES, getCourse } from "@/data/courses";
 import { COURSE_PICKER_GROUPS } from "@/lib/courses/picker";
 import { getScoreRepository } from "@/lib/db/client";
@@ -75,7 +74,6 @@ export default async function RankingPage({
         종류라, 표 아래로 내렸다.
       */}
       <header className="flex flex-col gap-3">
-        <BackLink href="/">시군 타이핑</BackLink>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">랭킹</h1>
       </header>
 

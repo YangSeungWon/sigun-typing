@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BackLink } from "@/components/BackLink";
 import type { ReactNode } from "react";
 
 interface LegalDocProps {
@@ -14,7 +13,6 @@ export function LegalDoc({ title, effectiveDate, children }: LegalDocProps) {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-14">
       <header className="flex flex-col gap-3">
-        <BackLink href="/">시군 타이핑</BackLink>
         <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
         <p className="font-mono text-xs text-dim">시행일 {effectiveDate}</p>
       </header>

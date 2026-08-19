@@ -90,11 +90,16 @@ export function PersonalBestPanel({
      * 상자를 두르지 않는다. 이건 누르는 것이 아니라 기록에 붙는 해석이다.
      * 테두리를 치면 버튼처럼 보여 무엇이 다음 행동인지가 흐려진다.
      */
-    <p className="font-mono text-base text-on-sign/80" role="status">
+    <p
+      className="flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/80"
+      role="status"
+    >
       <span className="font-semibold text-centerline">새 최고 기록</span>
-      {comparable && gained > 0
-        ? ` · ${gained.toFixed(2)}초 단축`
-        : ` · 완주 ${previous.completed} → ${score.completed}`}
+      <span>
+        {comparable && gained > 0
+          ? `${gained.toFixed(2)}초 단축`
+          : `완주 ${previous.completed} → ${score.completed}`}
+      </span>
     </p>
   );
 }

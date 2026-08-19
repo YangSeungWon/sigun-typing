@@ -161,7 +161,8 @@ function Row({
         <span className={mine ? "text-sign" : ""}>{name}</span>
       </span>
       <span className="font-mono text-sm tabular-nums text-dim">
-        {completed}/{total} · {formatClock(elapsedMs)}
+        <span>{completed}/{total}</span>
+        <span className="ml-3">{formatClock(elapsedMs)}</span>
       </span>
     </li>
   );

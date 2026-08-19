@@ -617,10 +617,10 @@ function RoomHeader({
         <span className="font-mono text-3xl font-semibold tracking-[0.2em]">
           {code}
         </span>
-        <span className="text-sm text-dim">
+        <span className="flex items-baseline gap-2.5 text-sm text-dim">
           {/* 첫 판에는 안 적는다. `1판째`는 아무 말도 아니다. */}
-          {round > 1 && <span className="font-mono tabular-nums">{round}판째 · </span>}
-          {courseName}
+          {round > 1 && <span className="font-mono tabular-nums">{round}판째</span>}
+          <span>{courseName}</span>
         </span>
       </div>
     </header>

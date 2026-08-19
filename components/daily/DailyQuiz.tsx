@@ -201,8 +201,9 @@ export function DailyQuiz({
 
       {stage === "region" && (
         <section className="flex flex-col gap-3">
-          <h2 className="font-mono text-sm text-dim">
-            어느 시군구입니까 · {left}번 남음
+          <h2 className="flex items-baseline justify-between gap-4 font-mono text-sm text-dim">
+            <span>어느 시군구입니까</span>
+            <span>{left}번 남음</span>
           </h2>
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="guess">

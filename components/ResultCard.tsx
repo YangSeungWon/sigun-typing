@@ -291,8 +291,9 @@ export function ResultCard({
           모드를 남겨 둔다. `이름 보고 익히기`로 낸 기록은 랭킹에도 개인 기록에도
           안 올라가므로, 같은 숫자라도 다른 판이다.
         */}
-        <p className="relative mt-3 font-mono text-base text-on-sign/75">
-          {perfect ? "완주" : "도착"} · {modeLabel}
+        <p className="relative mt-3 flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/75">
+          <span>{perfect ? "완주" : "도착"}</span>
+          <span>{modeLabel}</span>
         </p>
 
         {/*
@@ -303,9 +304,11 @@ export function ResultCard({
           적으면 읽는 사람이 해석할 일이 없다. 퍼센트로 안 적는 이유는 그대로다 —
           이 게임의 단위는 곳이다.
         */}
-        <p className="relative mt-1 font-mono text-base text-on-sign/75">
-          {`첫 입력 ${score.firstTry} / ${score.completed} · `}
-          <HintCount score={score} />
+        <p className="relative mt-1 flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/75">
+          <span>{`첫 입력 ${score.firstTry} / ${score.completed}`}</span>
+          <span>
+            <HintCount score={score} />
+          </span>
         </p>
 
         {/* 다 돌지 못한 판에서는 시간이 위에 없으므로 여기 적는다. */}
@@ -402,7 +405,7 @@ export function ResultCard({
               <span className="flex flex-col gap-0.5 text-left">
                 자세히 보기
                 <span className="text-xs text-dim/80">
-                  맞힌 타수 · 오타 · 첫 입력 · 힌트
+                  맞힌 타수·오타·첫 입력·힌트
                 </span>
               </span>
               <span className="transition-transform group-open:rotate-90">›</span>

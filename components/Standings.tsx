@@ -66,7 +66,8 @@ export function Standings({
                 </span>
               ) : (
                 <span className="font-mono text-base tabular-nums text-dim">
-                  {p.index}/{total} · {Math.round(p.cpm)}타
+                  <span>{p.index}/{total}</span>
+                  <span className="ml-3">{Math.round(p.cpm)}타</span>
                 </span>
               )}
             </div>

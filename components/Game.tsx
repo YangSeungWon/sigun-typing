@@ -703,8 +703,9 @@ export function Game({
                 기억을 쓰지 않아도 되는 모드가 가장 유리해진다.
                 개인 기록은 그대로 남는다 — 어제의 나와는 겨룰 만하다.
               */
-              <p className="font-mono text-sm text-dim">
-                연습 판이라 랭킹에 올리지 않습니다 · 개인 기록에는 남습니다
+              <p className="flex flex-wrap gap-x-3 font-mono text-sm text-dim">
+                <span>연습 판이라 랭킹에 올리지 않습니다</span>
+                <span>개인 기록에는 남습니다</span>
               </p>
             ) : (
               <SubmitScore
@@ -1088,7 +1089,7 @@ export function Game({
                                 ? "한 번 더 누르면 정답"
                                 : state.hintsUsed > 0
                                   ? `힌트 ${state.hintsUsed}회 봄`
-                                  : "힌트 · 기록에 남음"}
+                                  : "힌트, 기록에 남음"}
                             </KeyHint>
                           )}
                           {config.allowSkip && (

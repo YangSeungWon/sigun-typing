@@ -89,7 +89,7 @@ export async function POST(request: Request) {
      */
     console.warn(
       `[score] 검증 거부 ${body.courseId}/${body.mode}:`,
-      result.rejections.map((r) => `${r.code}(${r.detail})`).join(" · "),
+      result.rejections.map((r) => `${r.code}(${r.detail})`).join(", "),
     );
     return NextResponse.json(
       { error: "기록을 검증하지 못했습니다", rejections: result.rejections },

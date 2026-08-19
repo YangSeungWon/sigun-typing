@@ -201,7 +201,8 @@ export function MultiRace({
             </span>
           </p>
           <p className="text-sm text-dim">
-            정확도 {(score.accuracy * 100).toFixed(1)}% · 오타 {score.totalErrors}회
+            <span>정확도 {(score.accuracy * 100).toFixed(1)}%</span>
+            <span>오타 {score.totalErrors}회</span>
           </p>
           <SubmitScore
             token={raceStart?.token ?? null}

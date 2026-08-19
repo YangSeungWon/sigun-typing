@@ -37,9 +37,15 @@ export function SiteFooter() {
         href="/history"
         className="w-fit underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
-        행정구역 데이터 기준 {DATA_VINTAGE.year} · {DATA_VINTAGE.boundarySource}
+        <span className="flex flex-wrap gap-x-3">
+          <span>행정구역 데이터 기준 {DATA_VINTAGE.year}</span>
+          <span>{DATA_VINTAGE.boundarySource}</span>
+        </span>
       </Link>
-      <span>물길 © OpenStreetMap · 지형 NASA SRTM</span>
+      <span className="flex flex-wrap gap-x-3">
+        <span>물길 © OpenStreetMap</span>
+        <span>지형 NASA SRTM</span>
+      </span>
 
       <span className="flex gap-4 pt-1">
         <Link href="/guide" className="transition-colors hover:text-ink md:hidden">

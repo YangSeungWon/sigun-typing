@@ -32,7 +32,7 @@ export function ReviewGame({ course, geo }: ReviewGameProps) {
     if (regions.length === 0) return null;
     return {
       ...course,
-      name: `${course.name} · 오답 ${regions.length}곳`,
+      name: `${course.name} 오답 ${regions.length}곳`,
       description: "자주 틀린 곳만 모았습니다",
       regions,
     };

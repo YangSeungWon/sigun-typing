@@ -31,6 +31,7 @@ import {
 } from "@/lib/analytics/track";
 import type { Challenge } from "@/lib/game/challenge";
 import { MARK, markOf } from "@/lib/game/marks";
+import { classifyWrongAnswer } from "@/lib/score/confusion";
 import { NextChallenge } from "./NextChallenge";
 import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
@@ -77,6 +78,9 @@ interface GameProps {
 const HINT_TO_GIVE_UP_GRACE_MS = 600;
 
 /** 도전장의 목표 시간. 결과 화면과 같은 표기여야 같은 값으로 읽힌다. */
+/** 정체성이 고정돼야 useMemo가 실제로 걸린다. */
+const NO_CODES: string[] = [];
+
 function formatChallengeTime(ms: number): string {
   const total = Math.floor(ms / 1000);
   const mm = String(Math.floor(total / 60)).padStart(2, "0");
@@ -277,6 +281,38 @@ export function Game({
         .map((r) => r.id),
     [state.results],
   );
+  /**
+   * 이번 문제에서 **틀리게 부른 곳들.**
+   *
+   * 여태 오답은 표지판을 흔들고 끝이었다. 답은 화면에 남는데 그게 어디인지는
+   * 안 알려 줬고, 그래서 배움이 일어나야 할 순간(틀린 그 순간)에 아무 일도
+   * 없었다. 그 사실은 오답노트에만 조용히 쌓여 결과 화면에서야 만났다.
+   *
+   * 오답이 같은 코스의 다른 지역이면 지도에서 그곳을 켠다. 정답은 그대로
+   * 감춘다 — `안산시`라고 답한 사람이 안산이 어디인지 보면 다음 추측이 찍기가
+   * 아니라 추론이 된다.
+   *
+   * 오타는 걸러진다. `classifyWrongAnswer`가 자모 한 끗 차이를 먼저 쳐내므로
+   * `도봉그`에는 아무 일도 일어나지 않는다 — 그건 다른 곳을 떠올린 것이 아니라
+   * 손이 미끄러진 것이다.
+   */
+  const namedCodes = useMemo(() => {
+    /*
+     * `revealing`은 안 본다. 맞히거나 건너뛴 순간 엔진이 `itemWrong`을 비우므로
+     * 정답을 보여 주는 동안에는 이 목록이 이미 빈 배열이다.
+     */
+    const target = current?.answer;
+    if (!target || state.itemWrong.length === 0) return NO_CODES;
+    const codeOf = new Map(course.regions.map((r) => [r.name, r.code]));
+    const found: string[] = [];
+    for (const wrong of state.itemWrong) {
+      const peer = classifyWrongAnswer(wrong, target, course.regions);
+      const code = peer ? codeOf.get(peer) : undefined;
+      if (code && !found.includes(code)) found.push(code);
+    }
+    return found;
+  }, [state.itemWrong, current, course.regions]);
+
   /** 포기했거나 틀린 채로 지나온 곳. 지도에서 회색과 구분해 칠한다. */
   const missedCodes = useMemo(
     () => state.results.filter((r) => r.skipped).map((r) => r.id),
@@ -737,6 +773,7 @@ export function Game({
                           : current?.id
                     }
                     passedCodes={passedCodes}
+                    namedCodes={namedCodes}
                     /*
                      * 36px이었다. 전국 코스에서 반도 모양이 겨우 읽히고 구 단위
                      * 코스에서는 회색 얼룩이었다 — 실루엣과 점 하나만 남긴 지도라
@@ -859,6 +896,7 @@ export function Game({
                     }
                     passedCodes={passedCodes}
                     struggledCodes={struggledCodes}
+                    namedCodes={namedCodes}
                     missedCodes={missedCodes}
                     focus={!counting}
                     variant={config.reveal ? "route" : "hint"}

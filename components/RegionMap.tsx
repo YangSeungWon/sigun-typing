@@ -29,6 +29,16 @@ interface RegionMapProps {
    * `passedCodes`에도 들어 있다. 여기 있으면 그 위에 색이 덮인다.
    */
   struggledCodes?: string[];
+  /**
+   * 이번 문제에서 **틀리게 부른 곳들.** 순서가 의미를 가진다 — 마지막 것에만
+   * 이름표가 붙는다.
+   *
+   * 답이 아니라 오답의 자리다. `안산시`라고 답했으면 안산시를 켠다. 정답은
+   * 그대로 감춘 채, 사람이 자기가 부른 이름이 어디인지 보고 다음 추측을
+   * 좁히게 하는 장치다. 그래서 문제를 내는 지도(hint)에서도 켤 수 있다 —
+   * 이름표가 뜨지만 그건 **그 사람이 친 이름**이라 답을 흘리지 않는다.
+   */
+  namedCodes?: string[];
   variant: MapVariant;
   /**
    * 지금 문제인 지역으로 지도를 당길지.
@@ -69,6 +79,7 @@ export const RegionMap = memo(function RegionMap({
   passedCodes = EMPTY,
   missedCodes = EMPTY,
   struggledCodes = EMPTY,
+  namedCodes = EMPTY,
   variant,
   focus = false,
   explore = false,
@@ -77,6 +88,12 @@ export const RegionMap = memo(function RegionMap({
   const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
   const missed = useMemo(() => new Set(missedCodes), [missedCodes]);
   const struggled = useMemo(() => new Set(struggledCodes), [struggledCodes]);
+  const named = useMemo(() => new Set(namedCodes), [namedCodes]);
+  /** 이름표는 마지막에 부른 곳에만. 다섯 번 틀리면 판이 다섯 장 겹친다. */
+  const lastNamed = useMemo(
+    () => geo.regions.find((r) => r.code === namedCodes[namedCodes.length - 1]),
+    [geo, namedCodes],
+  );
   const justPassed = passedCodes[passedCodes.length - 1];
   const current = useMemo(
     () => geo.regions.find((r) => r.code === currentCode),
@@ -369,6 +386,31 @@ export const RegionMap = memo(function RegionMap({
       </g>
 
       {/*
+        틀리게 부른 곳의 테두리.
+        **칠하지 않고 두른다.** 채우기는 이미 네 가지 뜻을 지고 있고(한 번에·
+        헤맴·못 맞힘·지금 문제), 여기에 다섯 번째를 얹으면 지도가 범례를
+        요구하게 된다. 테두리는 그 위에 겹쳐도 아래 상태를 안 가린다 —
+        "이 곳이 무엇인가"가 아니라 "네가 방금 여기를 불렀다"이므로 층이 다르다.
+      */}
+      {namedCodes.length > 0 && (
+        <g style={{ ...PAN, transform }} pointerEvents="none" aria-hidden>
+          {geo.regions
+            .filter((r) => named.has(r.code))
+            .map((r) => (
+              <path
+                key={r.code}
+                d={r.d}
+                fill="none"
+                stroke="var(--color-alert)"
+                strokeWidth={3}
+                strokeDasharray="8 6"
+                strokeLinejoin="round"
+              />
+            ))}
+        </g>
+      )}
+
+      {/*
         현재 지역을 한 번 더 감싼다. 전국 지도에서 서울처럼 작은 지역은
         채우기만으로는 눈에 띄지 않는다. 이름은 쓰지 않는다 — 그게 문제니까.
       */}
@@ -431,43 +473,23 @@ export const RegionMap = memo(function RegionMap({
         판은 지역 위에 뜨고, 위쪽 가장자리에서는 아래로 내려 붙는다.
       */}
       {explorable && label && (
-        <g className="region-label" pointerEvents="none">
-          <rect
-            x={Math.min(
-              Math.max(label.cx - plateWidth(label.name, fontSize) / 2, 4),
-              geo.width - plateWidth(label.name, fontSize) - 4,
-            )}
-            y={
-              label.cy - fontSize * 2.4 < 4
-                ? label.cy + fontSize * 0.7
-                : label.cy - fontSize * 2.4
-            }
-            width={plateWidth(label.name, fontSize)}
-            height={fontSize * 1.7}
-            rx={fontSize * 0.25}
-            fill="var(--color-sign)"
-          />
-          <text
-            x={Math.min(
-              Math.max(label.cx, 4 + plateWidth(label.name, fontSize) / 2),
-              geo.width - plateWidth(label.name, fontSize) / 2 - 4,
-            )}
-            y={
-              (label.cy - fontSize * 2.4 < 4
-                ? label.cy + fontSize * 0.7
-                : label.cy - fontSize * 2.4) +
-              fontSize * 0.85
-            }
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={fontSize}
-            fontWeight={700}
-            fill="var(--color-paint)"
-          >
-            {label.name}
-          </text>
+        <NamePlate region={label} fontSize={fontSize} mapWidth={geo.width} />
+      )}
+
+      {/*
+        틀리게 부른 곳의 이름표. 자기가 친 이름이라 답을 흘리지 않는다.
+        마지막 하나만 띄운다 — 여러 번 틀리면 판이 겹쳐 지도를 덮는다.
+
+        팬 그룹 안에 넣는다. 위의 짚어 보기 이름표는 밖에 있어도 됐는데,
+        그 지도는 카메라가 움직이지 않기 때문이다(`focus`가 꺼져 있다).
+        게임 화면은 문제마다 미끄러지므로 밖에 두면 판만 제자리에 남는다.
+      */}
+      {lastNamed && (
+        <g style={{ ...PAN, transform }} pointerEvents="none">
+          <NamePlate region={lastNamed} fontSize={fontSize} mapWidth={geo.width} />
         </g>
       )}
+
 
       {/*
         테두리도 함께 움직여야 한다.
@@ -525,3 +547,55 @@ const PAN: CSSProperties = {
   transformBox: "view-box",
   transformOrigin: "0 0",
 };
+
+/**
+ * 지도 위의 지명 판.
+ *
+ * 도로표지 그대로 — 초록 판에 흰 글자다. 지도 위에 뜨는 이름이 이 사이트
+ * 어디에서나 같은 모양이어야 "저건 지명이다"가 설명 없이 읽힌다.
+ *
+ * 판은 지역 위에 뜨고, 위쪽 가장자리에서는 아래로 내려 붙는다. 좌우로도
+ * 화면을 벗어나지 않게 물린다 — 가장자리 지역의 이름이 잘리면 그건 이름표가
+ * 아니다.
+ *
+ * 짚어 보는 지도와 오답을 짚어 주는 지도가 같은 판을 쓴다. 둘 다 "여기가
+ * 어디인가"를 말하는 자리다.
+ */
+function NamePlate({
+  region,
+  fontSize,
+  mapWidth,
+}: {
+  region: { name: string; cx: number; cy: number };
+  fontSize: number;
+  mapWidth: number;
+}) {
+  const width = plateWidth(region.name, fontSize);
+  const above = region.cy - fontSize * 2.4 >= 4;
+  const top = above ? region.cy - fontSize * 2.4 : region.cy + fontSize * 0.7;
+  const left = Math.min(Math.max(region.cx - width / 2, 4), mapWidth - width - 4);
+
+  return (
+    <g className="region-label" pointerEvents="none">
+      <rect
+        x={left}
+        y={top}
+        width={width}
+        height={fontSize * 1.7}
+        rx={fontSize * 0.25}
+        fill="var(--color-sign)"
+      />
+      <text
+        x={left + width / 2}
+        y={top + fontSize * 0.85}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={fontSize}
+        fontWeight={700}
+        fill="var(--color-paint)"
+      >
+        {region.name}
+      </text>
+    </g>
+  );
+}

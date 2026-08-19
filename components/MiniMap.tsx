@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import { mainPathBox } from "@/lib/geo/bbox";
 
@@ -8,6 +8,15 @@ interface MiniMapProps {
   geo: CourseGeo;
   currentCode?: string;
   passedCodes?: string[];
+  /**
+   * 이번 문제에서 틀리게 부른 곳들.
+   *
+   * 큰 지도는 지금 묻는 곳으로 당겨져 있어서, 멀리 있는 오답은 화면 밖이라
+   * 보이지 않는다 — 서울을 묻는데 부산을 불렀다면 부산은 지도 저편이다.
+   * 카메라를 물리는 대신 여기에 찍는다. 전체 안에서 어디인가는 원래 이
+   * 지도가 맡은 질문이다.
+   */
+  namedCodes?: string[];
   className?: string;
 }
 
@@ -24,17 +33,29 @@ export const MiniMap = memo(function MiniMap({
   geo,
   currentCode,
   passedCodes = EMPTY,
+  namedCodes = EMPTY,
   className,
 }: MiniMapProps) {
   const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
   const justPassed = passedCodes[passedCodes.length - 1];
-  const marker = useMemo(() => {
-    const region = geo.regions.find((r) => r.code === currentCode);
-    if (!region) return null;
-    // 표시점도 본체에 찍어야 한다. 섬까지 감싸면 점이 바다에 뜬다.
-    const box = mainPathBox(region.d);
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  }, [geo, currentCode]);
+  /** 표시점은 본체에 찍는다. 섬까지 감싸면 점이 바다에 뜬다. */
+  const dotAt = useCallback(
+    (code: string | undefined) => {
+      const region = code ? geo.regions.find((r) => r.code === code) : undefined;
+      if (!region) return null;
+      const box = mainPathBox(region.d);
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    },
+    [geo],
+  );
+  const marker = useMemo(() => dotAt(currentCode), [dotAt, currentCode]);
+  const named = useMemo(
+    () =>
+      namedCodes
+        .map((code) => ({ code, at: dotAt(code) }))
+        .filter((n): n is { code: string; at: { x: number; y: number } } => !!n.at),
+    [dotAt, namedCodes],
+  );
 
   return (
     <svg
@@ -59,6 +80,23 @@ export const MiniMap = memo(function MiniMap({
       ))}
 
       {/*
+        틀리게 부른 곳. 지금 묻는 곳보다 먼저 그린다 — 겹치면 위에 있어야 할
+        것은 문제이지 오답이 아니다. 점을 조금 작게 두어 둘이 구별된다.
+      */}
+      {named.map((n) => (
+        <circle
+          key={n.code}
+          cx={n.at.x}
+          cy={n.at.y}
+          r={Math.max(geo.width, geo.height) * 0.045}
+          fill="var(--color-alert)"
+          stroke="var(--color-paint)"
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+
+      {/*
         지금 묻는 곳은 칠하지 않고 점으로 찍는다. 이 크기에서 작은 구를 칠해
         봐야 보이지 않고, 칠하면 "맞힌 곳"과 헷갈린다.
       */}
@@ -75,7 +113,15 @@ export const MiniMap = memo(function MiniMap({
             transform: `translate(${marker.x}px, ${marker.y}px)`,
           }}
         >
-          <circle r={Math.max(geo.width, geo.height) * 0.06} fill="var(--color-centerline)" />
+          {/*
+            큰 지도와 같은 색이어야 한다. 노랑이던 때가 있었는데, 큰 지도에서
+            노랑이 "헤맨 곳"으로 옮겨 가면서 두 지도가 같은 순간을 가리키며
+            다른 말을 하게 됐다.
+          */}
+          <circle
+            r={Math.max(geo.width, geo.height) * 0.06}
+            fill="var(--color-expressway-hi)"
+          />
           <circle
             r={Math.max(geo.width, geo.height) * 0.06}
             fill="none"

@@ -331,9 +331,15 @@ export function buildGrid(geo: GeoFile): CourseGrid {
       let y = clamp(Math.round((r.centroid[1] - box.y0) / chh - 0.5), by);
       const dx = Math.sign(x - mx) || 0;
       const dy = Math.sign(y - my) || 1;
-      // 방위가 뚜렷한 축으로만 민다. 둘 다 밀면 대각선으로 흘러 엉뚱한 데 간다.
+      /*
+       * 방위가 뚜렷한 축으로만 민다. 둘 다 밀면 대각선으로 흘러 엉뚱한 데 간다.
+       *
+       * 비교는 **실제 거리**로 한다. 격자 행 하나가 열 하나보다 CELL_ASPECT배
+       * 넓은 땅을 덮으므로 세로 차이에 그만큼 곱해야 한다. 이걸 가로 쪽에
+       * 곱했더니 제주가 남쪽 대신 서쪽으로 가서 전라남도 옆에 붙었다.
+       */
       const [stepX, stepY] =
-        Math.abs(x - mx) * CELL_ASPECT > Math.abs(y - my) ? [dx, 0] : [0, dy];
+        Math.abs(x - mx) > Math.abs(y - my) * CELL_ASPECT ? [dx, 0] : [0, dy];
       // 육지와 대각선으로도 닿으면 안 되고, 먼저 앉은 섬과 겹쳐도 안 된다.
       const clash = () =>
         mainCells.some((c) => Math.abs(c.x - x) <= 1 && Math.abs(c.y - y) <= 1) ||
@@ -343,6 +349,66 @@ export function buildGrid(geo: GeoFile): CourseGrid {
         x += stepX;
         y += stepY;
       }
+
+      /*
+       * 여기까지는 **밀어내기만** 했다. 그러면 처음 앉은 자리가 이미 멀었을 때
+       * 그대로 멀리 남는다 — 울릉이 울진에서 가로 두 칸 세로 두 칸 어긋난
+       * 대각선에 떠서, 규칙상 거리는 최소인데 눈에는 세 칸 가까이 떨어져 보였다.
+       *
+       * 그래서 붙일 수 있는 만큼 당긴다. 여덟 방향으로 한 칸씩 옮겨 보고, 육지에
+       * 더 가까워지면서 여전히 대각선으로도 안 닿는 자리가 있으면 옮긴다.
+       * 결과가 대각선 대신 정동·정남이 되어, 방위도 오히려 또렷해진다.
+       */
+      const reach = (px: number, py: number) =>
+        Math.min(
+          ...mainCells.map(
+            (c) => (c.x - px) ** 2 + ((c.y - py) * CELL_ASPECT) ** 2,
+          ),
+        );
+      /*
+       * 당기되 **방위는 지킨다.**
+       *
+       * 조건 없이 당기면 가까워지기만 하면 되므로 섬이 육지 옆구리로 기어
+       * 오른다 — 전국에서 제주시가 전라남도 서쪽에 붙고, 서귀포시와도 갈라졌다.
+       * 남쪽 섬은 육지 아래를 벗어나지 않아야 남쪽으로 읽힌다.
+       *
+       * 그래서 미는 축에서는 육지 경계 밖에 머물게 하고, 나머지 축으로만 자유롭게
+       * 당긴다. 울릉은 동쪽 밖에 남은 채 위아래로 붙고, 제주는 남쪽 밖에 남은 채
+       * 좌우로 붙는다.
+       */
+      const keepsBearing = (px: number, py: number) => {
+        if (stepX > 0) return px > bx[1];
+        if (stepX < 0) return px < bx[0];
+        if (stepY > 0) return py > by[1];
+        return py < by[0];
+      };
+      const legal = (px: number, py: number) =>
+        keepsBearing(px, py) &&
+        !taken.has(`${px},${py}`) &&
+        !mainCells.some((c) => Math.abs(c.x - px) <= 1 && Math.abs(c.y - py) <= 1);
+      for (let step = 0; step < 64; step++) {
+        let bx2 = x;
+        let by2 = y;
+        let best = reach(x, y);
+        for (const [ox, oy] of [
+          [1, 0], [-1, 0], [0, 1], [0, -1],
+          [1, 1], [1, -1], [-1, 1], [-1, -1],
+        ]) {
+          const nx = x + ox;
+          const ny = y + oy;
+          if (!legal(nx, ny)) continue;
+          const d = reach(nx, ny);
+          if (d < best - 1e-9) {
+            best = d;
+            bx2 = nx;
+            by2 = ny;
+          }
+        }
+        if (bx2 === x && by2 === y) break;
+        x = bx2;
+        y = by2;
+      }
+
       taken.add(`${x},${y}`);
       seatOf.set(r.code, { x, y, cover: 1 });
     }

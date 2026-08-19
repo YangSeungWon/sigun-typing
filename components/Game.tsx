@@ -23,8 +23,14 @@ import {
 import { romanizeRegion } from "@/lib/hangul/romanize";
 import { requestToken } from "@/lib/score/client";
 import { useIsHydrated } from "@/lib/useIsHydrated";
-import { beginGame, entrySource, readChallenge, track } from "@/lib/analytics/track";
+import {
+  beginGame,
+  entrySource,
+  readChallenge,
+  track,
+} from "@/lib/analytics/track";
 import type { Challenge } from "@/lib/game/challenge";
+import { MARK, markOf } from "@/lib/game/marks";
 import { NextChallenge } from "./NextChallenge";
 import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
@@ -258,6 +264,19 @@ export function Game({
     () => state.results.filter((r) => !r.skipped).map((r) => r.id),
     [state.results],
   );
+  /**
+   * 맞히긴 했지만 헤맨 곳. 지도에서 노랑으로 뜬다.
+   *
+   * 판정은 `markOf()` 하나만 쓴다 — 공유 격자와 카드가 같은 함수를 쓰므로,
+   * 지도에서 노랑인 곳은 카톡에 붙인 격자에서도 노랑이다.
+   */
+  const struggledCodes = useMemo(
+    () =>
+      state.results
+        .filter((r) => markOf(r) === MARK.struggled)
+        .map((r) => r.id),
+    [state.results],
+  );
   /** 포기했거나 틀린 채로 지나온 곳. 지도에서 회색과 구분해 칠한다. */
   const missedCodes = useMemo(
     () => state.results.filter((r) => r.skipped).map((r) => r.id),
@@ -352,7 +371,14 @@ export function Game({
       });
     }
     hint();
-  }, [state.hintShown, state.results.length, state.items.length, course.id, mode, hint]);
+  }, [
+    state.hintShown,
+    state.results.length,
+    state.items.length,
+    course.id,
+    mode,
+    hint,
+  ]);
 
   useEffect(() => {
     if (state.status !== "finished" || score.completed !== score.total) return;
@@ -405,7 +431,10 @@ export function Game({
 
   const revealing =
     state.status === "revealing" && state.revealed
-      ? { id: state.results[state.results.length - 1]?.id, answer: state.revealed.answer }
+      ? {
+          id: state.results[state.results.length - 1]?.id,
+          answer: state.revealed.answer,
+        }
       : null;
 
   // 출발 전에는 아무 키나 누르면 시작한다. 시작 버튼을 찾게 만들 이유가 없다.
@@ -527,7 +556,8 @@ export function Game({
     [state.results, course],
   );
 
-  const perfect = state.status === "finished" && score.completed === score.total;
+  const perfect =
+    state.status === "finished" && score.completed === score.total;
   if (perfect && !celebrated) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-16">
@@ -586,7 +616,14 @@ export function Game({
             practice || missedItems.length === 0 ? null : (
               <Link
                 href={`/review/${course.id}`}
-                onClick={() => track({ name: "mode_switch", courseId: course.id, mode, toMode: "review" })}
+                onClick={() =>
+                  track({
+                    name: "mode_switch",
+                    courseId: course.id,
+                    mode,
+                    toMode: "review",
+                  })
+                }
                 className="rounded-lg bg-sign px-5 py-4 text-center text-lg font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
                 틀린 {missedItems.length}곳 다시 하기
@@ -622,10 +659,10 @@ export function Game({
               </p>
             ) : (
               <SubmitScore
-              token={token}
-              courseId={course.id}
-              mode={mode}
-              seed={seed}
+                token={token}
+                courseId={course.id}
+                mode={mode}
+                seed={seed}
                 state={state}
                 score={score}
               />
@@ -678,7 +715,9 @@ export function Game({
                   ? formatClock(remaining)
                   : formatClock(score.elapsedMs)}
               </span>
-              {streak >= 3 && <span className="text-sign">무오타 ×{streak}</span>}
+              {streak >= 3 && (
+                <span className="text-sign">무오타 ×{streak}</span>
+              )}
               {geo && showMiniMap && (
                 // 배경을 깔아 준다. 같은 회색 위에 얹으면 이 크기에서는
                 // 지도가 아니라 얼룩으로 보인다.
@@ -688,7 +727,11 @@ export function Game({
                     // 세는 동안에는 표시점을 찍지 않는다. 미리 보여 주면
                     // 시계가 돌기 전에 생각할 시간을 공짜로 준다.
                     currentCode={
-                      countdown !== null ? undefined : revealing ? revealing.id : current?.id
+                      countdown !== null
+                        ? undefined
+                        : revealing
+                          ? revealing.id
+                          : current?.id
                     }
                     passedCodes={passedCodes}
                     className="h-9 w-auto sm:h-11"
@@ -735,7 +778,8 @@ export function Game({
           state.status === "ready" && countdown === null
             ? "justify-center"
             : "justify-start"
-        }`}>
+        }`}
+      >
         {state.status === "ready" && countdown === null ? (
           <div className="flex flex-col items-center gap-6 text-center">
             {/* 이 화면은 순간이다 — 판이 준비되면 곧바로 세기 시작한다. */}
@@ -788,43 +832,52 @@ export function Game({
               */}
               {geo && (
                 <div className="play-map relative w-full max-w-2xl overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
-                <RegionMap
-                  geo={geo}
-                  /*
-                   * 세는 동안에는 아무 곳도 켜지 않고 당기지도 않는다. 미리
-                   * 보여 주면 시계가 돌기 전에 생각할 시간을 공짜로 주는 셈이다.
-                   * 시작하는 순간 카메라가 첫 지역으로 들어간다.
-                   */
-                  currentCode={counting ? undefined : revealing ? revealing.id : current.id}
-                  passedCodes={passedCodes}
-                  missedCodes={missedCodes}
-                  focus={!counting}
-                  variant={config.reveal ? "route" : "hint"}
-                  // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
-                  // 접혀 주행 중에 스크롤해야 한다.
-                  className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto sm:h-[44vh]"
-                />
+                  <RegionMap
+                    geo={geo}
+                    /*
+                     * 세는 동안에는 아무 곳도 켜지 않고 당기지도 않는다. 미리
+                     * 보여 주면 시계가 돌기 전에 생각할 시간을 공짜로 주는 셈이다.
+                     * 시작하는 순간 카메라가 첫 지역으로 들어간다.
+                     */
+                    currentCode={
+                      counting
+                        ? undefined
+                        : revealing
+                          ? revealing.id
+                          : current.id
+                    }
+                    passedCodes={passedCodes}
+                    struggledCodes={struggledCodes}
+                    missedCodes={missedCodes}
+                    focus={!counting}
+                    variant={config.reveal ? "route" : "hint"}
+                    // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
+                    // 접혀 주행 중에 스크롤해야 한다.
+                    className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto sm:h-[44vh]"
+                  />
 
-                {/*
+                  {/*
                   도전장을 받고 온 사람은 무엇을 깨러 왔는지 봐야 한다.
                   지도 위에 겹쳐 둔다 — 자리를 차지하면 시작하는 순간 그 높이만큼
                   아래가 밀리고, 하필 첫 문제가 뜨는 순간이다.
                 */}
-                {counting && hydrated && challenge && (
-                  <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
-                    <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint/90 px-4 py-2">
-                      <span className="font-mono text-xs tracking-[0.18em] text-sign uppercase">
-                        도전
+                  {counting && hydrated && challenge && (
+                    <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
+                      <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint/90 px-4 py-2">
+                        <span className="font-mono text-xs tracking-[0.18em] text-sign uppercase">
+                          도전
+                        </span>
+                        <span className="font-mono text-lg font-semibold tabular-nums">
+                          {formatChallengeTime(challenge.beatMs)}
+                        </span>
+                        {challenge.by && (
+                          <span className="text-sm text-dim">
+                            {challenge.by}
+                          </span>
+                        )}
                       </span>
-                      <span className="font-mono text-lg font-semibold tabular-nums">
-                        {formatChallengeTime(challenge.beatMs)}
-                      </span>
-                      {challenge.by && (
-                        <span className="text-sm text-dim">{challenge.by}</span>
-                      )}
-                    </span>
-                  </div>
-                )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -834,60 +887,63 @@ export function Game({
               */}
               {/* 가로로 누우면 이 덩어리가 지도 오른쪽으로 간다. */}
               <div className="play-input flex w-full flex-col items-center gap-2 sm:gap-3">
-              {/*
+                {/*
                 입력창은 세는 동안에도 **같은 것 하나**다.
                 예전에는 카운트다운 화면과 판 화면이 서로 다른 덩어리라, 시작하는
                 순간 입력창이 떨어졌다 다시 붙었다. 휴대폰에서는 그 순간 자판이
                 내려간다 — 그리고 자판은 사람이 화면을 눌러야만 다시 올라온다.
                 시계는 이미 돌고 있는데.
               */}
-              <TypingSurface
-                onType={type}
-                // 엔진이 들고 있는 값. 정답을 베껴 쓰는 중이면 그쪽이다.
-                value={revealing ? state.revealInput : state.input}
-                // 세는 동안 눌린 글자는 이 판의 것이 아니다. 시작할 때 비운다.
-                resetAt={counting ? 0 : 1}
-                onFocusChange={onFocusChange}
-              >
-                {counting ? (
-                  <CountdownPlate seconds={countdown} />
-                ) : (
-                <SignPlate
-                  target={revealing ? revealing.answer : current.answer}
-                  typed={revealing ? state.revealInput : state.input}
-                  focused={focused}
-                  masked={!config.reveal}
-                  revealed={Boolean(revealing)}
-                  roman={romanizeRegion(
-                    revealing ? revealing.answer : current.answer,
-                    course.placeUnit,
+                <TypingSurface
+                  onType={type}
+                  // 엔진이 들고 있는 값. 정답을 베껴 쓰는 중이면 그쪽이다.
+                  value={revealing ? state.revealInput : state.input}
+                  // 세는 동안 눌린 글자는 이 판의 것이 아니다. 시작할 때 비운다.
+                  resetAt={counting ? 0 : 1}
+                  onFocusChange={onFocusChange}
+                >
+                  {counting ? (
+                    <CountdownPlate seconds={countdown} />
+                  ) : (
+                    <SignPlate
+                      target={revealing ? revealing.answer : current.answer}
+                      typed={revealing ? state.revealInput : state.input}
+                      focused={focused}
+                      masked={!config.reveal}
+                      revealed={Boolean(revealing)}
+                      roman={romanizeRegion(
+                        revealing ? revealing.answer : current.answer,
+                        course.placeUnit,
+                      )}
+                      hinted={state.hintShown}
+                      judge={config.judge}
+                      /*
+                       * 흔들리는 계기가 모드마다 다르다. 따라치기에서는 경로를
+                       * 벗어난 순간이고, 회상 모드에서는 오답을 제출한 순간이다.
+                       */
+                      erroredAt={
+                        config.judge === "enter" ? rejectedAt : erroredAt
+                      }
+                      /*
+                       * 지금 판에 있는 답이 이미 거부된 그 답인지. 엔진이 오답을
+                       * 지우지 않으므로 이 비교만으로 알 수 있고, 한 글자만 고쳐도
+                       * 저절로 풀린다 — 타이머를 둘 이유가 없다.
+                       */
+                      rejected={
+                        state.input !== "" &&
+                        state.itemWrong[state.itemWrong.length - 1] ===
+                          state.input
+                      }
+                      advancedAt={advancedAt}
+                      // 판면의 제출 표시를 눌러도 같은 길로 간다.
+                      onSubmit={submitAnswer}
+                    />
                   )}
-                  hinted={state.hintShown}
-                  judge={config.judge}
-                  /*
-                   * 흔들리는 계기가 모드마다 다르다. 따라치기에서는 경로를
-                   * 벗어난 순간이고, 회상 모드에서는 오답을 제출한 순간이다.
-                   */
-                  erroredAt={config.judge === "enter" ? rejectedAt : erroredAt}
-                  /*
-                   * 지금 판에 있는 답이 이미 거부된 그 답인지. 엔진이 오답을
-                   * 지우지 않으므로 이 비교만으로 알 수 있고, 한 글자만 고쳐도
-                   * 저절로 풀린다 — 타이머를 둘 이유가 없다.
-                   */
-                  rejected={
-                    state.input !== "" &&
-                    state.itemWrong[state.itemWrong.length - 1] === state.input
-                  }
-                  advancedAt={advancedAt}
-                  // 판면의 제출 표시를 눌러도 같은 길로 간다.
-                  onSubmit={submitAnswer}
-                />
-                )}
-              </TypingSurface>
+                </TypingSurface>
 
-              {counting ? null : (
-              <>
-              {/*
+                {counting ? null : (
+                  <>
+                    {/*
                 모바일에는 Tab도 Esc도 없다. 키 안내만 두면 손가락으로 노는
                 사람은 힌트도 포기도 쓸 수 없어, 한 곳을 모르는 순간 막다른
                 길에 갇힌다. 좁은 화면에서는 같은 기능을 버튼으로 낸다.
@@ -895,67 +951,71 @@ export function Game({
                 onMouseDown에서 preventDefault를 하는 이유: 버튼을 누르면
                 입력창이 포커스를 잃고, 그러면 그 뒤로 아무리 쳐도 반응이 없다.
               */}
-              <div className="flex min-h-11 items-center justify-center gap-3 sm:hidden">
-                {/*
+                    <div className="flex min-h-11 items-center justify-center gap-3 sm:hidden">
+                      {/*
                   휴대폰 자판의 확인 키가 엔터로 오지 않는 경우가 있다 —
                   한글 조합을 끝내는 데 쓰이거나 자판만 닫히기도 한다.
                   제출이 유일한 통로인 모드에서 그 키가 안 먹으면 판이 막힌다.
                 */}
-                {!revealing && (
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={submitAnswer}
-                    className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
-                  >
-                    제출
-                  </button>
-                )}
-                {config.allowHint && !state.hintShown && (
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={onHintPressed}
-                    className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
-                  >
-                    힌트
-                    {/*
+                      {!revealing && (
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={submitAnswer}
+                          className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
+                        >
+                          제출
+                        </button>
+                      )}
+                      {config.allowHint && !state.hintShown && (
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={onHintPressed}
+                          className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
+                        >
+                          힌트
+                          {/*
                       값을 초로 적고 있었다. 이제 힌트는 시간에 안 얹히고
                       **횟수로** 센다. 몇 번째인지가 곧 그 값이다.
                     */}
-                    <span className="ml-1.5 font-mono text-sm text-dim">
-                      {state.hintsUsed > 0 ? `${state.hintsUsed}회 봄` : "기록에 남음"}
-                    </span>
-                  </button>
-                )}
-                {config.allowSkip && (
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => (revealing ? skipReveal() : giveUpItem())}
-                    className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
-                  >
-                    {revealing ? "건너뛰기" : "모르겠어요"}
-                  </button>
-                )}
-              </div>
+                          <span className="ml-1.5 font-mono text-sm text-dim">
+                            {state.hintsUsed > 0
+                              ? `${state.hintsUsed}회 봄`
+                              : "기록에 남음"}
+                          </span>
+                        </button>
+                      )}
+                      {config.allowSkip && (
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() =>
+                            revealing ? skipReveal() : giveUpItem()
+                          }
+                          className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
+                        >
+                          {revealing ? "건너뛰기" : "모르겠어요"}
+                        </button>
+                      )}
+                    </div>
 
-              {/* 포커스를 잃으면 아무리 쳐도 반응이 없다. 그 사실을 알려 준다. */}
-              <p
-                className="mt-2 hidden min-h-6 flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-dim/80 sm:flex"
-                role="status"
-                aria-live="polite"
-              >
-                {revealing ? (
-                  <>
-                    <span>정답을 직접 쳐 보세요</span>
-                    <KeyHint keys="Esc">건너뛰기</KeyHint>
-                  </>
-                ) : !focused ? (
-                  "표지판을 눌러 계속 입력하세요"
-                ) : (
-                  <>
-                    {/*
+                    {/* 포커스를 잃으면 아무리 쳐도 반응이 없다. 그 사실을 알려 준다. */}
+                    <p
+                      className="mt-2 hidden min-h-6 flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-dim/80 sm:flex"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {revealing ? (
+                        <>
+                          <span>정답을 직접 쳐 보세요</span>
+                          <KeyHint keys="Esc">건너뛰기</KeyHint>
+                        </>
+                      ) : !focused ? (
+                        "표지판을 눌러 계속 입력하세요"
+                      ) : (
+                        <>
+                          {/*
                       제출은 여기서 말하지 않는다. 판 오른쪽의 `제출 ↵`이
                       이미 그 자리에서 말하고 있고, 같은 말을 두 곳에서 하면
                       읽어야 할 것만 늘어난다.
@@ -963,28 +1023,29 @@ export function Game({
                       "초성 힌트"도 "힌트"로 줄인다 — 눌러 보면 초성이
                       뜨므로 시스템 용어를 미리 가르칠 이유가 없다.
                     */}
-                    {config.allowHint && (
-                      <KeyHint keys="Tab">
-                        {state.hintShown
-                          ? "한 번 더 누르면 정답"
-                          : state.hintsUsed > 0
-                            ? `힌트 ${state.hintsUsed}회 봄`
-                            : "힌트 · 기록에 남음"}
-                      </KeyHint>
-                    )}
-                    {config.allowSkip && <KeyHint keys="Esc">모르겠어요</KeyHint>}
+                          {config.allowHint && (
+                            <KeyHint keys="Tab">
+                              {state.hintShown
+                                ? "한 번 더 누르면 정답"
+                                : state.hintsUsed > 0
+                                  ? `힌트 ${state.hintsUsed}회 봄`
+                                  : "힌트 · 기록에 남음"}
+                            </KeyHint>
+                          )}
+                          {config.allowSkip && (
+                            <KeyHint keys="Esc">모르겠어요</KeyHint>
+                          )}
+                        </>
+                      )}
+                    </p>
                   </>
                 )}
-              </p>
 
-              </>
-              )}
-
-              {/*
+                {/*
                 타수와 정확도는 플레이 중 판단에 쓰이지 않는다. 좁은 화면에서는
                 그 자리를 지도에 준다.
               */}
-              {/*
+                {/*
                 플레이 중 판단에 쓰는 것은 지도와 입력판이다. 타수와 정확도는
                 거기에 답하지 않으면서 매 타건마다 바뀌어 시선을 끌어간다 —
                 특히 첫 문제를 풀기 전에는 `0타/분 · 0.0%`가 그냥 소음이다.
@@ -993,7 +1054,7 @@ export function Game({
                 시간 제한이 있는 모드는 예외다. 거기서는 남은 시간이 곧 게임이고,
                 타수도 성적의 일부다.
               */}
-              {/*
+                {/*
                 시간은 이미 위 한 줄에 있다. 제한 시간이 있는 모드에서만
                 큰 숫자로 한 번 더 보여 준다 — 거기서는 남은 시간이 곧 게임이다.
               */}

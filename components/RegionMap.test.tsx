@@ -40,11 +40,14 @@ describe("RegionMap", () => {
   });
 
   /**
-   * 노랑은 "네가 답해야 할 것"만 가리킨다.
-   * 이름을 보여 주는 모드에서 현재 지역까지 노랗게 칠했더니, 지도는 문제를
-   * 내는 것처럼 보이는데 답은 판에 적혀 있어 무엇을 맞히는지 알 수 없었다.
+   * 노랑은 **헤맨 곳**이다.
+   *
+   * 한때 "네가 답해야 할 것"이었는데, 그러면 초성을 보고 맞힌 곳이 한 번에
+   * 맞힌 곳과 같은 초록이 되어 지도만 공유 격자와 다른 말을 했다. 현재 지역은
+   * 색 말고도 알려 주는 것이 셋이라(카메라·표지판·진행 숫자) 노랑을 내주고
+   * 표지판 파랑으로 옮겼다.
    */
-  it("문제를 내는 지도에서만 현재 지역이 노랗다", () => {
+  it("문제를 내는 지도에서 현재 지역은 파랗다", () => {
     const [first, second] = geo.regions;
     const html = renderToStaticMarkup(
       <RegionMap
@@ -55,13 +58,29 @@ describe("RegionMap", () => {
       />,
     );
     expect(html).toContain("var(--color-sign)");
-    expect(html).toContain("var(--color-centerline)");
+    expect(html).toContain("var(--color-expressway)");
     // 실루엣 한 장과 현재 지역 강조 테두리가 한 겹씩 더 붙는다.
     const shapes = (html.match(/<path/g) ?? []).length;
     expect(shapes - extras(geo)).toBe(geo.regions.length + 2);
   });
 
-  it("진행을 보여 주는 지도에서는 노랑을 쓰지 않는다", () => {
+  it("헤맨 곳은 맞힌 곳과 다른 색이다", () => {
+    // 지도에서 노랑인 곳은 카톡에 붙인 이모지 격자에서도 노랑이어야 한다.
+    const [first, second, third] = geo.regions;
+    const html = renderToStaticMarkup(
+      <RegionMap
+        geo={geo}
+        variant="hint"
+        passedCodes={[first.code, second.code]}
+        struggledCodes={[second.code]}
+        currentCode={third.code}
+      />,
+    );
+    expect(html).toContain("var(--color-sign)");
+    expect(html).toContain("var(--color-centerline)");
+  });
+
+  it("진행을 보여 주는 지도에서 현재 지역은 밝은 초록이다", () => {
     const [first, second] = geo.regions;
     const html = renderToStaticMarkup(
       <RegionMap
@@ -71,9 +90,9 @@ describe("RegionMap", () => {
         currentCode={second.code}
       />,
     );
-    expect(html).not.toContain("var(--color-centerline)");
-    // 지금 위치는 곧 칠해질 곳이라는 뜻의 밝은 초록으로 표시한다.
+    // 거기서 현재 지역은 질문이 아니라 위치다 — 곧 칠해질 곳으로 읽혀야 한다.
     expect(html).toContain("var(--color-sign-hi)");
+    expect(html).not.toContain("var(--color-expressway)");
   });
 
   it("퀴즈 단서에는 지역 이름이 새어 나오지 않는다", () => {

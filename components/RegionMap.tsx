@@ -23,6 +23,12 @@ interface RegionMapProps {
   passedCodes?: string[];
   /** 포기했거나 틀린 채로 지나온 지역 코드 */
   missedCodes?: string[];
+  /**
+   * 맞히긴 했지만 헤맨 곳 — 초성을 봤거나, 틀렸다 고쳤거나.
+   *
+   * `passedCodes`에도 들어 있다. 여기 있으면 그 위에 색이 덮인다.
+   */
+  struggledCodes?: string[];
   variant: MapVariant;
   /**
    * 지금 문제인 지역으로 지도를 당길지.
@@ -62,6 +68,7 @@ export const RegionMap = memo(function RegionMap({
   focusCode,
   passedCodes = EMPTY,
   missedCodes = EMPTY,
+  struggledCodes = EMPTY,
   variant,
   focus = false,
   explore = false,
@@ -69,6 +76,7 @@ export const RegionMap = memo(function RegionMap({
 }: RegionMapProps) {
   const passed = useMemo(() => new Set(passedCodes), [passedCodes]);
   const missed = useMemo(() => new Set(missedCodes), [missedCodes]);
+  const struggled = useMemo(() => new Set(struggledCodes), [struggledCodes]);
   const justPassed = passedCodes[passedCodes.length - 1];
   const current = useMemo(
     () => geo.regions.find((r) => r.code === currentCode),
@@ -201,7 +209,11 @@ export const RegionMap = memo(function RegionMap({
           바다에까지 산이 걸린다.
         */}
         {geo.terrain && (
-          <g className="pointer-events-none" clipPath={`url(#${clipId}-land)`} aria-hidden>
+          <g
+            className="pointer-events-none"
+            clipPath={`url(#${clipId}-land)`}
+            aria-hidden
+          >
             {/*
               띠는 겹쳐 쌓인다. 위 띠는 아래 띠 안에 들어 있으므로 색이
               누적된다 — 넉 장이면 0.4씩 겹쳐 0.4 · 0.64 · 0.78 · 0.87이 된다.
@@ -217,36 +229,47 @@ export const RegionMap = memo(function RegionMap({
           const isCurrent = r.code === currentCode;
           const isPassed = passed.has(r.code);
           const isMissed = missed.has(r.code);
+          const isStruggled = struggled.has(r.code);
           return (
             <path
               d={r.d}
               /*
-               * 노랑은 오직 "네가 답해야 할 것"만 가리킨다.
+               * 노랑은 한때 "네가 답해야 할 것"이었다. 지금은 **헤맨 곳**이다.
                *
-               * 이름을 보여 주는 모드에서도 현재 지역을 노랑으로 칠했더니,
-               * 지도는 문제를 내는 것처럼 보이는데 답은 판에 적혀 있어
-               * 앞뒤가 맞지 않았다. 그 모드에서 현재 지역은 질문이 아니라
-               * 위치이므로 밝은 초록 — 곧 칠해질 곳 — 으로 표시한다.
+               * 바꾼 이유는 신호가 몇 개냐다. 현재 지역은 색 말고도 알려 주는
+               * 것이 셋이다 — 카메라가 거기로 당겨져 있고, 표지판에 문제가 떠
+               * 있고, 진행 숫자가 돈다. 헤맨 곳에는 색 말고 아무 채널이 없다.
+               * 신호가 남는 쪽에서 하나를 빌려 왔다.
+               *
+               * 그래서 게임 중 지도와 공유 격자와 카드가 같은 말을 하게 됐다 —
+               * 세 화면 모두 초록·노랑·빨강이 같은 뜻이다. 여태 지도만 두 색이라
+               * 힌트를 보고 맞힌 곳이 한 번에 맞힌 곳과 구별되지 않았다.
+               *
+               * 현재 지역은 표지판 파랑으로 간다. 이름을 보여 주는 모드에서는
+               * 그대로 밝은 초록이다 — 거기서 현재 지역은 질문이 아니라 위치라
+               * "곧 칠해질 곳"으로 읽혀야 한다.
                */
               fill={
                 isCurrent
                   ? variant === "hint"
-                    ? "var(--color-centerline)"
+                    ? "var(--color-expressway)"
                     : "var(--color-sign-hi)"
-                  : isPassed
-                    ? "var(--color-sign)"
-                    : isMissed
-                      ? // 지나왔지만 못 맞힌 곳. 아직 안 간 회색과 구분돼야
-                        // 지도만 보고도 어디를 다시 봐야 하는지 읽힌다.
-                        "var(--color-alert)"
-                      : /*
-                         * 아직 모르는 곳은 **비워 둔다.**
-                         *
-                         * 여기를 칠하면 밑에 깐 고도 띠가 통째로 덮인다. 비워
-                         * 두면 지형이 그대로 드러나고, 맨 아래 실루엣이 지형
-                         * 없는 저지대의 바탕을 맡는다.
-                         */
-                        "none"
+                  : isStruggled
+                    ? "var(--color-centerline)"
+                    : isPassed
+                      ? "var(--color-sign)"
+                      : isMissed
+                        ? // 지나왔지만 못 맞힌 곳. 아직 안 간 회색과 구분돼야
+                          // 지도만 보고도 어디를 다시 봐야 하는지 읽힌다.
+                          "var(--color-alert)"
+                        : /*
+                           * 아직 모르는 곳은 **비워 둔다.**
+                           *
+                           * 여기를 칠하면 밑에 깐 고도 띠가 통째로 덮인다. 비워
+                           * 두면 지형이 그대로 드러나고, 맨 아래 실루엣이 지형
+                           * 없는 저지대의 바탕을 맡는다.
+                           */
+                          "none"
               }
               /*
                * 색이 든 곳은 반투명으로 덮는다.
@@ -274,7 +297,9 @@ export const RegionMap = memo(function RegionMap({
               key={r.code === justPassed ? `pass-${r.code}` : r.code}
               onPointerEnter={explorable ? () => setHovered(r.code) : undefined}
               onPointerLeave={
-                explorable ? () => setHovered((c) => (c === r.code ? null : c)) : undefined
+                explorable
+                  ? () => setHovered((c) => (c === r.code ? null : c))
+                  : undefined
               }
               onClick={
                 explorable
@@ -309,7 +334,11 @@ export const RegionMap = memo(function RegionMap({
           한강을 얹으면 줄기가 경기도까지 뻗는다.
         */}
         {geo.water && (
-          <g className="pointer-events-none" clipPath={`url(#${clipId}-land)`} aria-hidden>
+          <g
+            className="pointer-events-none"
+            clipPath={`url(#${clipId}-land)`}
+            aria-hidden
+          >
             <path d={geo.water.areas} fill="var(--color-water)" />
             <path
               d={geo.water.lines}
@@ -392,7 +421,11 @@ export const RegionMap = memo(function RegionMap({
               Math.max(label.cx - plateWidth(label.name, fontSize) / 2, 4),
               geo.width - plateWidth(label.name, fontSize) - 4,
             )}
-            y={label.cy - fontSize * 2.4 < 4 ? label.cy + fontSize * 0.7 : label.cy - fontSize * 2.4}
+            y={
+              label.cy - fontSize * 2.4 < 4
+                ? label.cy + fontSize * 0.7
+                : label.cy - fontSize * 2.4
+            }
             width={plateWidth(label.name, fontSize)}
             height={fontSize * 1.7}
             rx={fontSize * 0.25}

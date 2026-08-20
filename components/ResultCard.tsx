@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { CourseGeo } from "@/data/geo/types";
+import { classifyWrongAnswer, type PeerName } from "@/lib/score/confusion";
 import type { ItemResult, Score } from "@/lib/game/types";
 import { formatClock } from "./Odometer";
 import { RegionMap } from "./RegionMap";
@@ -139,6 +140,15 @@ export function ResultCard({
   coursesHref,
   onRestart,
 }: ResultCardProps) {
+
+  /*
+    착각의 상대가 될 수 있는 후보. 같은 코스의 다른 지역 이름들이다.
+    지도가 없는 코스에서는 가릴 방법이 없으므로 아예 안 적는다.
+  */
+  const peers: PeerName[] = useMemo(
+    () => (geo ? geo.regions.map((r) => ({ name: r.name })) : []),
+    [geo],
+  );
   const perfect = score.completed === score.total;
   const shown = useCountUp(score.elapsedMs);
 
@@ -212,30 +222,43 @@ export function ResultCard({
               다시 볼 곳 {missed.length}
             </h2>
             <ul className="flex flex-wrap gap-2">
-              {missed.map((r) => (
-                <li
-                  key={r.id}
-                  className={`rounded-lg px-3 py-1.5 text-base ${
-                    r.skipped
-                      ? "bg-alert/10 text-alert"
-                      : "border border-concrete-deep text-ink"
-                  }`}
-                >
-                  {r.answer}
-                  {/*
-                    무엇으로 착각했는지가 "오타 1회"보다 훨씬 쓸모 있다.
-                    안산을 연천이라고 답한 사람에게 필요한 것은 그 두 곳을
-                    나란히 보는 일이지, 자기가 틀렸다는 통보가 아니다.
-                  */}
-                  {r.wrongAnswers && r.wrongAnswers.length > 0 ? (
-                    <span className="ml-1.5 text-sm text-dim">
-                      → {r.wrongAnswers.join(", ")}라고 답함
-                    </span>
-                  ) : (
-                    !r.skipped && <span className="ml-1.5 text-sm text-dim">오타</span>
-                  )}
-                </li>
-              ))}
+              {missed.map((r) => {
+                /*
+                  무엇으로 **착각했는지**만 적는다.
+
+                  여태 제출된 오답을 그대로 붙였더니 `광주 → 과주라고 답함`이
+                  떴다. 과주는 지명이 아니라 손이 미끄러진 자국이고, 그걸
+                  적어 주는 것은 틀렸다는 통보를 한 번 더 하는 일이다.
+
+                  안산을 연천이라고 답한 것은 다르다. 그 사람에게 필요한 것은
+                  두 곳을 나란히 보는 일이다. 가르는 규칙은 이미 있다
+                  (lib/score/confusion.ts) — 오답노트가 홈에 `도봉구 ↔ 도봉그`를
+                  띄우지 않으려고 쓰던 것과 같은 판정이다.
+                */
+                const confused = peers.length
+                  ? (r.wrongAnswers ?? [])
+                      .map((wrong) => classifyWrongAnswer(wrong, r.answer, peers))
+                      .filter((name): name is string => !!name)
+                  : [];
+                return (
+                  <li
+                    key={r.id}
+                    /*
+                      칩 모양은 하나다. 끝까지 못 맞힌 곳과 틀렸다가 맞힌 곳을
+                      여기서 또 가르면, 지도와 범례가 이미 하는 말을 세 번째로
+                      하는 셈이다. 이 상자가 하는 말은 `다시 볼 곳`뿐이다.
+                    */
+                    className="rounded-lg bg-alert/10 px-3 py-1.5 text-base text-alert"
+                  >
+                    {r.answer}
+                    {confused.length > 0 && (
+                      <span className="ml-1.5 text-sm text-alert/70">
+                        → {confused.join(", ")}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}

@@ -86,6 +86,16 @@ export function ShareResult({
    */
   const lean = shareText({ ...body, grid: null });
 
+  /*
+   * 미리보기용으로 문구를 격자 앞뒤로 가른다. 격자 문자열은 본문 안에 그대로
+   * 들어 있으므로 그것을 경계로 자르면 된다 — 두 벌을 따로 만들면 보여 준
+   * 것과 보낸 것이 언젠가 갈라진다.
+   */
+  const block = grid ? renderGrid(grid, results) : "";
+  const at = block ? text.indexOf(block) : -1;
+  const head = (at >= 0 ? text.slice(0, at) : text).trim();
+  const tail = at >= 0 ? text.slice(at + block.length).trim() : "";
+
   return (
     <ShareCard
       text={text}
@@ -106,20 +116,29 @@ export function ShareResult({
         track({ name: "share_clicked", courseId, mode, elapsedMs: score.elapsedMs })
       }
       preview={
-        grid && (
-          /*
-            보낼 것을 보여 준다. 이 게임의 공유물은 링크가 아니라 이 그림이다 —
-            주인공이 카카오톡이나 X가 아니라 자기 판이어야 한다.
+        /*
+          보낼 것을 그대로 보여 준다.
 
-            코스명과 기록은 안 적는다. 바로 위 표지판이 이미 그 말을 하고 있다.
-          */
-          <pre
-            aria-hidden
-            className="overflow-hidden text-center text-[10px] leading-[1.15] break-keep whitespace-pre sm:text-xs"
-          >
-            {renderGrid(grid, results)}
-          </pre>
-        )
+          한때 격자만 띄웠다. 바로 위 표지판이 코스명과 기록을 이미 말하고
+          있으니 두 번 적을 이유가 없다고 봤는데, 그러면 **누르기 전에는 무엇이
+          가는지 알 수 없다**는 문제가 남는다. 특히 마지막 줄(`같이 한 판?`)이
+          이 링크를 도전장으로 만드는 부분인데 그게 안 보였다.
+
+          격자만 조판이 다르다. 지도 모양이 나오려면 줄 간격이 붙어야 하고,
+          문장에 그 간격을 주면 읽기 나빠진다. 그래서 세 조각으로 나눈다.
+        */
+        <div
+          aria-hidden
+          className="flex flex-col items-center gap-2 text-center text-[11px] text-dim sm:text-xs"
+        >
+          {head && <pre className="whitespace-pre-wrap">{head}</pre>}
+          {grid && (
+            <pre className="overflow-hidden text-[10px] leading-[1.15] break-keep whitespace-pre text-ink sm:text-xs">
+              {renderGrid(grid, results)}
+            </pre>
+          )}
+          {tail && <pre className="whitespace-pre-wrap">{tail}</pre>}
+        </div>
       }
     />
   );

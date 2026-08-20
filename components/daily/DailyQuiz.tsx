@@ -181,6 +181,15 @@ export function DailyQuiz({
 
   const left = MAX_TRIES - state.guesses.length;
   const text = quizShareText(state);
+  /*
+   * 미리보기용으로 문구를 색 줄 앞뒤로 가른다. 그 줄은 본문 안에 그대로
+   * 들어 있으므로 그것을 경계로 자른다 — 두 벌을 따로 만들면 보여 준 것과
+   * 보낸 것이 언젠가 갈라진다.
+   */
+  const marks = state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("");
+  const markAt = marks ? text.indexOf(marks) : -1;
+  const head = (markAt >= 0 ? text.slice(0, markAt) : text).trim();
+  const tail = markAt >= 0 ? text.slice(markAt + marks.length).trim() : "";
 
   /*
    * 아직 안 푼 사람에게 보이는 숫자.
@@ -381,9 +390,20 @@ export function DailyQuiz({
             */
             imagePath={`/api/today-card/${cardCode(state)}`}
             preview={
-              <pre className="text-center text-lg leading-none whitespace-pre">
-                {state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("")}
-              </pre>
+              /*
+                보낼 것을 그대로 보여 준다. 색 줄만 크게 둔다 — 그게 이
+                공유물의 본체이고, 나머지는 그것을 둘러싼 문장이다.
+              */
+              <div
+                aria-hidden
+                className="flex flex-col items-center gap-2 text-center text-[11px] text-dim sm:text-xs"
+              >
+                <pre className="whitespace-pre-wrap">{head}</pre>
+                <pre className="text-lg leading-none whitespace-pre">
+                  {state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("")}
+                </pre>
+                <pre className="whitespace-pre-wrap">{tail}</pre>
+              </div>
             }
             tweet={text}
             kakao={{

@@ -178,7 +178,15 @@ export function ResultCard({
                * 보기 가장 좋은 자리다 — 빨간 곳이 어디였는지 손으로 확인한다.
                */
               explore
-              className="h-56 w-auto sm:h-72 md:h-[26rem]"
+              /*
+                근데 데스크톱에서 왼쪽 아래가 통째로 비었다. 오른쪽 칸은
+                성적부터 공유까지 길게 이어지는데 왼쪽은 지도와 목록에서
+                끝나 무게중심이 오른쪽으로 쏠린다.
+
+                채울 것을 새로 만들지 않는다. 이 화면에서 지도는 장식이
+                아니라 결과의 본체이므로, 남는 세로를 지도가 쓰면 된다.
+              */
+              className="h-56 w-auto sm:h-72 md:h-[34rem]"
             />
             {/*
               한 종류밖에 없으면 그건 범례가 아니라 설명문이다. 다 맞힌 판에서
@@ -223,7 +231,7 @@ export function ResultCard({
           그 답이 지도 바로 아래 붙어 있어야 두 개가 한 장면이 된다.
         */}
         {missed.length > 0 && (
-          <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+          <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5 md:max-w-none">
             <h2 className="text-sm font-medium text-dim">
               다시 볼 곳 {missed.length}
             </h2>
@@ -443,7 +451,8 @@ export function ResultCard({
               <span className="flex flex-col gap-0.5 text-left">
                 자세히 보기
                 <span className="text-xs text-dim/80">
-                  맞힌 타수·오타·첫 입력·힌트
+                  {/* 값을 잇는 가운데점은 대시보드 문법이다. 공백으로 나눈다. */}
+                  맞힌 타수 오타 첫 입력 힌트
                 </span>
               </span>
               <span className="transition-transform group-open:rotate-90">›</span>

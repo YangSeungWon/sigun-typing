@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CourseGeo } from "@/data/geo/types";
 import { useIsHydrated } from "@/lib/useIsHydrated";
 import { RegionMap } from "@/components/RegionMap";
+import { MiniMap } from "@/components/MiniMap";
 import {
   closeness,
   isOver,
@@ -49,24 +50,6 @@ interface DailyQuizProps {
  * 그게 이 판의 유일한 단서다. 당겨 두면 멀리 있는 오답이 화면 밖이라 아무것도
  * 안 보인다.
  */
-/**
- * 확대 창의 카메라.
- *
- * 상자가 손바닥만 하므로 지역이 상자를 절반쯤 채우게 당긴다. 기본값
- * (채움 0.36, 상한 3배)은 큰 지도 기준이라 그대로 쓰면 큰 지도와 똑같은
- * 그림이 작아지기만 한다 — 배율은 viewBox 좌표에서 계산되어 상자 크기와
- * 무관하기 때문이다.
- *
- * 상한 60배는 전국 지도의 가장 작은 곳에서 나온 값이다. 24배로 두면 대구
- * 중구가 창의 9%밖에 안 되어 확대한 보람이 없고(229곳 중 63곳이 상한에
- * 걸렸다), 60배면 그 중구가 23%가 되고 상한에 걸리는 곳이 셋만 남는다.
- * 더 올리면 이웃이 화면 밖으로 밀려난다 — 이 게임에서 인접 관계는 모양만큼
- * 중요한 단서다.
- *
- * 렌더 밖에 둔다. 안에서 만들면 매 렌더마다 새 객체라 카메라가 다시 계산된다.
- */
-const INSET_ZOOM = { fill: 0.52, maxScale: 60 };
-
 export function DailyQuiz({
   day,
   geo,
@@ -200,6 +183,22 @@ export function DailyQuiz({
    * 저장된 값이 아니라 오늘 기준으로 살아 있는지를 본다 — 이틀 쉬었으면 저장된
    * 숫자는 그대로여도 지금은 끊긴 상태다.
    */
+  /*
+   * 자판을 열어 둔다.
+   *
+   * `autoFocus`만 걸어 두었는데 그것으로는 모자랐다. 그 속성은 붙는 순간
+   * 한 번뿐이라, 시도를 맞히고 입력창이 나타난 뒤에도 답을 낼 때마다 초점이
+   * 흩어졌다 — 제출을 손으로 누르면 초점이 단추로 가고, 그 다음 답을 치려면
+   * 매번 입력창을 다시 눌러야 했다.
+   *
+   * 그래서 단계가 바뀔 때와 답이 하나 쌓일 때마다 되돌린다. 판이 끝나면
+   * 놓아 준다 — 끝난 화면에서 자판이 올라와 있으면 결과를 가린다.
+   */
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (stage === "region") inputRef.current?.focus();
+  }, [stage, state.guesses.length]);
+
   const alive = streak ? aliveOn(streak, day) : 0;
 
   return (
@@ -217,50 +216,55 @@ export function DailyQuiz({
         모양이 읽히지 않는데, 이 퀴즈에서 모양은 위치 다음가는 단서다.
       */}
       {/* 지도에 붙인다. 폭을 다 쓰면 넓은 화면에서 창만 저 혼자 오른쪽 끝에 뜬다. */}
+      {/*
+        본편과 같은 구조로 둔다.
+
+        한때 반대로 짰다 — 전국 어디쯤인가가 이 퀴즈의 단서 자체라 큰 지도를
+        당기면 안 된다고 보고, 대신 구석에 확대 창을 하나 얹었다. 그런데 그건
+        같은 화면에 돋보기를 덧댄 꼴이라 어느 쪽을 봐야 하는지가 흐려졌고,
+        이 사이트의 다른 판과도 혼자 다르게 생겼다.
+
+        본편은 이 문제를 진작 풀어 두었다. 큰 지도는 문제인 곳으로 당기고,
+        전체 안에서 어디인가는 미니맵이 맡는다. 잃는 것 없이 둘 다 얻는
+        구조이고, 무엇보다 사용자가 이미 아는 화면이다.
+      */}
       <div className="relative mx-auto w-fit">
-      <RegionMap
-        geo={geo}
-        variant="hint"
-        currentCode={answerCode}
-        namedCodes={namedCodes}
-        /*
-         * 판이 끝나면 이름을 짚어 볼 수 있게 연다. 그 전에는 안 된다 —
-         * 짚는 순간 이름이 뜨고 그게 곧 답이다.
-         */
-        /*
-         * 못 맞히고 끝난 판에서는 정답을 **빨강으로** 칠한다.
-         *
-         * 현재 지역 색(밝은 초록)으로 두면 화면이 "여기가 정답이고 너는 맞혔다"로
-         * 읽힌다. 빨강과 빗금은 이 사이트에서 이미 `다시 볼 곳`이라는 뜻이고,
-         * 못 맞힌 판의 정답이 정확히 그것이다.
-         */
-        missedCodes={stage === "done" && !state.solved ? [answerCode] : undefined}
-        explore={stage === "done"}
-        className="mx-auto h-[38vh] max-h-[26rem] w-auto"
-      />
+        <RegionMap
+          geo={geo}
+          variant="hint"
+          currentCode={answerCode}
+          namedCodes={namedCodes}
+          /*
+           * 못 맞히고 끝난 판에서는 정답을 **빨강으로** 칠한다.
+           *
+           * 현재 지역 색(밝은 초록)으로 두면 화면이 "여기가 정답이고 너는
+           * 맞혔다"로 읽힌다. 빨강과 빗금은 이 사이트에서 이미 `다시 볼 곳`이라는
+           * 뜻이고, 못 맞힌 판의 정답이 정확히 그것이다.
+           *
+           * 판이 끝나면 이름을 짚어 볼 수 있게 연다. 그 전에는 안 된다 —
+           * 짚는 순간 이름이 뜨고 그게 곧 답이다.
+           */
+          missedCodes={stage === "done" && !state.solved ? [answerCode] : undefined}
+          explore={stage === "done"}
+          focus
+          className="mx-auto h-[38vh] max-h-[26rem] w-auto max-w-full"
+        />
 
         {/*
-          확대 창.
+          전체 지도. 배경을 깔아 준다 — 같은 회색 위에 얹으면 지도가 아니라
+          얼룩으로 보인다.
 
-          배경을 깔아 준다. 같은 회색 위에 얹으면 지도가 아니라 얼룩으로 보인다.
           왼쪽 위에 둔다. 오른쪽 위는 강원 동해안이라, 하필 그 근처가 답인 날에
           답을 가린다. 왼쪽 위는 서해뿐이다.
-
-          이름은 여기에도 안 뜬다 — variant가 `hint`인 한 이름표는 나오지
-          않지만, 짚어 보는 것까지 열리는 끝난 판에서도 여기는 안 연다.
-          작은 창에서 이름표는 확대한 모양을 도로 덮는다.
         */}
-        <div className="pointer-events-none absolute top-0 left-0 overflow-hidden rounded-md border border-concrete-deep bg-paint/70">
-          <RegionMap
+        <span className="pointer-events-none absolute top-0 left-0 rounded-md border border-concrete-deep bg-paint/70 px-1.5 py-1">
+          <MiniMap
             geo={geo}
-            variant="hint"
             currentCode={answerCode}
-            missedCodes={stage === "done" && !state.solved ? [answerCode] : undefined}
-            focus
-            zoom={INSET_ZOOM}
-            className="size-24 sm:size-28"
+            namedCodes={namedCodes}
+            className="size-20 sm:size-24"
           />
-        </div>
+        </span>
       </div>
 
       {/* 낸 답들. 색이 곧 공유될 격자다. */}
@@ -321,10 +325,10 @@ export function DailyQuiz({
             </label>
             <input
               id="guess"
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              autoFocus
               placeholder="이름"
               className="flex-1 rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             />

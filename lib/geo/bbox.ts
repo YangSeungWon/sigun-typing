@@ -151,13 +151,27 @@ export function focusTransform(
   const cy = box.y + box.height / 2;
 
   /*
-   * 가장자리 지역을 가운데로 끌어오면 지도 바깥의 빈 공간이 화면에 들어온다.
-   * 중심을 지도 안쪽으로 밀어 넣어 그 여백을 없앤다.
+   * 가장자리는 조금만 넘게 둔다.
+   *
+   * 원래는 카메라 중심을 지도 안으로 완전히 밀어 넣었다. 지도 바깥의 빈
+   * 공간이 화면에 들어오는 것을 막으려던 것인데, 그러면 강화군이나 울진군처럼
+   * 가장자리에 붙은 지역은 **영영 가운데로 오지 못한다.** 화면 구석에 문제가
+   * 놓이고, 그 구석이 어디인지는 지역마다 달라서 눈이 매번 다시 찾는다.
+   *
+   * 그래서 화면의 12%까지는 바깥이 들어와도 좋다고 본다. 그 정도면 가장자리
+   * 지역이 눈에 띄게 가운데로 오고, 여백은 지도 옆에 난 여백으로 읽히지
+   * 화면이 비었다고 읽히지 않는다.
+   *
+   * 여유분을 보이는 창의 크기에 비례시킨다(`2 * halfW`가 창의 가로다).
+   * 고정값으로 두면 많이 당긴 화면에서는 지도의 절반이 밀려난다.
    */
   const halfW = view.width / (2 * scale);
   const halfH = view.height / (2 * scale);
-  const clampedX = Math.min(Math.max(cx, halfW), view.width - halfW);
-  const clampedY = Math.min(Math.max(cy, halfH), view.height - halfH);
+  const OVERSHOOT = 0.12;
+  const padX = 2 * halfW * OVERSHOOT;
+  const padY = 2 * halfH * OVERSHOOT;
+  const clampedX = Math.min(Math.max(cx, halfW - padX), view.width - halfW + padX);
+  const clampedY = Math.min(Math.max(cy, halfH - padY), view.height - halfH + padY);
 
   /*
    * SVG의 transform **속성**이 아니라 CSS transform 문법으로 낸다

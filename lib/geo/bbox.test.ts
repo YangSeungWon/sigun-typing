@@ -71,12 +71,21 @@ describe("지금 문제로 당기는 변환", () => {
     expect(huge).toContain("scale(1)");
   });
 
-  it("가장자리 지역에서도 지도 밖 여백을 끌어오지 않는다", () => {
-    // 좌상단 구석을 가운데로 옮기면 지도 바깥이 화면 절반을 차지한다.
+  it("가장자리 지역은 조금만 넘겨서 가운데 쪽으로 끌어온다", () => {
+    /*
+     * 한때는 지도 바깥을 한 픽셀도 들이지 않았다. 그러면 강화군처럼 구석에
+     * 붙은 지역은 영영 가운데로 오지 못하고, 화면 어느 구석에 놓일지가
+     * 지역마다 달라 눈이 매번 다시 찾는다.
+     *
+     * 이제 화면의 12%까지는 바깥이 들어와도 좋다고 본다. 여백이 그 이상
+     * 커지면 지도가 화면에서 떠 보인다.
+     */
     const corner = focusTransform(region("M0,0L10,10Z"), view, { maxScale: 2 });
-    const [, x, y] = corner.match(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)$/) ?? [];
-    // 배율 2에서 중심은 (250,250)보다 안쪽으로 밀려 있어야 한다.
-    expect(Number(x)).toBeLessThanOrEqual(-250);
-    expect(Number(y)).toBeLessThanOrEqual(-250);
+    const [, x] = corner.match(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)$/) ?? [];
+    const half = view.width / (2 * 2);
+    const blank = half - Math.abs(Number(x));
+    // 구석 쪽으로 끌려 오되(여백이 생기되), 그 여백이 화면의 12%를 넘지 않는다.
+    expect(blank).toBeGreaterThan(0);
+    expect(blank / (2 * half)).toBeLessThanOrEqual(0.12 + 1e-9);
   });
 });

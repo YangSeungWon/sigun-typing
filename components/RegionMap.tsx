@@ -67,6 +67,17 @@ interface RegionMapProps {
    * 그래서 아래에서 variant까지 함께 본다. 실수로 넘겨도 켜지지 않는다.
    */
   explore?: boolean;
+  /**
+   * 크기.
+   *
+   * **폭 상한(`max-w-full`)을 반드시 함께 준다.** 이 svg는 viewBox를 갖고
+   * 있어서 `w-auto`면 폭이 높이에 비례해 늘어나는데, 그 비율이 코스마다
+   * 다르다 — 울릉은 가로가 세로의 2.65배다. 상한이 없으면 높이만 보고 잡은
+   * 크기가 칸을 넘어가고, 결과 화면에서는 지도가 오른쪽 성적표 위로 올라탔다.
+   *
+   * 상한에 걸리면 그림이 작아지며 위아래에 여백이 남는다. 그게 맞다 —
+   * 넘치는 것보다 낫고, svg는 투명해서 여백이 보이지도 않는다.
+   */
   className?: string;
 }
 
@@ -254,15 +265,21 @@ export const RegionMap = memo(function RegionMap({
         */}
         {/*
           아직 안 간 곳의 바탕.
-          판이 도는 동안에는 연하게 깐다. 진하게 두면 칠한 곳과 안 칠한 곳의
+
+          판이 도는 동안에는 조금 물린다. 진하게 두면 칠한 곳과 안 칠한 곳의
           명도가 비슷해져서, 지도가 "어디를 했고 어디가 남았나"를 말하지 않고
-          그냥 회색 덩어리로 보인다. 끝난 뒤(explore)에는 되돌린다 — 거기서는
-          짚어 보는 것이 일이라 바탕도 또렷해야 한다.
+          그냥 회색 덩어리로 보인다.
+
+          0.55였다. 그건 너무 물린 값이었다 — 바탕이 배경으로 내려앉아 **문제인
+          곳이 어디에 붙어 있는지**가 안 보였고, 이 게임에서 인접 관계는 모양
+          다음가는 단서다. 대비를 만들려다 단서를 지운 셈이다.
+
+          끝난 뒤(explore)에는 되돌린다 — 거기서는 짚어 보는 것이 일이다.
         */}
         <path
           d={silhouette}
           fill="var(--color-map-idle)"
-          opacity={explore ? 1 : 0.55}
+          opacity={explore ? 1 : 0.82}
         />
 
         {/*
@@ -287,7 +304,7 @@ export const RegionMap = memo(function RegionMap({
                 key={i}
                 d={d}
                 fill="var(--color-relief)"
-                opacity={explore ? 0.4 : 0.22}
+                opacity={explore ? 0.4 : 0.32}
               />
             ))}
           </g>
@@ -363,7 +380,7 @@ export const RegionMap = memo(function RegionMap({
                 isCurrent || isPassed || isMissed || isStruggled
                   ? explore || isCurrent
                     ? 0.82
-                    : 0.5
+                    : 0.62
                   : 1
               }
               /*
@@ -486,7 +503,7 @@ export const RegionMap = memo(function RegionMap({
         pointerEvents="none"
         style={{ ...PAN, transform }}
         // 채우기와 같은 만큼 물린다. 무늬만 진하면 지나간 곳이 되레 튄다.
-        opacity={explore ? 1 : 0.5}
+        opacity={explore ? 1 : 0.62}
       >
         {geo.regions
           .filter((r) => struggled.has(r.code) && !missed.has(r.code))

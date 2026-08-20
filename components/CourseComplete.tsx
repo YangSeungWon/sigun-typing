@@ -61,7 +61,7 @@ export function CourseComplete({
           passedCodes={passedCodes}
           struggledCodes={struggledCodes}
           variant="route"
-          className="h-56 w-auto sm:h-72"
+          className="h-56 w-auto max-w-full sm:h-72"
         />
       )}
     </div>

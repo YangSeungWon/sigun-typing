@@ -30,7 +30,7 @@ export function CourseMap({ geo, courseId }: { geo: CourseGeo; courseId: string 
        * 것과 같은 방향이다.
        */
       explore
-      className="h-64 w-auto sm:h-80"
+      className="h-64 w-auto max-w-full sm:h-80"
     />
   );
 }

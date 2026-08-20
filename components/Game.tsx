@@ -942,7 +942,7 @@ export function Game({
                     variant={config.reveal ? "route" : "hint"}
                     // 화면 높이에 비례시킨다. 고정 높이로 두면 노트북에서 계기판이
                     // 접혀 주행 중에 스크롤해야 한다.
-                    className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto sm:h-[44vh]"
+                    className="mx-auto h-[31vh] max-h-[28rem] min-h-40 w-auto max-w-full sm:h-[44vh]"
                   />
 
                   {/*

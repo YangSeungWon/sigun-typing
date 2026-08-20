@@ -288,7 +288,7 @@ export function MultiRace({
                 */
                 focus={!counting}
                 variant="hint"
-                className="h-[24vh] max-h-80 min-h-32 w-auto sm:h-[32vh]"
+                className="h-[24vh] max-h-80 min-h-32 w-auto max-w-full sm:h-[32vh]"
               />
             )}
 

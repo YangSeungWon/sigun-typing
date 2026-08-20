@@ -171,7 +171,7 @@ export function ResultCard({
                 채울 것을 새로 만들지 않는다. 이 화면에서 지도는 장식이
                 아니라 결과의 본체이므로, 남는 세로를 지도가 쓰면 된다.
               */
-              className="h-56 w-auto sm:h-72 md:h-[34rem]"
+              className="h-56 w-auto max-w-full sm:h-72 md:h-[34rem]"
             />
             {/*
               한 종류밖에 없으면 그건 범례가 아니라 설명문이다. 다 맞힌 판에서

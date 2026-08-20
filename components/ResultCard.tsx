@@ -120,6 +120,19 @@ export function ResultCard({
     착각의 상대가 될 수 있는 후보. 같은 코스의 다른 지역 이름들이다.
     지도가 없는 코스에서는 가릴 방법이 없으므로 아예 안 적는다.
   */
+  /*
+    한 번에 간 곳.
+
+    범례와 표지판이 같은 값을 각각 계산하고 있었다. 표지판은 `firstTry`(첫
+    제출에 맞힌 수)를, 범례는 `markOf`로 가른 것을 썼는데, 판정 모드에 따라
+    이 둘이 갈린다 — `live`에서는 제출이라는 개념이 없어 `attempts`가 늘
+    1이라 오타를 낸 곳도 첫 제출로 세어진다.
+
+    한 곳에서 계산해 둘이 같이 쓴다. 같은 것을 두 번 세면 언젠가 다른 숫자가
+    된다.
+  */
+  const cleanCount = score.completed - struggledCodes.length;
+
   const peers: PeerName[] = useMemo(
     () => (geo ? geo.regions.map((r) => ({ name: r.name })) : []),
     [geo],
@@ -171,10 +184,7 @@ export function ResultCard({
             */}
             {(missed.some((r) => r.skipped) || struggledCodes.length > 0) && (
               <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-sm text-dim">
-                <Legend
-                  color="var(--color-sign)"
-                  label={`한 번에 ${score.completed - struggledCodes.length}`}
-                />
+                <Legend color="var(--color-sign)" label={`한 번에 ${cleanCount}`} />
                 {struggledCodes.length > 0 && (
                   <Legend
                     dotted
@@ -320,13 +330,18 @@ export function ResultCard({
         {/*
           손을 잰 값들.
 
-          `한 번에 2곳`이었다. 두 곳을 동시에 맞혔다는 뜻으로 읽힌다 —
-          `한 번에`가 시점(첫 입력)인지 개수인지를 문장이 안 정해 준다. 값으로
-          적으면 읽는 사람이 해석할 일이 없다. 퍼센트로 안 적는 이유는 그대로다 —
+          `한 번에 2곳`이었다. 두 곳을 동시에 맞혔다는 뜻으로 읽혔다 —
+          `한 번에`가 시점인지 개수인지를 문장이 안 정해 준다. 그래서 `첫 입력
+          16 / 18`로 바꿨는데, 이번엔 그 말이 시점만 가리켜 값이 개수라는 게
+          안 읽혔다. 게다가 바로 아래 범례가 같은 것을 `한 번에`라고 불렀다 —
+          한 화면에서 한 값이 두 이름을 가졌다.
+
+          분수가 개수라는 것을 이미 말한다. 그러면 남은 문제는 이름 하나뿐이고,
+          범례와 같은 말을 쓰면 된다. 퍼센트로 안 적는 이유는 그대로다 —
           이 게임의 단위는 곳이다.
         */}
         <p className="relative mt-1 flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/75">
-          <span>{`첫 입력 ${score.firstTry} / ${score.completed}`}</span>
+          <span>{`한 번에 ${cleanCount} / ${score.total}`}</span>
           {/*
             일어난 일만 적는다.
 

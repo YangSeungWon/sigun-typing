@@ -53,8 +53,15 @@ export function issueToken(
   return { token: `${payload}.${sign(payload)}`, claims };
 }
 
-/** 서명이 맞고 만료되지 않았으면 claims를, 아니면 null을 돌려준다. */
-export function verifyToken(token: string, now: number): SessionClaims | null {
+/**
+ * 서명이 맞고 만료되지 않았으면 claims를, 아니면 null을 돌려준다.
+ *
+ * 문자열이 아닌 것도 받는다. 이 함수의 입력은 결국 남이 보낸 JSON이고,
+ * 토큰을 아예 빼고 보내면 여기서 터져 500이 났다 — 잘못된 요청은 400으로
+ * 돌려보내야 할 자리에서 서버 오류가 나고 로그가 쌓였다.
+ */
+export function verifyToken(token: unknown, now: number): SessionClaims | null {
+  if (typeof token !== "string") return null;
   const dot = token.lastIndexOf(".");
   if (dot <= 0) return null;
 

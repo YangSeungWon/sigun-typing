@@ -3,6 +3,7 @@ import { getCourse } from "@/data/courses";
 import { getScoreRepository } from "@/lib/db/client";
 import { isModeId } from "@/lib/game/modes";
 import type { ModeId } from "@/lib/game/types";
+import { checkNickname } from "@/lib/score/nickname";
 import { validateSubmission } from "@/lib/score/validate";
 import { SCORING_VERSION } from "@/lib/score/version";
 import { isRankingPeriod, periodStart } from "@/lib/score/period";
@@ -14,16 +15,7 @@ export const dynamic = "force-dynamic";
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 
-const MAX_NICKNAME = 12;
 const MAX_KEYSTROKES = 20_000;
-
-/** 눈에 보이지 않는 문자로 순위표를 어지럽히지 못하게 한다. */
-function cleanNickname(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  const name = raw.replace(/[\p{C}\p{Zl}\p{Zp}]/gu, "").trim();
-  if (name.length === 0 || name.length > MAX_NICKNAME) return null;
-  return name;
-}
 
 function deviceIdOf(request: Request, body: { deviceId?: unknown }): string | null {
   const raw = body.deviceId ?? request.headers.get("x-device-id");
@@ -42,13 +34,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "잘못된 요청입니다" }, { status: 400 });
   }
 
-  const nickname = cleanNickname(body.nickname);
-  if (!nickname) {
-    return NextResponse.json(
-      { error: `이름은 1~${MAX_NICKNAME}자로 입력하세요` },
-      { status: 400 },
-    );
+  /*
+   * 이름은 이 사이트에서 남에게 보이는 유일한 사용자 입력이다. 무엇을 왜
+   * 막는지는 lib/score/nickname.ts에 적어 두었다. 대결 방도 같은 검사를 쓴다.
+   */
+  const checked = checkNickname(body.nickname);
+  if (!checked.ok) {
+    return NextResponse.json({ error: checked.message }, { status: 400 });
   }
+  const nickname = checked.name;
 
   const deviceId = deviceIdOf(request, body);
   if (!deviceId) {

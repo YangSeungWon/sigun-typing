@@ -3,6 +3,7 @@ import { Server, type Socket } from "socket.io";
 import { getCourse } from "../data/courses/index.ts";
 import { isModeId } from "../lib/game/modes.ts";
 import type { ModeId } from "../lib/game/types.ts";
+import { checkNickname } from "../lib/score/nickname.ts";
 import { issueToken, secretFingerprint } from "../lib/score/session.ts";
 import {
   createRoom,
@@ -57,10 +58,20 @@ const io = new Server(httpServer, {
   cors: { origin: ORIGIN, methods: ["GET", "POST"] },
 });
 
+/**
+ * 방에 들어오는 이름.
+ *
+ * 랭킹과 같은 검사를 쓴다(lib/score/nickname.ts). 여기는 여덟 명이 보는
+ * 자리라 순위표만큼 넓지는 않지만, 막을 이유는 같고 목록이 갈리면 한쪽만
+ * 고치는 일이 생긴다.
+ *
+ * 다만 **거절하지 않고 익명으로 바꾼다.** 소켓에는 폼 검증이 없어서 거절해도
+ * 사용자에게 이유를 보여 줄 길이 없고, 그러면 방에 못 들어가는 이유를 모른 채
+ * 튕긴다. 이름만 갈아 끼우면 판은 계속 돈다.
+ */
 function cleanNickname(raw: unknown): string {
-  if (typeof raw !== "string") return "익명";
-  const name = raw.replace(/[\p{C}]/gu, "").trim().slice(0, 12);
-  return name || "익명";
+  const checked = checkNickname(raw);
+  return checked.ok ? checked.name : "익명";
 }
 
 /** 방 상태를 그 방의 모두에게 보낸다. 화면은 이 한 이벤트만 보고 그린다. */

@@ -320,6 +320,12 @@ body {
 .home-map-slot { grid-area: map; }
 .home-actions { grid-area: actions; }
 .home-confuse { grid-area: confuse; }
+/*
+ * 구역을 하나 더할 때는 **네 곳을 다 고쳐야 한다** — 좁은 화면, 768, 1024,
+ * 그리고 각 폭의 `data-confuse="off"` 변형. 하나라도 빠지면 그 조합에서만
+ * 이름 없는 영역이 되어 자동 배치로 밀려나고, 실제로 데스크톱에서 이 줄이
+ * 열을 통째로 차지해 화면이 어그러졌다.
+ */
 .home-daily { grid-area: daily; }
 .home-friends { grid-area: friends; }
 
@@ -350,6 +356,7 @@ body {
     grid-template-areas:
       "copy    map"
       "actions map"
+      "daily   daily"
       "friends friends";
   }
 }
@@ -362,6 +369,7 @@ body {
       "copy     map map"
       "actions  map map"
       "confuse  confuse confuse"
+      "daily    daily daily"
       "friends  friends friends";
   }
 
@@ -369,6 +377,7 @@ body {
     grid-template-areas:
       "copy     map map"
       "actions  map map"
+      "daily    daily daily"
       "friends  friends friends";
   }
 }

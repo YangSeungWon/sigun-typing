@@ -373,7 +373,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         onLeave={leave}
       />
 
-      <InviteLink code={room.id} />
+      <InviteLink code={room.id} courseName={course?.name ?? room.courseId} />
 
       <Standings
         players={room.players}
@@ -634,22 +634,35 @@ function RoomHeader({
  * 받아쓰게 하면 단톡방에서 오타가 나고, 오타가 나면 그 사람은 안 들어온다.
  * 링크를 누른 사람은 이름만 넣고 바로 방에 들어간다.
  */
-function InviteLink({ code }: { code: string }) {
+function InviteLink({ code, courseName }: { code: string; courseName: string }) {
   const [copied, setCopied] = useState(false);
+
+  /*
+   * 문구에 코스를 싣는다.
+   *
+   * 여태 `같이 한 판 하자` 한 줄이라, 무슨 판인지가 링크 안에만 있었다. 단톡방에
+   * 붙은 주소를 눌러 봐야 아는 것과 붙은 자리에서 읽히는 것은 다르다.
+   *
+   * 카드로 하지 않는 이유는 페이지 쪽에 적어 두었다. 문구는 카카오톡이든
+   * 디스코드든 문자든 어디서나 같게 나가고, 캐시되어 굳지도 않는다.
+   */
+  const text = `시군 타이핑\n${courseName}\n\n같이 한 판?`;
 
   const copy = async () => {
     // 주소는 누를 때 만든다. 렌더 중에 window를 읽으면 서버 렌더와 어긋난다.
     const url = `${window.location.origin}/rooms?code=${code}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "시군 타이핑", text: "같이 한 판 하자", url });
+        await navigator.share({ title: "시군 타이핑", text, url });
         return;
       } catch {
         return;
       }
     }
     try {
-      await navigator.clipboard.writeText(url);
+      // 시트가 없는 곳에서는 문구와 주소를 함께 넘긴다. 주소만 가면 아까 그
+      // 한 줄로 되돌아가는 셈이다.
+      await navigator.clipboard.writeText(`${text}\n${url}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
@@ -666,9 +679,8 @@ function InviteLink({ code }: { code: string }) {
       >
         {copied ? "복사했습니다 — 단톡방에 붙여 넣으세요" : "친구 초대 링크 복사"}
       </button>
-      <p className="text-sm text-dim">
-        링크를 받은 사람은 이름만 넣으면 바로 들어옵니다. 최대 8명.
-      </p>
+      {/* `이름만 넣으면 들어옵니다`는 눌러 보면 아는 것이다. 남길 값은 정원뿐이다. */}
+      <p className="font-mono text-sm text-dim">최대 8명</p>
     </div>
   );
 }

@@ -223,7 +223,8 @@ export function MultiRace({
               {Math.round(score.cpm)}타/분
             </span>
           </p>
-          <p className="text-sm text-dim">
+          {/* 사이를 벌린다. 붙여 두면 `100.0%오타`가 한 낱말로 읽힌다. */}
+          <p className="flex items-baseline justify-center gap-4 text-sm text-dim">
             <span>정확도 {(score.accuracy * 100).toFixed(1)}%</span>
             <span>오타 {score.totalErrors}회</span>
           </p>

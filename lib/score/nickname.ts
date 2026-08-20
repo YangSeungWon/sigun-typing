@@ -11,8 +11,17 @@
  * 욕설이 하나 지나가는 것보다 나쁘다 — 욕설은 나중에 내릴 수 있지만 막힌
  * 사람은 그냥 떠난다.
  *
- * 그래서 **명백한 것만 막는다.** 사이 글자와 반복을 지운 뒤 목록과 대조하고,
- * 걸리면 거절한다. 나머지는 신고와 차단 목록이 할 일이다.
+ * 그래서 **명백한 것만 막는다.** 나머지는 신고와 차단 목록이 할 일이다.
+ *
+ * ── 낱말을 넘어가며 걸리지 않게 ────────────────────────────
+ * 처음에는 이름 전체에서 공백을 지우고 대조했다. 저장소의 지명 3,700개를
+ * 넣어 보니 **우리 코스 이름 하나가 걸렸다** — `수원시 팔달구`에서 공백을
+ * 지우면 `시팔`이 만들어진다. 영어에도 같은 일이 있다(`Scunthorpe`).
+ *
+ * 그래서 대조는 **띄어쓴 낱말 하나씩** 한다. 낱말을 넘어가며 만들어진 꼴은
+ * 애초에 그 사람이 쓴 말이 아니다. 사이에 점이나 숫자를 끼운 회피(`시.발`,
+ * `시1발`)는 여전히 걸린다 — 그건 한 낱말 안의 일이다. 공백으로 가른
+ * 회피(`시 발`)는 놓친다. 그것까지 잡으려다 멀쩡한 지명을 막는 쪽이 나쁘다.
  *
  * 사칭은 다르다. 목록이 짧고 닫혀 있으며(운영자·관리자·admin), 오탐이 나도
  * 그 이름을 꼭 써야 할 사람이 없다. 여기는 넉넉히 막아도 손해가 없다.
@@ -33,9 +42,11 @@ export type NicknameResult =
  * 그 사람의 것이고, 우리가 고쳐 쓸 물건이 아니다.
  *
  * 하는 일 셋. 호환 문자를 정규 꼴로 모으고(전각 `ａ`와 `a`가 같아진다),
- * 한글·영문·숫자가 아닌 것을 다 버리고(`시.발`, `시 발`, `시_발`이 같아진다),
- * 같은 글자가 잇달아 나오면 하나로 줄인다(`시이발`은 안 걸리지만 `시발발`은
+ * 글자가 아닌 것을 다 버리고(`시.발`, `시1발`, `시_발`이 같아진다), 같은
+ * 글자가 잇달아 나오면 하나로 줄인다(`시이발`은 안 걸리지만 `시발발`은
  * 걸린다).
+ *
+ * 숫자도 버린다. 사이에 숫자를 끼우는 것이 가장 흔한 회피 꼴이다.
  *
  * 남기는 글자에 **낱자모 블록(U+1100~U+11FF)을 반드시 넣는다.** NFKC가
  * `ㅅ`(U+3145)을 그 블록으로 옮기기 때문이다. 빠뜨렸더니 `ㅅㅂ` 같은 초성
@@ -46,7 +57,7 @@ function flatten(name: string): string {
   return name
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/[^0-9a-z가-힣\u1100-\u11FFㄱ-ㅎㅏ-ㅣ]/g, "")
+    .replace(/[^a-z가-힣\u1100-\u11FFㄱ-ㅎㅏ-ㅣ]/g, "")
     .replace(/(.)\1+/g, "$1");
 }
 
@@ -85,43 +96,53 @@ const IMPERSONATION = [
 ];
 
 /**
- * 욕설.
+ * 욕설 — 낱말 안 어디에 있어도 막는 것.
  *
- * 짧고 명백한 것만 둔다. 사이 글자를 지운 꼴에서 **부분 일치**로 보므로
- * `씨발놈아`도 걸린다. 초성만 쓴 것도 흔해서 함께 둔다.
- *
- * 늘리고 싶어질 때 기준 하나: **그 문자열이 들어간 멀쩡한 이름을 하나라도
- * 떠올릴 수 있으면 넣지 않는다.** 예를 들어 `병신`은 넣지만 `병`은 안 된다.
+ * 다른 말에 섞여 우연히 만들어지지 않는 꼴만 둔다. 늘리고 싶어질 때 기준
+ * 하나: **그 문자열이 들어간 멀쩡한 낱말을 하나라도 떠올릴 수 있으면 아래
+ * `PROFANITY_EXACT`로 보낸다.**
  */
-const PROFANITY = [
-  "시발",
+const PROFANITY_ANYWHERE = [
   "씨발",
-  "시팔",
   "씨팔",
+  "시발",
+  "시팔",
   "쉬발",
-  "씹",
   "좆",
-  "존나",
-  "졸라",
   "지랄",
   "병신",
-  "새끼",
-  "개새",
   "미친놈",
   "미친년",
   "썅",
   "닥쳐",
-  "꺼져",
+  "fuck",
+  "nigger",
+  "faggot",
+  "asshole",
+];
+
+/**
+ * 욕설 — 낱말이 통째로 그것일 때만 막는 것.
+ *
+ * 다른 말의 일부가 될 수 있는 꼴들이다. 실제로 다음이 다 걸렸었다.
+ *
+ *     자지말고달려   씹어먹는다   새끼손가락   졸라맨
+ *     뒤돌아보지마   꺼져가는불   shitake   Scunthorpe   Bitchute
+ *
+ * 초성도 여기 둔다. `ㅅㅂㅈ`나 `ㅂㅅㅎ`는 사람 이름의 초성이기도 하다.
+ */
+const PROFANITY_EXACT = [
+  "씹",
   "보지",
   "자지",
-  "фuck",
-  "fuck",
+  "새끼",
+  "개새",
+  "존나",
+  "졸라",
+  "꺼져",
   "shit",
   "bitch",
   "cunt",
-  "asshole",
-  "nigger",
-  "faggot",
   "ㅅㅂ",
   "ㅆㅂ",
   "ㅄ",
@@ -132,7 +153,8 @@ const PROFANITY = [
 ];
 
 const IMPERSONATION_FLAT = patterns(IMPERSONATION);
-const PROFANITY_FLAT = patterns(PROFANITY);
+const ANYWHERE_FLAT = patterns(PROFANITY_ANYWHERE);
+const EXACT_FLAT = patterns(PROFANITY_EXACT);
 
 /** 이름 자리에 붙는 광고. 주소가 보이면 그건 이름이 아니다. */
 const LINK = /(https?:|www\.|\.com|\.net|\.kr|\.io|\.gg|텔레그램|텔레|카톡아이디)/i;
@@ -167,11 +189,26 @@ export function checkNickname(raw: unknown): NicknameResult {
     return { ok: false, reason: "link", message: "이름에 주소를 넣을 수 없습니다" };
   }
 
-  const flat = flatten(name);
-  if (IMPERSONATION_FLAT.some((word) => flat.includes(word))) {
+  /*
+   * 띄어쓴 낱말 하나씩 본다. 붙여 쓴 이름은 낱말이 하나라 결과가 같다.
+   * 사칭은 통째로도 본다 — `시군 타이핑 운영팀`처럼 여러 낱말로 사칭하는
+   * 쪽이 오히려 흔하고, 거기서 나올 오탐은 없다.
+   */
+  const tokens = name.split(" ").map(flatten).filter((t) => t.length > 0);
+  const whole = flatten(name);
+
+  if (
+    IMPERSONATION_FLAT.some((word) => whole.includes(word)) ||
+    tokens.some((token) => IMPERSONATION_FLAT.some((word) => token.includes(word)))
+  ) {
     return { ok: false, reason: "impersonation", message: "쓸 수 없는 이름입니다" };
   }
-  if (PROFANITY_FLAT.some((word) => flat.includes(word))) {
+  if (
+    tokens.some(
+      (token) =>
+        ANYWHERE_FLAT.some((word) => token.includes(word)) || EXACT_FLAT.includes(token),
+    )
+  ) {
     /*
      * 무엇에 걸렸는지 말하지 않는다. 알려 주면 목록을 역으로 짚어 가며
      * 빠져나갈 꼴을 찾는 일이 쉬워진다.

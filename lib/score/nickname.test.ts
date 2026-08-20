@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { COURSES } from "@/data/courses";
 import { checkNickname } from "./nickname";
 
 const pass = (raw: string) => checkNickname(raw);
@@ -40,10 +41,42 @@ describe("이름 검사", () => {
   });
 
   it("욕설은 사이 글자를 넣어도 막는다", () => {
-    // 대조는 한글·영문·숫자만 남기고 잇단 반복을 줄인 꼴로 한다.
-    for (const raw of ["시발", "씨 발", "시.발", "병신1호", "ㅅㅂ", "존나빠름", "fuck you"]) {
+    // 한 낱말 안에서는 점도 숫자도 밑줄도 지운 꼴로 대조한다.
+    for (const raw of ["시발", "시.발", "시1발", "씨발놈아", "병신1호", "ㅅㅂ", "fuck you"]) {
       expect(pass(raw).ok, raw).toBe(false);
     }
+  });
+
+  it("낱말을 넘어가며 만들어진 꼴은 막지 않는다", () => {
+    /*
+     * 이름 전체에서 공백을 지우고 대조했더니 **우리 코스 이름 하나가 걸렸다** —
+     * `수원시 팔달구`에서 공백을 지우면 `시팔`이 만들어진다. 영어에도 같은
+     * 일이 있다(`Scunthorpe`).
+     *
+     * 그 대가로 공백으로 가른 회피(`시 발`)는 놓친다. 멀쩡한 지명을 막는
+     * 쪽이 더 나쁘다.
+     */
+    expect(pass("수원시 팔달구 10개").ok).toBe(true);
+    expect(pass("Scunthorpe").ok).toBe(true);
+    expect(pass("시 발").ok).toBe(true);
+  });
+
+  it("저장소의 지명은 하나도 막히지 않는다", () => {
+    /*
+     * 오탐을 말로 따지지 않고 잰다. 목록을 늘린 뒤 이 검사가 깨지면 그
+     * 항목은 낱말 전체 일치(PROFANITY_EXACT) 쪽으로 옮길 것.
+     */
+    const names = new Set<string>();
+    for (const course of COURSES) {
+      names.add(course.name.slice(0, 12));
+      for (const region of course.regions) names.add(region.name);
+    }
+    expect(names.size).toBeGreaterThan(3000);
+    const blocked = [...names].filter((n) => {
+      const r = checkNickname(n);
+      return !r.ok && r.reason !== "too_long";
+    });
+    expect(blocked).toEqual([]);
   });
 
   it("무엇에 걸렸는지는 말하지 않는다", () => {
@@ -69,7 +102,22 @@ describe("이름 검사", () => {
      * 오탐은 욕설 하나가 지나가는 것보다 나쁘다. 욕설은 나중에 내릴 수 있지만
      * 막힌 사람은 그냥 떠난다. 목록을 늘릴 때마다 여기에 한 줄씩 늘린다.
      */
-    for (const raw of ["김병만", "지랑", "새벽", "보성군민", "미친듯이빠름", "부산갈매기"]) {
+    for (const raw of [
+      "김병만",
+      "보성군민",
+      "부산갈매기",
+      // 아래는 전부 실제로 걸렸던 것들이다.
+      "자지말고달려",
+      "뒤돌아보지마",
+      "새끼손가락",
+      "졸라맨",
+      "꺼져가는불",
+      "shitake",
+      "Bitchute",
+      // 초성 두 자는 사람 이름의 초성이기도 하다.
+      "ㅅㅂㅈ",
+      "ㅂㅅㅎ",
+    ]) {
       expect(pass(raw).ok, raw).toBe(true);
     }
   });

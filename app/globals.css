@@ -367,23 +367,25 @@ body {
 }
 
 @media (min-width: 1024px) {
+  /*
+   * 열을 여섯으로 쪼갠다. 셋으로 두면 아래 줄이 나눠떨어지지 않는다 — 헷갈리는
+   * 곳이 없는 날에는 두 칸을 3+3으로 갈라야 하는데, 격자는 줄마다 열 수를
+   * 달리 가질 수 없다.
+   */
   .home-grid {
     gap: 1.5rem;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(6, 1fr);
     grid-template-areas:
-      "copy     map map"
-      "actions  map map"
-      "confuse  confuse confuse"
-      "daily    daily daily"
-      "friends  friends friends";
+      "copy    copy    map     map     map     map"
+      "actions actions map     map     map     map"
+      "confuse confuse daily   daily   friends friends";
   }
 
   .home-grid[data-confuse="off"] {
     grid-template-areas:
-      "copy     map map"
-      "actions  map map"
-      "daily    daily daily"
-      "friends  friends friends";
+      "copy    copy    map     map     map     map"
+      "actions actions map     map     map     map"
+      "daily   daily   daily   friends friends friends";
   }
 }
 

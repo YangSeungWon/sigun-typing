@@ -356,18 +356,22 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         그럴듯하게 지어내느니 아는 것만 적는다.
       */}
       {data.confusion && (
-        <section className="home-confuse flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-4">
-          <h2 className="font-mono text-sm text-dim">자꾸 헷갈리는 곳</h2>
-          <p className="text-2xl font-semibold">
+        <section className="home-confuse relative flex flex-col gap-2 rounded-md bg-paint/70 p-5 pt-4 shadow-[0_1px_0_0_var(--color-concrete-deep)]">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
+          />
+          <h2 className="relative font-mono text-sm text-dim">자꾸 헷갈리는 곳</h2>
+          <p className="relative text-2xl font-semibold">
             {data.confusion.a} <span className="text-dim">↔</span>{" "}
             {data.confusion.b}
           </p>
-          <p className="font-mono text-sm text-alert tabular-nums">
+          <p className="relative font-mono text-sm text-alert tabular-nums">
             최근 오답 {data.confusion.count}회
           </p>
           <Link
             href={`/review/${data.confusion.courseId}`}
-            className="mt-auto rounded-lg border border-concrete-deep px-5 py-3 text-center font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="relative mt-auto rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium transition-colors hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             오답 복습
           </Link>
@@ -389,7 +393,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       */}
       <DailyLine />
 
-      <section className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)]">
+      <section className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
@@ -402,16 +406,16 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           그래도 문장은 아니다. 명사와 숫자로 적고, 좁은 화면에서는 감춘다 —
           거기서는 줄바꿈이 생겨 한 줄짜리가 두 줄이 된다.
         */}
-        <span className="relative flex items-baseline gap-3">
-          <span className="font-medium">친구 대결</span>
-          <span className="hidden items-baseline gap-3 font-mono text-sm text-dim sm:flex">
+        <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
+          <span className="font-medium lg:font-mono lg:text-sm lg:font-normal lg:text-dim">친구 대결</span>
+          <span className="hidden items-baseline gap-3 font-mono text-sm text-dim sm:flex lg:text-lg">
             <span>같은 코스</span>
             <span>최대 8명</span>
           </span>
         </span>
         <Link
           href="/rooms"
-          className="relative rounded-sm bg-concrete-deep px-5 py-2 font-medium whitespace-nowrap transition-colors hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="relative rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium whitespace-nowrap transition-colors lg:mt-auto hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           대결
         </Link>

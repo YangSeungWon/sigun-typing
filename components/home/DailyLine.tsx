@@ -46,7 +46,7 @@ export function DailyLine() {
     : `X / ${MAX_TRIES}`;
 
   return (
-    <section className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)]">
+    <section className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
       {/*
         판면으로 세운다.
 
@@ -58,9 +58,9 @@ export function DailyLine() {
         aria-hidden
         className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
       />
-      <span className="relative flex items-baseline gap-3">
-        <span className="font-medium">오늘의 퀴즈</span>
-        <span className="flex items-baseline gap-3 font-mono text-sm text-dim">
+      <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
+        <span className="font-medium lg:font-mono lg:text-sm lg:font-normal lg:text-dim">오늘의 퀴즈</span>
+        <span className="flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
           {/*
             푼 날에는 성적이, 안 푼 날에는 규칙이 온다. 이미 푼 사람에게 `여섯 번`은
             더 이상 정보가 아니고, 안 푼 사람에게는 그게 오늘 할 일의 크기다.
@@ -83,7 +83,7 @@ export function DailyLine() {
           단추를 채운다. 실선 하나로는 누를 것으로 안 보였다. 초록은 안 쓴다 —
           첫 화면의 초록은 `전국 시작` 하나여야 한다.
         */
-        className="relative rounded-sm bg-concrete-deep px-5 py-2 font-medium whitespace-nowrap transition-colors hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="relative rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium whitespace-nowrap transition-colors lg:mt-auto hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         {done ? "다시 보기" : "풀기"}
       </Link>

@@ -52,15 +52,6 @@ function formatPrecise(ms: number): string {
 }
 
 /**
- * 힌트를 몇 번 봤는가.
- *
- * 시간과 나란히 놓는다. 이 둘이 각자 순위를 가르기 때문이다 — 힌트 적은
- * 쪽이 먼저이고, 같으면 빠른 쪽이다. 한때 힌트를 30초씩 시간에 얹었는데,
- * 그러면 화면의 숫자가 벽시계와 어긋나고 그 무게가 코스 길이에 따라 널뛴다.
- *
- * 안 본 판에도 적는다. `힌트 없음`은 이 게임에서 자랑할 값이다.
- */
-/**
  * 도전장을 이겼는가.
  *
  * 여태 도전 정보는 카운트다운까지만 살아 있었다. 목표를 보며 시작했는데
@@ -95,13 +86,6 @@ function Verdict({ challenge, score }: { challenge: Challenge; score: Score }) {
   );
 }
 
-function HintCount({ score }: { score: Score }) {
-  return (
-    <span className={score.hintsUsed === 0 ? "" : "text-on-sign/70"}>
-      {score.hintsUsed === 0 ? "힌트 없음" : `힌트 ${score.hintsUsed}회`}
-    </span>
-  );
-}
 
 /**
  * 도착 표지판.
@@ -344,16 +328,25 @@ export function ResultCard({
         <p className="relative mt-1 flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/75">
           <span>{`첫 입력 ${score.firstTry} / ${score.completed}`}</span>
           {/*
+            일어난 일만 적는다.
+
             오타는 접힌 상자 안에 있었다. 이 줄이 이미 손을 잰 값들의 자리이고,
             거기 한 칸을 더 쓰는 편이 상자 하나를 여는 것보다 싸다.
 
-            0회일 때는 안 적는다. `오타 0회`는 아무 일도 없었다는 말을 굳이
-            하는 것이고, 이 줄은 일어난 일만 적는 자리다.
+            `오타 0회`도 `힌트 없음`도 안 적는다. 아무 일도 없었다는 말을 굳이
+            하는 것이고, 안 적힌 자리가 이미 그 말을 한다. 남에게 보내는
+            문구가 진작 이 문법이었다 — `힌트 3번`은 쓴 판에만 들어간다.
+            표지판만 자기 문법을 어기고 있었다.
+
+            한때는 반대로 정했었다. `힌트 없음`이 이 게임에서 자랑할 값이라고
+            봤는데, 자랑은 안 적힌 자리가 대신한다. 힌트는 시간과 나란히
+            둔다 — 이 둘이 각자 순위를 가르기 때문이다(힌트 적은 쪽이 먼저,
+            같으면 빠른 쪽). 힌트를 30초씩 시간에 얹던 때가 있었는데,
+            그러면 화면의 숫자가 벽시계와 어긋나고 그 무게가 코스 길이에
+            따라 널뛴다.
           */}
           {score.totalErrors > 0 && <span>{`오타 ${score.totalErrors}회`}</span>}
-          <span>
-            <HintCount score={score} />
-          </span>
+          {score.hintsUsed > 0 && <span>{`힌트 ${score.hintsUsed}회`}</span>}
         </p>
 
         {/* 다 돌지 못한 판에서는 시간이 위에 없으므로 여기 적는다. */}

@@ -7,6 +7,7 @@ import { dayIndex } from "@/lib/daily/pick";
 import { isOver, MAX_TRIES, type QuizState } from "@/lib/daily/quiz";
 import { loadQuiz } from "@/lib/daily/store";
 import { aliveOn, loadStreak } from "@/lib/daily/streak";
+import { StreakBadge } from "@/components/daily/StreakBadge";
 
 /**
  * 첫 화면의 오늘의 퀴즈 한 줄.
@@ -61,10 +62,8 @@ export function DailyLine() {
               <span>여섯 번</span>
             </>
           )}
-          {/* 첫날에는 안 적는다. `연속 1일`은 아무 말도 아니다. */}
-          {seen && seen.streak > 1 && (
-            <span className="text-sign">연속 {seen.streak}일</span>
-          )}
+          {/* 첫날에는 안 띄운다. 하루짜리 연속은 아무 말도 아니다. */}
+          {seen && seen.streak > 1 && <StreakBadge days={seen.streak} />}
         </span>
       </span>
       <Link

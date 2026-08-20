@@ -15,6 +15,8 @@ import {
 import { cardCode, quizShareText } from "@/lib/daily/quiz";
 import { loadQuiz, saveQuiz } from "@/lib/daily/store";
 import { ShareCard } from "@/components/share/ShareCard";
+import { StreakBadge } from "./StreakBadge";
+import { NextQuiz } from "./NextQuiz";
 import { aliveOn, loadStreak, recordDay, type Streak } from "@/lib/daily/streak";
 
 export interface QuizRegion {
@@ -175,9 +177,7 @@ export function DailyQuiz({
 
   return (
     <div className="flex w-full flex-col gap-5">
-      {stage !== "done" && alive > 1 && (
-        <p className="font-mono text-sm text-sign">연속 {alive}일</p>
-      )}
+      {stage !== "done" && alive > 1 && <StreakBadge days={alive} />}
 
       <RegionMap
         geo={geo}
@@ -342,26 +342,14 @@ export function DailyQuiz({
           />
 
           {/*
-            내일 다시 온다는 것을 알려 준다. 하루에 한 번인 게임에서 "끝"만
-            적으면 오늘 여기서 관계가 끊긴다.
+            하루에 한 번인 게임에서 "끝"만 적으면 오늘 여기서 관계가 끊긴다.
+            그 자리에 문장을 두는 대신 값을 둔다 — 줄어드는 시계와 이어 온 날.
 
-            연속 일수가 그 말을 더 세게 한다 — 오늘 푼 이유는 문제가 궁금해서지만
-            내일 올 이유는 끊고 싶지 않은 숫자가 만든다. 첫날에는 안 적는다.
-            `연속 1일`은 아무 말도 아니다.
+            첫날에는 불꽃을 안 띄운다. 하루짜리 연속은 아무 말도 아니다.
           */}
           <p className="flex flex-wrap items-baseline gap-x-4 font-mono text-sm text-dim">
-            {streak && streak.current > 1 && (
-              <span className="text-sign">연속 {streak.current}일</span>
-            )}
-            {/*
-              최고 기록은 지금보다 길 때만 적는다.
-              같으면 두 숫자가 나란히 같은 말을 하고, 짧으면 그건 최고가 아니다.
-              이게 지금 이어지는 줄의 목표가 된다 — 넘으면 그 줄이 사라진다.
-            */}
-            {streak && streak.best > streak.current && (
-              <span>최고 {streak.best}일</span>
-            )}
-            <span>내일 새 문제가 나옵니다</span>
+            {streak && streak.current > 1 && <StreakBadge days={streak.current} />}
+            <NextQuiz />
           </p>
         </section>
       )}

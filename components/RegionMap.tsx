@@ -49,6 +49,15 @@ interface RegionMapProps {
    */
   focus?: boolean;
   /**
+   * 카메라를 얼마나 당길지.
+   *
+   * 기본값은 본편 화면 기준이다 — 지도가 화면 높이의 38~44%로 그려질 때
+   * 알맞은 값이고, 배율은 viewBox 좌표에서 계산되므로 **상자를 줄여도 그대로**다.
+   * 즉 같은 카메라로 작은 상자에 그리면 같은 그림이 작아질 뿐 확대가 아니다.
+   * 손바닥만 한 창에는 그 창에 맞는 배율을 따로 준다.
+   */
+  zoom?: { fill?: number; maxScale?: number; minSpan?: number };
+  /**
    * 짚으면 이름이 뜨는 지도.
    *
    * 코스를 고르는 화면에서 "이 모양이 어디지"를 손으로 확인하는 자리다.
@@ -82,6 +91,7 @@ export const RegionMap = memo(function RegionMap({
   namedCodes = EMPTY,
   variant,
   focus = false,
+  zoom,
   explore = false,
   className,
 }: RegionMapProps) {
@@ -117,8 +127,8 @@ export const RegionMap = memo(function RegionMap({
   const fontSize = Math.round(geo.width * (geo.regions.length > 60 ? 0.03 : 0.055));
 
   const transform = useMemo(
-    () => (focus ? focusTransform(camera, geo) : ""),
-    [focus, camera, geo],
+    () => (focus ? focusTransform(camera, geo, zoom) : ""),
+    [focus, camera, geo, zoom],
   );
   /** 모든 경계를 이어 붙인 한 장. 각 조각이 `M`으로 시작하므로 그대로 이으면 된다. */
   const silhouette = useMemo(() => geo.regions.map((r) => r.d).join(""), [geo]);

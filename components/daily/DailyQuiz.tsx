@@ -49,6 +49,24 @@ interface DailyQuizProps {
  * 그게 이 판의 유일한 단서다. 당겨 두면 멀리 있는 오답이 화면 밖이라 아무것도
  * 안 보인다.
  */
+/**
+ * 확대 창의 카메라.
+ *
+ * 상자가 손바닥만 하므로 지역이 상자를 절반쯤 채우게 당긴다. 기본값
+ * (채움 0.36, 상한 3배)은 큰 지도 기준이라 그대로 쓰면 큰 지도와 똑같은
+ * 그림이 작아지기만 한다 — 배율은 viewBox 좌표에서 계산되어 상자 크기와
+ * 무관하기 때문이다.
+ *
+ * 상한 60배는 전국 지도의 가장 작은 곳에서 나온 값이다. 24배로 두면 대구
+ * 중구가 창의 9%밖에 안 되어 확대한 보람이 없고(229곳 중 63곳이 상한에
+ * 걸렸다), 60배면 그 중구가 23%가 되고 상한에 걸리는 곳이 셋만 남는다.
+ * 더 올리면 이웃이 화면 밖으로 밀려난다 — 이 게임에서 인접 관계는 모양만큼
+ * 중요한 단서다.
+ *
+ * 렌더 밖에 둔다. 안에서 만들면 매 렌더마다 새 객체라 카메라가 다시 계산된다.
+ */
+const INSET_ZOOM = { fill: 0.52, maxScale: 60 };
+
 export function DailyQuiz({
   day,
   geo,
@@ -179,6 +197,18 @@ export function DailyQuiz({
     <div className="flex w-full flex-col gap-5">
       {stage !== "done" && alive > 1 && <StreakBadge days={alive} />}
 
+      {/*
+        지도 두 장.
+
+        본편은 문제인 곳으로 카메라를 당기고, 전체 안에서 어디인지는 옆에
+        붙는 미니맵이 맡는다. 여기서는 그 둘이 뒤집힌다 — **전국 어디쯤인가가
+        이 퀴즈의 단서 자체**라 큰 지도는 당기면 안 된다.
+
+        그래서 없던 쪽을 붙인다. 전국 지도에서 시군구 하나는 몇 픽셀이라
+        모양이 읽히지 않는데, 이 퀴즈에서 모양은 위치 다음가는 단서다.
+      */}
+      {/* 지도에 붙인다. 폭을 다 쓰면 넓은 화면에서 창만 저 혼자 오른쪽 끝에 뜬다. */}
+      <div className="relative mx-auto w-fit">
       <RegionMap
         geo={geo}
         variant="hint"
@@ -199,6 +229,30 @@ export function DailyQuiz({
         explore={stage === "done"}
         className="mx-auto h-[38vh] max-h-[26rem] w-auto"
       />
+
+        {/*
+          확대 창.
+
+          배경을 깔아 준다. 같은 회색 위에 얹으면 지도가 아니라 얼룩으로 보인다.
+          왼쪽 위에 둔다. 오른쪽 위는 강원 동해안이라, 하필 그 근처가 답인 날에
+          답을 가린다. 왼쪽 위는 서해뿐이다.
+
+          이름은 여기에도 안 뜬다 — variant가 `hint`인 한 이름표는 나오지
+          않지만, 짚어 보는 것까지 열리는 끝난 판에서도 여기는 안 연다.
+          작은 창에서 이름표는 확대한 모양을 도로 덮는다.
+        */}
+        <div className="pointer-events-none absolute top-0 left-0 overflow-hidden rounded-md border border-concrete-deep bg-paint/70">
+          <RegionMap
+            geo={geo}
+            variant="hint"
+            currentCode={answerCode}
+            missedCodes={stage === "done" && !state.solved ? [answerCode] : undefined}
+            focus
+            zoom={INSET_ZOOM}
+            className="size-24 sm:size-28"
+          />
+        </div>
+      </div>
 
       {/* 낸 답들. 색이 곧 공유될 격자다. */}
       {state.guesses.length > 0 && (

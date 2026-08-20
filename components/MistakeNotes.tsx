@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { COURSES } from "@/data/courses";
+import { atlasLearnUrl } from "@/lib/atlas";
 import { useIsHydrated } from "@/lib/useIsHydrated";
 import {
   clearMistakes,
@@ -122,6 +123,28 @@ export function MistakeNotes() {
               기록 지우기
             </button>
           </div>
+
+          {/*
+            같은 지도를 반대로 묻는 곳으로 가는 문.
+
+            여기까지 온 사람은 이름이 아예 안 떠오르는 것이고, 그건 더 친다고
+            나아지는 종류가 아니다. 지도를 눈으로 훑는 편이 빠르다 — 그게
+            저쪽이 하는 일이고 여기에는 없다.
+
+            자리는 여기뿐이다. 푸터나 첫 화면에 박으면 링크 교환으로 읽히고,
+            정작 막힌 사람에게는 안 닿는다. 이 줄 바로 위에 그 사람이 자꾸
+            틀리는 곳들이 이름째로 떠 있다.
+          */}
+          {atlasLearnUrl(entry.courseId, "notes") && (
+            <a
+              href={atlasLearnUrl(entry.courseId, "notes")!}
+              target="_blank"
+              rel="noopener"
+              className="self-start text-sm text-dim underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              {entry.courseName} 지도에서 위치부터 익히기
+            </a>
+          )}
         </section>
       ))}
     </div>

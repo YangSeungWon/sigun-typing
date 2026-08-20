@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Keycap } from "@/components/Keycap";
 import { COURSES } from "@/data/courses";
+import { ATLAS_BLANK_MAPS, atlasLearnUrl } from "@/lib/atlas";
 import { DATA_VINTAGE, VINTAGE_LABEL } from "@/data/vintage";
 import { MODES, MODE_LABELS, MODE_LADDER } from "@/lib/game/modes";
 
@@ -96,8 +97,8 @@ export default function GuidePage() {
             알 수 없습니다.
           </p>
           <p>
-            시도 코스는 짧은 이름이 기준입니다. <Kbd>제주</Kbd>·
-            <Kbd>제주도</Kbd>·<Kbd>제주특별자치도</Kbd>가 모두 정답입니다.
+            시도 코스는 짧은 이름이 기준입니다. <Kbd>제주</Kbd>{" "}
+            <Kbd>제주도</Kbd> <Kbd>제주특별자치도</Kbd>가 모두 정답입니다.
           </p>
           <p>
             치는 도중의 글자는 오타로 세지 않습니다. <Kbd>고성</Kbd>을 칠 때
@@ -123,8 +124,8 @@ export default function GuidePage() {
 
         <Fold title="기록과 랭킹">
           <p>
-            타수는 두벌식 자판 기준입니다. <Kbd>값</Kbd>은 ㄱ·ㅏ·ㅂ·ㅅ 네 타,{" "}
-            <Kbd>좌</Kbd>는 ㅈ·ㅗ·ㅏ 세 타입니다. 맞힌 글자만 셉니다.
+            타수는 두벌식 자판 기준입니다. <Kbd>값</Kbd>은 ㄱ ㅏ ㅂ ㅅ 네 타,{" "}
+            <Kbd>좌</Kbd>는 ㅈ ㅗ ㅏ 세 타입니다. 맞힌 글자만 셉니다.
           </p>
           <p>
             정답을 보고 넘어간 지역은 공식 기록에 들어가지 않습니다. 힌트를 쓰면
@@ -140,6 +141,44 @@ export default function GuidePage() {
             <Kbd>{MODE_LABELS.learn}</Kbd>는 답이 화면에 있어 재는 것이 회상이
             아니라 타자 속도라서 순위에 넣지 않습니다. 개인 기록에는 남습니다.
           </p>
+        </Fold>
+
+        {/*
+          이 게임이 못 하는 것을 적어 둔다.
+
+          여기는 이미 아는 이름을 꺼내는 연습이다. 이름 자체를 모르는 사람에게
+          같은 판을 또 돌리는 것은 답이 아니고, 그런 사람이 이용안내를 열어
+          본다. 지도를 눈으로 훑는 것과 종이에 손으로 적어 보는 것 — 둘 다
+          이 사이트에 없고 옆 사이트에 있다.
+        */}
+        <Fold title="이름이 아예 안 떠오릅니다">
+          <p>
+            이 게임은 아는 이름을 빨리 꺼내는 연습입니다. 이름 자체를 처음
+            본다면 지도를 먼저 훑는 편이 빠릅니다.
+          </p>
+          <ul className="flex flex-col gap-2">
+            <li>
+              <a
+                href={atlasLearnUrl("sido", "guide")!}
+                target="_blank"
+                rel="noopener"
+                className="underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                지도에서 위치부터 익히기
+              </a>
+            </li>
+            <li>
+              <a
+                href={ATLAS_BLANK_MAPS.sigun}
+                target="_blank"
+                rel="noopener"
+                className="underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                인쇄용 백지도 PDF
+              </a>
+            </li>
+          </ul>
+          <p className="text-dim">두 곳 모두 quiz-korea.ysw.kr입니다.</p>
         </Fold>
 
         <Fold title="자료">

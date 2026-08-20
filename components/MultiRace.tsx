@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { beginGame } from "@/lib/analytics/track";
 import type { CourseGeo } from "@/data/geo/types";
 import type { Course } from "@/data/types";
@@ -11,6 +11,9 @@ import type { RaceStart, RoomState } from "@/lib/multiplayer/types";
 import { KeyHint } from "./Keycap";
 import { Odometer } from "./Odometer";
 import { RegionMap } from "./RegionMap";
+import { ShareResult } from "./ShareResult";
+import { fetchCourseGrid } from "@/lib/share/courseGrid";
+import type { CourseGrid } from "@/lib/share/grid";
 import { CountdownPlate, useSecondsUntil } from "./CountdownPlate";
 import { SignPlate } from "./SignPlate";
 import { Standings } from "./Standings";
@@ -189,6 +192,24 @@ export function MultiRace({
   const done = state.status === "finished";
   const myRank = room.players.find((p) => p.id === selfId)?.rank ?? null;
 
+  /*
+   * 자랑용 격자.
+   *
+   * 끝난 뒤에야 읽는다. 대기실에서 코스가 정해지므로 서버가 미리 꺼내 줄 수
+   * 없고, 달리는 동안에는 쓸모가 없는 값이다.
+   */
+  const [grid, setGrid] = useState<CourseGrid | null>(null);
+  useEffect(() => {
+    if (!done) return;
+    let alive = true;
+    void fetchCourseGrid(room.courseId).then((g) => {
+      if (alive) setGrid(g);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [done, room.courseId]);
+
   return (
     <div className="flex w-full flex-col gap-8">
       {done ? (
@@ -213,6 +234,26 @@ export function MultiRace({
             seed={room.seed}
             state={state}
             score={score}
+          />
+
+          {/*
+            대결에도 자랑할 길을 준다.
+
+            여태 혼자 한 판에만 있었다. 정작 이 게임에서 남에게 보여 줄 만한
+            숫자는 `8명 중 1위` 쪽인데, 그게 방 안에만 갇혀 있었다.
+
+            보내는 것은 싱글과 같다 — 이모지 격자와 도전장 링크. 받은 사람은
+            같은 코스에 이 기록이 목표로 박힌 판으로 떨어진다. 대결에 끼려면
+            시간을 맞춰야 하지만 그 기록을 깨는 것은 아무 때나 할 수 있다.
+          */}
+          <ShareResult
+            courseId={room.courseId}
+            courseName={course.name}
+            mode={room.mode}
+            score={score}
+            grid={grid}
+            results={state.results}
+            standing={myRank ? { rank: myRank, field: room.players.length } : null}
           />
         </div>
       ) : (

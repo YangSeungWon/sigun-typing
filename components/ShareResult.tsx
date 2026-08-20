@@ -23,6 +23,8 @@ interface ShareResultProps {
   grid: CourseGrid | null;
   /** 지역별 결과. 어느 칸을 무슨 색으로 칠할지가 여기서 나온다. */
   results: ItemResult[];
+  /** 대결이면 몇 명 중 몇 등인지. 혼자 한 판에는 없다. */
+  standing?: { rank: number; field: number } | null;
 }
 
 /**
@@ -45,6 +47,7 @@ export function ShareResult({
   score,
   grid,
   results,
+  standing = null,
 }: ShareResultProps) {
   // 완주하지 못한 판은 도전장이 되지 않는다.
   if (score.completed === 0) return null;
@@ -72,6 +75,7 @@ export function ShareResult({
     total: score.total,
     elapsedMs: score.elapsedMs,
     hintsUsed: score.hintsUsed,
+    standing,
   };
   const text = shareText(body);
 
@@ -90,7 +94,9 @@ export function ShareResult({
       imagePath={grid ? `${path}/opengraph-image` : null}
       tweet={fitsTweet(text) ? text : lean}
       kakao={{
-        title: `${courseName} ${spokenDuration(score.elapsedMs)}`,
+        title: standing
+          ? `${courseName} ${standing.field}명 중 ${standing.rank}위`
+          : `${courseName} ${spokenDuration(score.elapsedMs)}`,
         description:
           score.completed === score.total
             ? `${score.total}곳 전부, 같이 한 판?`

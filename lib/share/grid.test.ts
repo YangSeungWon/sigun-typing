@@ -90,6 +90,38 @@ describe("이모지 격자", () => {
     expect(t.trimEnd().endsWith("같이 한 판?")).toBe(true);
   });
 
+  it("대결이면 등수가 곳 수보다 먼저 온다", () => {
+    /*
+     * 대결에서 먼저 읽히는 숫자는 초가 아니라 등수다. 1분 12초가 빠른지
+     * 느린지는 받은 사람이 모르지만 `8명 중 1위`는 그 자체로 읽힌다.
+     */
+    const t = shareText({
+      courseName: "강원 18 시군",
+      grid: null,
+      results: [],
+      completed: 18,
+      total: 18,
+      elapsedMs: 72_440,
+      hintsUsed: 0,
+      standing: { rank: 1, field: 8 },
+    });
+    expect(t).toContain("8명 중 1위");
+    expect(t.indexOf("8명 중 1위")).toBeLessThan(t.indexOf("18곳 전부"));
+  });
+
+  it("혼자 한 판에는 등수 줄이 없다", () => {
+    const t = shareText({
+      courseName: "강원 18 시군",
+      grid: null,
+      results: [],
+      completed: 18,
+      total: 18,
+      elapsedMs: 72_440,
+      hintsUsed: 0,
+    });
+    expect(t).not.toContain("위");
+  });
+
   it("1분이 넘으면 분으로 말한다", () => {
     const t = shareText({
       courseName: "경기도 31 시군",

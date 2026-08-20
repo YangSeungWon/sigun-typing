@@ -72,6 +72,13 @@ export interface ShareTextInput {
   total: number;
   elapsedMs: number;
   hintsUsed: number;
+  /**
+   * 대결에서 몇 명 중 몇 등이었는지. 혼자 한 판에는 없다.
+   *
+   * 대결의 자랑거리는 초가 아니라 등수다 — 1분 12초가 빠른지 느린지는 아무도
+   * 모르지만 `8명 중 1위`는 그 자체로 읽힌다.
+   */
+  standing?: { rank: number; field: number } | null;
 }
 
 /**
@@ -108,14 +115,18 @@ export function spokenDuration(ms: number): string {
  * 적으면 카톡에서 주소가 두 번 뜬다. 클립보드로 떨어질 때만 부르는 쪽에서 붙인다.
  */
 export function shareText(input: ShareTextInput): string {
-  const { courseName, grid, results, completed, total, elapsedMs, hintsUsed } = input;
+  const { courseName, grid, results, completed, total, elapsedMs, hintsUsed, standing } =
+    input;
 
   const lines = ["시군 타이핑", `${courseName} ${spokenDuration(elapsedMs)}`];
 
   // 격자가 없는 코스도 자랑은 할 수 있어야 한다. 그때는 숫자만 남는다.
   if (grid) lines.push("", renderGrid(grid, results));
 
-  lines.push("", completed === total ? `${total}곳 전부` : `${total}곳 중 ${completed}곳`);
+  lines.push("");
+  // 등수를 곳 수보다 위에 둔다. 대결에서 먼저 읽히는 숫자다.
+  if (standing) lines.push(`${standing.field}명 중 ${standing.rank}위`);
+  lines.push(completed === total ? `${total}곳 전부` : `${total}곳 중 ${completed}곳`);
   if (hintsUsed > 0) lines.push(`힌트 ${hintsUsed}번`);
 
   lines.push("", "같이 한 판?");

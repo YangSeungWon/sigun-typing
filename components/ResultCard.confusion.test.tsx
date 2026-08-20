@@ -15,7 +15,8 @@ const score: Score = {
   totalErrors: 1,
   cpm: 300,
   accuracy: 0.97,
-  cleanFirstTries: 13,
+  correctKeystrokes: 120,
+  firstTry: 13,
 };
 
 function markup(missed: ItemResult[]) {
@@ -41,7 +42,7 @@ function item(answer: string, wrongAnswers: string[]): ItemResult {
     attempts: wrongAnswers.length + 1,
     hinted: false,
     skipped: false,
-    revealed: false,
+    keystrokes: 6,
     elapsedMs: 2000,
   };
 }

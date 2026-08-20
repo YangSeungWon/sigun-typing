@@ -85,12 +85,12 @@ describe("세 상태는 배타적이다", () => {
       />,
     );
     // 표지판과 범례가 같은 값을 같은 이름으로 부른다.
-    expect(html).toContain("한 번에 15 / 17");
-    expect(html).toContain("한 번에 15");
+    expect(html).toContain("바로 맞힘 15 / 17");
+    expect(html).toContain("바로 맞힘 15");
     expect(html).not.toContain("첫 입력");
-    expect(html).toContain("헤맨 곳 1");
+    expect(html).toContain("헤매다 맞힘 1");
     // 못 맞힌 곳은 건너뛴 하나뿐이다. 상자 이름(다시 볼 곳)과 겹치지 않는다.
-    expect(html).toContain("못 맞힌 곳 1");
+    expect(html).toContain("못 맞힘 1");
     expect(html).toContain("다시 볼 곳 2");
   });
 });

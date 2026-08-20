@@ -145,9 +145,9 @@ describe("결과 화면의 지도", () => {
         onRestart={() => {}}
       />,
     );
-    // 24곳을 끝냈고 그중 셋을 헤맸으니 한 번에 맞힌 곳은 스물하나다.
-    expect(html).toContain("한 번에 21");
-    expect(html).toContain("헤맨 곳 3");
+    // 24곳을 끝냈고 그중 셋을 헤맸으니 바로 맞힌 곳은 스물하나다.
+    expect(html).toContain("바로 맞힘 21");
+    expect(html).toContain("헤매다 맞힘 3");
     expect(html).toContain("다시 볼 곳 1");
   });
 
@@ -164,9 +164,9 @@ describe("결과 화면의 지도", () => {
         onRestart={() => {}}
       />,
     );
-    // "한 번에"는 아래 통계 줄에도 쓰이므로 범례의 색으로 확인한다.
+    // "바로 맞힘"은 아래 통계 줄에도 쓰이므로 범례의 색으로 확인한다.
     expect(html).not.toContain("var(--color-centerline)");
-    expect(html).not.toContain("헤맨 곳");
+    expect(html).not.toContain("헤매다 맞힘");
     expect(html).not.toContain("다시 볼 곳");
   });
 });

@@ -184,12 +184,12 @@ export function ResultCard({
             */}
             {(missed.some((r) => r.skipped) || struggledCodes.length > 0) && (
               <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-mono text-sm text-dim">
-                <Legend color="var(--color-sign)" label={`한 번에 ${cleanCount}`} />
+                <Legend color="var(--color-sign)" label={`바로 맞힘 ${cleanCount}`} />
                 {struggledCodes.length > 0 && (
                   <Legend
                     dotted
                     color="var(--color-centerline)"
-                    label={`헤맨 곳 ${struggledCodes.length}`}
+                    label={`헤매다 맞힘 ${struggledCodes.length}`}
                   />
                 )}
                 {missed.some((r) => r.skipped) && (
@@ -202,7 +202,7 @@ export function ResultCard({
                       말이 한 화면에서 다른 숫자를 가리켰다. 범례의 셋은
                       배타적이어야 하고 합이 코스 전체여야 한다.
                     */
-                    label={`못 맞힌 곳 ${missed.filter((r) => r.skipped).length}`}
+                    label={`못 맞힘 ${missed.filter((r) => r.skipped).length}`}
                   />
                 )}
               </span>
@@ -330,28 +330,33 @@ export function ResultCard({
         {/*
           손을 잰 값들.
 
-          `한 번에 2곳`이었다. 두 곳을 동시에 맞혔다는 뜻으로 읽혔다 —
-          `한 번에`가 시점인지 개수인지를 문장이 안 정해 준다. 그래서 `첫 입력
-          16 / 18`로 바꿨는데, 이번엔 그 말이 시점만 가리켜 값이 개수라는 게
-          안 읽혔다. 게다가 바로 아래 범례가 같은 것을 `한 번에`라고 불렀다 —
-          한 화면에서 한 값이 두 이름을 가졌다.
+          이름을 세 번 고쳤다. `한 번에 2곳`은 두 곳을 동시에 맞혔다는 뜻으로
+          읽혔고, `첫 입력 16 / 18`은 시점만 가리켜 값이 개수라는 게 안 읽혔다.
+          `한 번에 16 / 18`도 여전히 무엇을 한 번에 했다는 건지가 말 안에 없다.
 
-          분수가 개수라는 것을 이미 말한다. 그러면 남은 문제는 이름 하나뿐이고,
-          범례와 같은 말을 쓰면 된다. 퍼센트로 안 적는 이유는 그대로다 —
-          이 게임의 단위는 곳이다.
+          말버릇을 바꾸는 대신 세 상태를 한 가족으로 묶는다. 셋 다 `맞힘`으로
+          끝나고 부사만 다르다.
+
+              바로 맞힘 16    헤매다 맞힘 2    못 맞힘 1
+
+          그러면 이름 하나하나를 해석할 필요가 없다. 셋을 나란히 읽으면 무엇이
+          갈렸는지가 형태로 보이고, 마지막 하나만 `못`이 붙어 있다.
+
+          퍼센트로 안 적는 이유는 그대로다 — 이 게임의 단위는 곳이다.
         */}
         <p className="relative mt-1 flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/75">
-          <span>{`한 번에 ${cleanCount} / ${score.total}`}</span>
+          <span>{`바로 맞힘 ${cleanCount} / ${score.total}`}</span>
           {/*
-            일어난 일만 적는다.
+            일어난 일만, 그것도 판을 가른 것만 적는다.
 
-            오타는 접힌 상자 안에 있었다. 이 줄이 이미 손을 잰 값들의 자리이고,
-            거기 한 칸을 더 쓰는 편이 상자 하나를 여는 것보다 싸다.
+            `자세히 보기`를 걷으면서 오타를 이 줄로 올렸다가 도로 뺐다. 오타는
+            이미 `헤매다 맞힘`에 들어가 있고, 그 곳들은 지도에 노랑으로 칠해져
+            있고, 아래 `다시 볼 곳`에 이름째로 적혀 있다. 네 번째로 셀 이유가
+            없었다.
 
             `오타 0회`도 `힌트 없음`도 안 적는다. 아무 일도 없었다는 말을 굳이
             하는 것이고, 안 적힌 자리가 이미 그 말을 한다. 남에게 보내는
             문구가 진작 이 문법이었다 — `힌트 3번`은 쓴 판에만 들어간다.
-            표지판만 자기 문법을 어기고 있었다.
 
             한때는 반대로 정했었다. `힌트 없음`이 이 게임에서 자랑할 값이라고
             봤는데, 자랑은 안 적힌 자리가 대신한다. 힌트는 시간과 나란히
@@ -360,7 +365,6 @@ export function ResultCard({
             그러면 화면의 숫자가 벽시계와 어긋나고 그 무게가 코스 길이에
             따라 널뛴다.
           */}
-          {score.totalErrors > 0 && <span>{`오타 ${score.totalErrors}회`}</span>}
           {score.hintsUsed > 0 && <span>{`힌트 ${score.hintsUsed}회`}</span>}
         </p>
 

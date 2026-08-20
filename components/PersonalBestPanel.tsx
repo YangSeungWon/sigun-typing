@@ -57,49 +57,39 @@ export function PersonalBestPanel({
   const renewed = !previous || isBetter(score, previous);
 
   /*
-   * 숫자를 되풀이하지 않는다. **의미만 더한다.**
+   * 두 상태뿐이다. **깼거나, 못 깼거나.**
    *
-   * 바로 위 기록 카드에 이 판의 시간이 크게 적혀 있다. 여기서 같은 숫자를
-   * 한 번 더 적으면 화면에 같은 값이 세 번 나오면서(카드·이 줄·버튼) 무엇을
-   * 봐야 하는지가 흐려진다. 첫 판에 알려 줄 것은 "이게 네 첫 기록이다"
-   * 하나뿐이고, 그 다음부터는 "전보다 나아졌는가"뿐이다.
+   * 전에는 넷이었다 — `첫 기록`, `새 최고 기록 1.20초 단축`, `내 최고 기록보다
+   * 0.4초 느림`, `내 최고 기록 00:09.80`. 넷 다 다른 문장이라 결과 화면에서
+   * 이 줄이 무슨 종류의 말인지 매번 새로 읽어야 했고, `첫 기록`은 그중에서도
+   * 뜻을 짐작해야 하는 말이었다(최고 기록이 없었다는 뜻인데 그렇게 안 읽힌다).
+   *
+   * 이제 라벨 하나와 시간 하나다. 처음 도는 판도 갱신이다 — 비교할 대상이
+   * 없다는 것은 사용자의 사정이지 화면이 설명할 일이 아니다.
+   *
+   * 못 깬 판에는 **차이 대신 목표**를 적는다. `0.4초 느림`은 이 판에 대한
+   * 말이고 다음 판에서 쓸 수 없지만, `내 최고 기록 00:09.80`은 다음에 깨야
+   * 할 값이라 그대로 쓸모가 있다.
    */
-  if (!previous) {
+  if (renewed) {
     return (
-      <p className="font-mono text-base text-on-sign/70">첫 기록</p>
-    );
-  }
-
-  // 완주 수가 다르면 시간을 견줄 수 없다. 서로 다른 문제를 푼 셈이다.
-  const comparable = previous.completed === score.completed;
-
-  if (!renewed) {
-    const gap = (score.elapsedMs - previous.elapsedMs) / 1000;
-    return (
-      <p className="font-mono text-base text-on-sign/70">
-        {comparable && gap > 0
-          ? `내 최고 기록보다 ${gap.toFixed(2)}초 느림`
-          : `내 최고 기록 ${formatPrecise(previous.elapsedMs)}`}
+      /*
+       * 상자를 두르지 않는다. 이건 누르는 것이 아니라 기록에 붙는 해석이다.
+       * 테두리를 치면 버튼처럼 보여 무엇이 다음 행동인지가 흐려진다.
+       */
+      <p
+        className="flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/80"
+        role="status"
+      >
+        <span className="font-semibold text-sign-accent">새 최고 기록</span>
+        <span>{formatPrecise(score.elapsedMs)}</span>
       </p>
     );
   }
 
-  const gained = (previous.elapsedMs - score.elapsedMs) / 1000;
   return (
-    /*
-     * 상자를 두르지 않는다. 이건 누르는 것이 아니라 기록에 붙는 해석이다.
-     * 테두리를 치면 버튼처럼 보여 무엇이 다음 행동인지가 흐려진다.
-     */
-    <p
-      className="flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/80"
-      role="status"
-    >
-      <span className="font-semibold text-sign-accent">새 최고 기록</span>
-      <span>
-        {comparable && gained > 0
-          ? `${gained.toFixed(2)}초 단축`
-          : `완주 ${previous.completed} → ${score.completed}`}
-      </span>
+    <p className="font-mono text-base text-on-sign/70">
+      {`내 최고 기록 ${formatPrecise(previous.elapsedMs)}`}
     </p>
   );
 }

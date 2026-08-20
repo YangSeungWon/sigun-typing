@@ -353,6 +353,14 @@ export function DailyQuiz({
             {streak && streak.current > 1 && (
               <span className="text-sign">연속 {streak.current}일</span>
             )}
+            {/*
+              최고 기록은 지금보다 길 때만 적는다.
+              같으면 두 숫자가 나란히 같은 말을 하고, 짧으면 그건 최고가 아니다.
+              이게 지금 이어지는 줄의 목표가 된다 — 넘으면 그 줄이 사라진다.
+            */}
+            {streak && streak.best > streak.current && (
+              <span>최고 {streak.best}일</span>
+            )}
             <span>내일 새 문제가 나옵니다</span>
           </p>
         </section>

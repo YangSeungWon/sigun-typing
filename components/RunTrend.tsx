@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import { COURSES } from "@/data/courses";
 import { MODE_LABELS } from "@/lib/game/modes";
@@ -72,22 +73,38 @@ export function RunTrend() {
       <h2 className="text-xl font-semibold">지나온 기록</h2>
       <ul className="flex flex-col gap-3">
         {curves.map((c) => (
-          <li
-            key={`${c.courseId}:${c.mode}`}
-            className="flex items-center gap-4 rounded-xl border border-concrete-deep px-5 py-4"
-          >
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="truncate font-medium">{c.courseName}</span>
-              <span className="flex items-baseline gap-3 font-mono text-sm text-dim">
-                <span>{c.mode}</span>
-                <span>{c.runs.length}판</span>
+          <li key={`${c.courseId}:${c.mode}`}>
+            {/*
+              눌러서 그 코스로 간다.
+
+              여태 보기만 하는 목록이었다. `서울 25개 구를 여섯 판 했고 늘고
+              있다`를 본 사람이 다음에 하고 싶은 일은 하나뿐인데, 그 자리에서
+              갈 길이 없어 목록을 되짚어 나가야 했다.
+
+              판을 바로 시작하지는 않는다. 코스 화면에는 같은 곡선이 더 크게
+              있고 모드를 고를 수도 있다 — 누르자마자 시계가 도는 것은 이 자리가
+              부를 만한 일이 아니다.
+            */}
+            <Link
+              href={`/courses/${c.courseId}`}
+              className="flex items-center gap-4 rounded-xl border border-concrete-deep px-5 py-4 transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="truncate font-medium">{c.courseName}</span>
+                <span className="flex items-baseline gap-3 font-mono text-sm text-dim">
+                  <span>{c.mode}</span>
+                  <span>{c.runs.length}판</span>
+                </span>
               </span>
-            </span>
-            <Sparkline times={c.runs.map((r) => r.elapsedMs)} className="h-8 w-24 shrink-0" />
-            <span className="flex flex-col items-end gap-0.5 font-mono text-sm">
-              <span className="tabular-nums">{formatClock(c.latest)}</span>
-              <span className="text-dim">최고 {formatClock(c.best)}</span>
-            </span>
+              <Sparkline
+                times={c.runs.map((r) => r.elapsedMs)}
+                className="h-8 w-24 shrink-0"
+              />
+              <span className="flex flex-col items-end gap-0.5 font-mono text-sm">
+                <span className="tabular-nums">{formatClock(c.latest)}</span>
+                <span className="text-dim">최고 {formatClock(c.best)}</span>
+              </span>
+            </Link>
           </li>
         ))}
       </ul>

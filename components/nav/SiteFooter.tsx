@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DATA_VINTAGE } from "@/data/vintage";
+import { ATLAS_HOME } from "@/lib/atlas";
 
 /**
  * 어느 화면에서나 같은 아랫줄.
@@ -57,6 +58,22 @@ export function SiteFooter() {
         <Link href="/terms" className="transition-colors hover:text-ink">
           이용약관
         </Link>
+        {/*
+          같은 사람이 만든 지도 퀴즈. 방향이 반대라 서로 뺏지 않는다 — 여기는
+          지도를 보고 이름을 치고, 거기는 이름을 보고 지도에서 찾는다.
+
+          링크 교환처럼 안 읽히게 하는 것은 자리와 문구다. 자리는 약관 옆이고
+          — 사이트에 관한 사실을 적는 줄이지 무언가를 권하는 줄이 아니다 —
+          문구는 그냥 이름이다. `추천`도 `함께 보기`도 없다.
+        */}
+        <a
+          href={ATLAS_HOME}
+          target="_blank"
+          rel="noopener"
+          className="transition-colors hover:text-ink"
+        >
+          한국 지리 퀴즈
+        </a>
       </span>
     </footer>
   );

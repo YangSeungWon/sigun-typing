@@ -18,6 +18,8 @@ interface Entry {
   courseId: string;
   courseName: string;
   records: MistakeRecord[];
+  /** 같은 곳을 지도에서 익힐 수 있는 옆 사이트 주소. 대응이 없으면 null이다. */
+  atlas: string | null;
 }
 
 /**
@@ -29,9 +31,12 @@ interface Entry {
 export function MistakeNotes() {
   const read = useCallback((): Entry[] => {
     const names = new Map(COURSES.map((c) => [c.id, c.name]));
+    // 읍면동 코스는 시군구 코드로 저쪽 동 지도에 바로 닿는다.
+    const prefixes = new Map(COURSES.map((c) => [c.id, c.geo?.prefix]));
     return loadAllMistakes(COURSES.map((c) => c.id)).map((entry) => ({
       ...entry,
       courseName: names.get(entry.courseId) ?? entry.courseId,
+      atlas: atlasLearnUrl(entry.courseId, "notes", prefixes.get(entry.courseId)),
     }));
   }, []);
 
@@ -135,9 +140,9 @@ export function MistakeNotes() {
             정작 막힌 사람에게는 안 닿는다. 이 줄 바로 위에 그 사람이 자꾸
             틀리는 곳들이 이름째로 떠 있다.
           */}
-          {atlasLearnUrl(entry.courseId, "notes") && (
+          {entry.atlas && (
             <a
-              href={atlasLearnUrl(entry.courseId, "notes")!}
+              href={entry.atlas}
               target="_blank"
               rel="noopener"
               className="self-start text-sm text-dim underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"

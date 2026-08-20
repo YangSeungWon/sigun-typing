@@ -10,11 +10,19 @@
  * 여기서 푸는 문제다.
  *
  * ── 어디에 놓는가 ─────────────────────────────────────────
- * 푸터나 첫 화면에는 안 붙인다. 사이트 전체에 박아 두면 링크 교환으로 읽히고,
- * 정작 필요한 사람에게는 안 닿는다. 이미 "이 지역을 자꾸 틀린다"가 화면에
- * 떠 있는 자리에만 둔다.
+ * 문맥이 있는 자리 둘과 푸터 하나.
+ *
+ * 문맥 있는 자리는 "이 지역을 자꾸 틀린다"가 이미 화면에 떠 있는 곳이다
+ * (헷갈리는 지역, 이용안내). 거기서는 코스에 맞는 지도로 바로 보낸다.
+ *
+ * 푸터는 다른 이유다. 문맥 있는 자리는 이미 막힌 사람만 만나므로, 그냥
+ * 옆에 뭐가 있는지 아는 길이 하나도 없다. 대신 그 자리에서는 아무것도
+ * 권하지 않는다 — 약관 옆에 이름만 걸어 둔다.
  */
 const ATLAS = "https://quiz-korea.ysw.kr";
+
+/** 푸터에서 이름만 걸어 두는 자리. 어디서 왔는지는 여기서도 싣는다. */
+export const ATLAS_HOME = `${ATLAS}/ko/?utm_source=sigun-typing&utm_medium=footer`;
 
 /** 자치구가 있는 광역시. 저쪽에서는 시군구로 분류된다. */
 const METRO = new Set(["seoul", "busan", "daegu", "incheon", "gwangju", "daejeon", "ulsan"]);
@@ -35,15 +43,20 @@ const PROVINCE = new Set([
 /**
  * 이 코스를 지도에서 익힐 수 있는 주소.
  *
- * 읍면동 코스(`gangwon-chuncheon`)는 저쪽에 대응이 없으므로 그 시도의 학습
- * 지도로 보낸다 — 춘천시 동을 헷갈리는 사람에게 강원 시군 지도는 한 단계
- * 위지만, 아무 데도 안 보내는 것보다 낫다.
+ * 읍면동 코스는 저쪽에도 있다(동 코스 252개가 전부 대응된다). 시군구 코드를
+ * 넘겨 주면 그 동 지도로 바로 가고, 안 넘기면 그 시도의 시군 지도로 한 단계
+ * 올라간다.
  *
  * 세종은 저쪽에 학습 페이지가 없다(시군도 시군구도 404). 없는 곳으로 보내느니
  * 문을 안 여는 쪽이 낫다.
  */
-export function atlasLearnUrl(courseId: string, from: string): string | null {
-  const path = learnPath(courseId);
+export function atlasLearnUrl(
+  courseId: string,
+  from: string,
+  /** 읍면동 코스의 시군구 코드(`geo.prefix`). 저쪽 동 지도의 주소가 이 코드다. */
+  dongPrefix?: string,
+): string | null {
+  const path = learnPath(courseId, dongPrefix);
   if (!path) return null;
   /*
    * 어디서 넘어왔는지를 싣는다. 안 넘어갈 때 문구 문제인지 자리 문제인지
@@ -52,7 +65,16 @@ export function atlasLearnUrl(courseId: string, from: string): string | null {
   return `${ATLAS}${path}?utm_source=sigun-typing&utm_medium=${from}`;
 }
 
-function learnPath(courseId: string): string | null {
+function learnPath(courseId: string, dongPrefix?: string): string | null {
+  /*
+   * 읍면동은 저쪽도 시군구 코드로 연다(`/ko/learn/dong/32010/` = 춘천시).
+   * 우리 코스의 `geo.prefix`가 같은 코드라 그대로 이어진다.
+   *
+   * 이 주소들은 HTTP 응답이 404다 — 저쪽이 GitHub Pages라 SPA 폴백으로
+   * 돌려주기 때문이고, 브라우저에서는 제대로 뜬다. 사람이 눌러서 가는
+   * 링크라 문제가 되지 않는다.
+   */
+  if (dongPrefix) return `/ko/learn/dong/${dongPrefix}/`;
   if (courseId === "sido") return "/ko/learn/sido/";
   if (courseId === "nationwide") return "/ko/learn/sigun/";
   const base = courseId.split("-")[0];

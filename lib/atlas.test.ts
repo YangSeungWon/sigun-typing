@@ -22,10 +22,19 @@ describe("옆 사이트로 가는 문", () => {
     expect(atlasLearnUrl("sido", "notes")).toContain("/ko/learn/sido/");
   });
 
-  it("읍면동 코스는 그 시도의 학습 지도로 간다", () => {
-    // 저쪽에 동 단위가 없다. 한 단계 위로 보내는 편이 아무 데도 안 보내는 것보다 낫다.
+  it("읍면동 코스는 시군구 코드로 그 동 지도에 바로 닿는다", () => {
+    expect(atlasLearnUrl("gangwon-chuncheon", "notes", "32010")).toContain(
+      "/ko/learn/dong/32010/",
+    );
+    // 코드를 못 주면 한 단계 위로 보낸다. 아무 데도 안 보내는 것보다 낫다.
     expect(atlasLearnUrl("gangwon-chuncheon", "notes")).toContain("/ko/learn/sigun/gangwon/");
-    expect(atlasLearnUrl("seoul-jongno", "notes")).toContain("/ko/learn/sigungu/seoul/");
+  });
+
+  it("모든 읍면동 코스에 시군구 코드가 있다", () => {
+    // 이 코드가 곧 저쪽 주소다. 하나라도 비면 그 코스만 조용히 한 단계 위로 샌다.
+    const dong = COURSES.filter((c) => c.level === "dong");
+    expect(dong.length).toBeGreaterThan(200);
+    expect(dong.filter((c) => !c.geo?.prefix)).toEqual([]);
   });
 
   it("어디서 넘어왔는지를 싣는다", () => {

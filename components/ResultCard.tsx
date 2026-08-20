@@ -103,15 +103,6 @@ function HintCount({ score }: { score: Score }) {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between border-b border-concrete-deep py-3">
-      <span className="text-base text-dim">{label}</span>
-      <span className="font-mono text-2xl tabular-nums text-ink">{value}</span>
-    </div>
-  );
-}
-
 /**
  * 도착 표지판.
  *
@@ -352,6 +343,14 @@ export function ResultCard({
         */}
         <p className="relative mt-1 flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/75">
           <span>{`첫 입력 ${score.firstTry} / ${score.completed}`}</span>
+          {/*
+            오타는 접힌 상자 안에 있었다. 이 줄이 이미 손을 잰 값들의 자리이고,
+            거기 한 칸을 더 쓰는 편이 상자 하나를 여는 것보다 싸다.
+
+            0회일 때는 안 적는다. `오타 0회`는 아무 일도 없었다는 말을 굳이
+            하는 것이고, 이 줄은 일어난 일만 적는 자리다.
+          */}
+          {score.totalErrors > 0 && <span>{`오타 ${score.totalErrors}회`}</span>}
           <span>
             <HintCount score={score} />
           </span>
@@ -451,39 +450,15 @@ export function ResultCard({
         )}
 
         {/*
-          상세는 접어 둔다. 다만 열면 무엇이 나오는지 한 줄로 보여 준다 —
-          "자세히 보기"만 덩그러니 있으면 아무도 열지 않는다.
+          여기 `자세히 보기` 상자가 있었다. 맞힌 타수, 오타, 첫 입력, 힌트
+          넷을 접어 두었는데, 뒤의 둘은 바로 위 표지판이 이미 말하고 있었고
+          앞의 둘도 열 이유가 못 됐다 — 맞힌 타수는 완주한 지역들의 이름 길이
+          합이라 코스가 정해지면 거의 상수이고(랭킹에서 타수를 순위에 안 쓰는
+          이유가 그것이다), 타/분 없이 타수만으로는 잘 친 건지도 알 수 없다.
+
+          접어 둔 것이 문제가 아니라 안에 든 것이 문제였다. 오타만 위로
+          올리고 상자를 걷는다. 잃은 값은 없다.
         */}
-        <details className="group rounded-xl border border-concrete-deep px-5 py-3">
-          <summary className="cursor-pointer list-none font-mono text-sm text-dim marker:content-none">
-            <span className="flex items-center justify-between gap-4">
-              <span className="flex flex-col gap-0.5 text-left">
-                자세히 보기
-                <span className="text-xs text-dim/80">
-                  {/* 값을 잇는 가운데점은 대시보드 문법이다. 공백으로 나눈다. */}
-                  맞힌 타수 오타 첫 입력 힌트
-                </span>
-              </span>
-              <span className="transition-transform group-open:rotate-90">›</span>
-            </span>
-          </summary>
-          {/*
-            미리보기에 `한 번에 맞힌 곳`이라 적어 두고 정작 열면 그 줄이 없었다.
-            열어 본 사람이 찾던 것을 못 찾는 것이 접어 둔 것보다 나쁘다.
-          */}
-          <div className="flex flex-col pt-2">
-            <Row label="맞힌 타수" value={`${score.correctKeystrokes}타`} />
-            <Row label="오타" value={`${score.totalErrors}회`} />
-            <Row
-              label="첫 입력 정답"
-              value={`${score.firstTry} / ${score.completed}`}
-            />
-            <Row
-              label="초성 힌트"
-              value={score.hintsUsed === 0 ? "없음" : `${score.hintsUsed}회`}
-            />
-          </div>
-        </details>
       </div>
     </div>
   );

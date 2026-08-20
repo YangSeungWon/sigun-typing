@@ -183,6 +183,8 @@ export function MultiRace({
    */
   const revealing =
     state.status === "revealing" && state.revealed ? state.revealed.answer : null;
+  // 엔진이 index를 먼저 넘기므로 방금 지나온 곳이 지금 답을 보여 주는 곳이다.
+  const revealedCode = state.results[state.results.length - 1]?.id;
 
   const done = state.status === "finished";
   const myRank = room.players.find((p) => p.id === selfId)?.rank ?? null;
@@ -228,6 +230,21 @@ export function MultiRace({
                 // 신호가 오기 전에 생각할 시간을 공짜로 갖는 셈이다.
                 currentCode={counting || revealing ? undefined : current?.id}
                 passedCodes={passedCodes}
+                /*
+                  정답을 베껴 쓰는 동안에도 카메라는 그 지역에 머문다. 여기서
+                  `current`는 이미 다음 문제를 가리키므로(엔진이 index를 먼저
+                  넘긴다) 그걸 따라가면 답을 다 쓰기도 전에 다음 곳으로 튄다.
+                */
+                focusCode={revealing ? revealedCode : undefined}
+                /*
+                  본편과 같이 카메라를 당긴다. 이 값을 안 넘겨 여태 대결만
+                  전체 지도로 굳어 있었다 — 전국 시군구에서는 문제인 지역이
+                  몇 픽셀짜리 점이라 어디를 묻는지 보이지도 않았다.
+
+                  세는 동안에는 당기지 않는다. 미리 당기면 출발 신호 전에
+                  어디인지 볼 시간을 공짜로 갖는 셈이다.
+                */
+                focus={!counting}
                 variant="hint"
                 className="h-[24vh] max-h-80 min-h-32 w-auto sm:h-[32vh]"
               />

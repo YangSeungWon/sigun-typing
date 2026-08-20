@@ -31,7 +31,7 @@ export function DesktopHeader() {
         */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 text-lg font-semibold transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="flex items-center gap-2.5 text-lg font-semibold transition-colors hover:text-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           <SignMark className="size-6 shrink-0" />
           시군 타이핑
@@ -57,7 +57,7 @@ export function DesktopHeader() {
                   아니라 밑줄로도 표시한다 — 색 하나에만 기대면 색을 구별하기
                   어려운 사람에게는 아무 표시도 없는 것과 같다.
                 */
-                className={`underline-offset-8 transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                className={`underline-offset-8 transition-colors hover:text-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                   active ? "text-ink underline decoration-sign decoration-2" : "text-ink/75"
                 }`}
               >

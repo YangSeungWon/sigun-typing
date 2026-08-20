@@ -109,7 +109,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         setChoice(next);
       }}
       aria-label={`화면 밝기 — 지금 ${LABEL[choice]}. 누르면 ${LABEL[next]}`}
-      className={`inline-flex size-8 items-center justify-center rounded text-ink/75 transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${className}`}
+      className={`inline-flex size-8 items-center justify-center rounded text-ink/75 transition-colors hover:text-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${className}`}
     >
       <ThemeIcon choice={choice} />
     </button>

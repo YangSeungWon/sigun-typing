@@ -11,7 +11,7 @@
 export function StreakBadge({ days }: { days: number }) {
   return (
     <span
-      className="inline-flex items-baseline gap-1 font-mono text-sign"
+      className="inline-flex items-baseline gap-1 font-mono text-sign-deep"
       role="img"
       aria-label={`${days}일 이어서 풀었습니다`}
     >

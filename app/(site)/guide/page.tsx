@@ -206,7 +206,7 @@ function Fold({ title, children }: { title: string; children: React.ReactNode })
 
 /** 본문 안에서 입력 예시나 화면의 글자를 가리킬 때. */
 function Kbd({ children }: { children: React.ReactNode }) {
-  return <span className="font-mono text-sign">{children}</span>;
+  return <span className="font-mono text-sign-deep">{children}</span>;
 }
 
 function KeyRow({

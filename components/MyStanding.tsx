@@ -158,7 +158,7 @@ function Row({
     >
       <span className="flex items-baseline gap-3">
         <span className="font-mono text-sm tabular-nums text-dim">{rank}</span>
-        <span className={mine ? "text-sign" : ""}>{name}</span>
+        <span className={mine ? "text-sign-deep" : ""}>{name}</span>
       </span>
       <span className="font-mono text-sm tabular-nums text-dim">
         <span>{completed}/{total}</span>

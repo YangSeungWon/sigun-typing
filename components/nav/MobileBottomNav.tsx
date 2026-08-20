@@ -37,7 +37,7 @@ export function MobileBottomNav() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={`flex h-14 items-center justify-center text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
-                  active ? "text-sign" : "text-dim"
+                  active ? "text-sign-deep" : "text-dim"
                 }`}
               >
                 {item.label}

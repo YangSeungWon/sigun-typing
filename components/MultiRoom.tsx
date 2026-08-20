@@ -473,7 +473,7 @@ function RoomRules({
                 {r.on ? "켜짐" : "꺼짐"}
               </button>
             ) : (
-              <span className={`shrink-0 font-mono text-sm ${r.on ? "text-sign" : "text-dim"}`}>
+              <span className={`shrink-0 font-mono text-sm ${r.on ? "text-sign-deep" : "text-dim"}`}>
                 {r.on ? "켜짐" : "꺼짐"}
               </span>
             )}

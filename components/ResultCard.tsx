@@ -79,7 +79,7 @@ function Verdict({ challenge, score }: { challenge: Challenge; score: Score }) {
   return (
     <p
       className={`relative mt-3 font-mono text-sm ${
-        won ? "font-semibold text-centerline" : "text-on-sign/70"
+        won ? "font-semibold text-sign-accent" : "text-on-sign/70"
       }`}
       role="status"
     >
@@ -249,8 +249,17 @@ export function ResultCard({
         건조한데 게임이 되는 데 있다. 표지판이라는 정체성은 남기고 두께만
         줄인다 — 판면이 주인공인 곳은 플레이 화면이다.
       */}
-      <div className="result-card sign-face relative order-1 rounded-2xl px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)] md:order-none md:col-start-2 md:row-start-1">
-        <div className="pointer-events-none absolute inset-2.5 rounded-xl border-2 border-on-sign/80" />
+      <div className="result-card sign-face relative order-1 rounded-lg px-8 py-8 text-center shadow-[0_2px_0_0_var(--color-sign-deep)] md:order-none md:col-start-2 md:row-start-1">
+        {/*
+          안쪽 흰 선. 고속도로 표지판의 문법이다.
+
+          곡률을 12px에서 6px로 낮췄다. 둥글면 판이 아니라 앱 카드로 읽힌다 —
+          실제 표지판의 안쪽 선은 곡률이 아주 살짝만 있다.
+
+          두께는 2px를 지킨다. 3px로 키워 보니 선이 글씨보다 굵어져 주인공이
+          바뀐다 — 실물에서도 안쪽 선은 글자 획보다 살짝 얇다.
+        */}
+        <div className="pointer-events-none absolute inset-2.5 rounded-md border-2 border-on-sign/80" />
         {/*
           코스명이 맨 위다.
           한때 `완주`가 이 자리에서 제일 컸다 — 숫자만 크면 끝냈다는 감정이

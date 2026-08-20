@@ -389,7 +389,11 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       */}
       <DailyLine />
 
-      <section className="home-friends flex items-center justify-between gap-4 rounded-xl border border-concrete-deep px-5 py-3">
+      <section className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)]">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
+        />
         {/*
           여기는 설명이 한 줄 있어야 하는 자리다. 위 카드들은 무엇인지 이름만
           봐도 알지만(`오늘의 도전`, `대한민국 정복도`) 대결은 처음 보는
@@ -398,7 +402,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           그래도 문장은 아니다. 명사와 숫자로 적고, 좁은 화면에서는 감춘다 —
           거기서는 줄바꿈이 생겨 한 줄짜리가 두 줄이 된다.
         */}
-        <span className="flex items-baseline gap-3">
+        <span className="relative flex items-baseline gap-3">
           <span className="font-medium">친구 대결</span>
           <span className="hidden items-baseline gap-3 font-mono text-sm text-dim sm:flex">
             <span>같은 코스</span>
@@ -407,7 +411,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         </span>
         <Link
           href="/rooms"
-          className="rounded-lg border border-concrete-deep px-5 py-2 font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="relative rounded-sm bg-concrete-deep px-5 py-2 font-medium whitespace-nowrap transition-colors hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           대결
         </Link>

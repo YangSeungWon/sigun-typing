@@ -38,7 +38,7 @@ export function Standings({
             <div className="flex items-baseline justify-between gap-3">
               <span className="flex items-baseline gap-2">
                 {p.rank !== null && (
-                  <span className="font-mono text-base font-semibold text-sign">
+                  <span className="font-mono text-base font-semibold text-sign-deep">
                     {p.rank}위
                   </span>
                 )}
@@ -60,7 +60,7 @@ export function Standings({
 
               {showReady ? (
                 <span
-                  className={`font-mono text-sm ${p.ready ? "text-sign" : "text-dim"}`}
+                  className={`font-mono text-sm ${p.ready ? "text-sign-deep" : "text-dim"}`}
                 >
                   {p.ready ? "준비됨" : "대기 중"}
                 </span>

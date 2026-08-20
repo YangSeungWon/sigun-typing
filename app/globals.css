@@ -29,6 +29,7 @@
   --color-sign: var(--sig-sign);
   --color-sign-deep: var(--sig-sign-deep);
   --color-sign-hi: var(--sig-sign-hi);
+  --color-sign-accent: var(--sig-sign-accent);
   --color-expressway: var(--sig-expressway);
   --color-centerline: var(--sig-centerline);
   --color-paint: var(--sig-paint);
@@ -76,18 +77,19 @@
   --sig-water: #7d99a8;
   /* 고도 띠. 겹쳐 쌓이므로 한 겹은 아주 옅어야 한다. */
   --sig-relief: #9a9d90;
-  --sig-sign: #0a6b3d;
-  --sig-sign-deep: #06522e;
+  --sig-sign: #007448;
+  --sig-sign-deep: #0a5334;
   --sig-sign-hi: #0f8b4f;
-  --sig-expressway: #10417e;
-  --sig-centerline: #f0c420;
+  --sig-sign-accent: #fcb954;
+  --sig-expressway: #00498b;
+  --sig-centerline: #fcb954;
   /** 떠 있는 판면 — 카드·입력칸. */
   --sig-paint: #f7f9f5;
   /** 강한 색 위에 얹는 글자. 판을 따라 밝기가 뒤집힌다. */
   --sig-on-sign: #f7f9f5;
   --sig-ink: #101410;
   --sig-dim: #586353;
-  --sig-alert: #c7452b;
+  --sig-alert: #b92021;
 
   /* 스크롤바와 입력 위젯도 함께 따라오게 한다. */
   color-scheme: light;
@@ -119,16 +121,17 @@
     --sig-water: #4d7d99;
   --sig-relief: #46565f;
     --sig-relief: #46565f;
-    --sig-sign: #23c08f;
-    --sig-sign-deep: #169b72;
-    --sig-sign-hi: #5cf2c0;
-    --sig-expressway: #4b9dff;
-    --sig-centerline: #ffd84d;
+    --sig-sign: #24c17e;
+    --sig-sign-deep: #1da56b;
+    --sig-sign-hi: #31f8a4;
+    --sig-sign-accent: #2c1b02;
+    --sig-expressway: #449afa;
+    --sig-centerline: #faac25;
     --sig-paint: #16242e;
     --sig-on-sign: #05161c;
     --sig-ink: #e6f0ec;
     --sig-dim: #93a7ab;
-    --sig-alert: #ff6b57;
+    --sig-alert: #fb5a51;
 
     color-scheme: dark;
   }
@@ -157,16 +160,17 @@
   --sig-water: #7d99a8;
   /* 고도 띠. 겹쳐 쌓이므로 한 겹은 아주 옅어야 한다. */
   --sig-relief: #9a9d90;
-  --sig-sign: #0a6b3d;
-  --sig-sign-deep: #06522e;
+  --sig-sign: #007448;
+  --sig-sign-deep: #0a5334;
   --sig-sign-hi: #0f8b4f;
-  --sig-expressway: #10417e;
-  --sig-centerline: #f0c420;
+  --sig-sign-accent: #fcb954;
+  --sig-expressway: #00498b;
+  --sig-centerline: #fcb954;
   --sig-paint: #f7f9f5;
   --sig-on-sign: #f7f9f5;
   --sig-ink: #101410;
   --sig-dim: #586353;
-  --sig-alert: #c7452b;
+  --sig-alert: #b92021;
 
   color-scheme: light;
 }
@@ -178,16 +182,17 @@
   --sig-water: #4d7d99;
   --sig-relief: #46565f;
   --sig-map-line: #0a141b;
-  --sig-sign: #23c08f;
-  --sig-sign-deep: #169b72;
-  --sig-sign-hi: #5cf2c0;
-  --sig-expressway: #4b9dff;
-  --sig-centerline: #ffd84d;
+  --sig-sign: #24c17e;
+  --sig-sign-deep: #1da56b;
+  --sig-sign-hi: #31f8a4;
+  --sig-sign-accent: #2c1b02;
+  --sig-expressway: #449afa;
+  --sig-centerline: #faac25;
   --sig-paint: #16242e;
   --sig-on-sign: #05161c;
   --sig-ink: #e6f0ec;
   --sig-dim: #93a7ab;
-  --sig-alert: #ff6b57;
+  --sig-alert: #fb5a51;
 
   color-scheme: dark;
 }

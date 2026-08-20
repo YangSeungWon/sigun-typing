@@ -211,7 +211,7 @@ export function SignPlate({
        * 늘어나면 글자 수가 공짜로 새는데, 그건 초성 힌트가 5초를 받고 파는
        * 정보다. 그래서 판은 늘 같은 폭이다.
        */
-      className={`sign-face relative mx-auto rounded-2xl px-4 py-4 shadow-[0_3px_0_0_var(--color-sign-deep)] transition-opacity sm:px-10 sm:py-6 ${
+      className={`sign-face relative mx-auto rounded-lg px-4 py-4 shadow-[0_3px_0_0_var(--color-sign-deep)] transition-opacity sm:px-10 sm:py-6 ${
         /*
          * 답이 이미 보이는 모드에서는 실제 표지판처럼 이름 길이에 맞춘다.
          * 가린 모드에서 그러면 판 너비가 곧 글자 수를 알려 준다 — 초성 힌트가
@@ -226,7 +226,7 @@ export function SignPlate({
         아니다. 틀린 것은 이 한 번의 제출이지 지금까지 온 길이 아니다.
       */}
       <div
-        className={`pointer-events-none absolute inset-2 rounded-xl border-2 transition-colors duration-150 sm:inset-2.5 ${
+        className={`pointer-events-none absolute inset-2 rounded-md border-2 transition-colors duration-150 sm:inset-2.5 ${
           rejecting ? "border-alert" : "border-on-sign"
         }`}
       />

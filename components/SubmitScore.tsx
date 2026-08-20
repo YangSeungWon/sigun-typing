@@ -235,14 +235,14 @@ function Standing({
   // 아직 아무 기록도 없다. "0명 중 1위"보다 비어 있는 자리로 말하는 게 낫다.
   if (standing.total === 0) {
     return (
-      <span className="flex-1 font-mono text-sm text-sign">1위 비어 있음</span>
+      <span className="flex-1 font-mono text-sm text-sign-deep">1위 비어 있음</span>
     );
   }
 
   if (standing.total < PERCENTILE_MIN) {
     return (
       <span className="flex-1 font-mono text-sm text-ink">
-        <span className="font-semibold text-sign">{standing.rank}위</span>
+        <span className="font-semibold text-sign-deep">{standing.rank}위</span>
         <span className="text-dim"> / {standing.total}개</span>
       </span>
     );
@@ -252,7 +252,7 @@ function Standing({
   const top = Math.max(1, Math.round((standing.rank / (standing.total + 1)) * 100));
   return (
     <span className="flex-1 font-mono text-sm text-ink">
-      <span className="font-semibold text-sign">상위 {top}%</span>
+      <span className="font-semibold text-sign-deep">상위 {top}%</span>
       {/*
         같은 사실을 두 가지로 말한 것이라 좁은 화면에서는 하나만 남긴다.
         결과 화면에서는 절대 순위보다 상대 위치가 빨리 읽히므로 남는 쪽은 %다.

@@ -46,8 +46,19 @@ export function DailyLine() {
     : `X / ${MAX_TRIES}`;
 
   return (
-    <section className="home-daily flex items-center justify-between gap-4 rounded-xl border border-concrete-deep px-5 py-3">
-      <span className="flex items-baseline gap-3">
+    <section className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)]">
+      {/*
+        판면으로 세운다.
+
+        회색 바탕에 회색 테두리만 있으니 줄이 있는지도 안 보였다. 면을 깔고
+        안쪽 선을 하나 두르면 이 사이트의 표지판 문법이 되고, 곡률을 낮추면
+        어디서나 보는 앱 카드에서 벗어난다.
+      */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
+      />
+      <span className="relative flex items-baseline gap-3">
         <span className="font-medium">오늘의 퀴즈</span>
         <span className="flex items-baseline gap-3 font-mono text-sm text-dim">
           {/*
@@ -55,7 +66,7 @@ export function DailyLine() {
             더 이상 정보가 아니고, 안 푼 사람에게는 그게 오늘 할 일의 크기다.
           */}
           {done ? (
-            <span className={seen?.quiz.solved ? "text-sign" : undefined}>{score}</span>
+            <span className={seen?.quiz.solved ? "text-sign-deep" : undefined}>{score}</span>
           ) : (
             <>
               <span className="hidden sm:inline">하루 한 곳</span>
@@ -68,7 +79,11 @@ export function DailyLine() {
       </span>
       <Link
         href="/today"
-        className="rounded-lg border border-concrete-deep px-5 py-2 font-medium whitespace-nowrap transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        /*
+          단추를 채운다. 실선 하나로는 누를 것으로 안 보였다. 초록은 안 쓴다 —
+          첫 화면의 초록은 `전국 시작` 하나여야 한다.
+        */
+        className="relative rounded-sm bg-concrete-deep px-5 py-2 font-medium whitespace-nowrap transition-colors hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         {done ? "다시 보기" : "풀기"}
       </Link>

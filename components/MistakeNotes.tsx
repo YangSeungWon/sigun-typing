@@ -93,7 +93,7 @@ export function MistakeNotes() {
                 */}
                 <span
                   className={`font-mono text-sm ${
-                    r.cleanStreak > 0 ? "text-sign" : "text-dim"
+                    r.cleanStreak > 0 ? "text-sign-deep" : "text-dim"
                   }`}
                 >
                   {r.cleanStreak > 0 ? "거의 외움" : `${r.misses}번 헷갈림`}

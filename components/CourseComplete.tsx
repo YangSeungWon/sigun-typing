@@ -36,7 +36,7 @@ export function CourseComplete({
   return (
     <div className="course-done flex flex-col items-center gap-6 text-center">
       <div className="flex flex-col gap-2">
-        <p className="font-mono text-sm tracking-[0.28em] text-sign uppercase">
+        <p className="font-mono text-sm tracking-[0.28em] text-sign-deep uppercase">
           완성
         </p>
         {/*

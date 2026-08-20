@@ -94,7 +94,7 @@ export function PersonalBestPanel({
       className="flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/80"
       role="status"
     >
-      <span className="font-semibold text-centerline">새 최고 기록</span>
+      <span className="font-semibold text-sign-accent">새 최고 기록</span>
       <span>
         {comparable && gained > 0
           ? `${gained.toFixed(2)}초 단축`

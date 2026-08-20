@@ -82,7 +82,7 @@ export default function TermsPage() {
           이 약관은 대한민국 법률을 따릅니다. 문의는{" "}
           <a
             href="mailto:sw.yang43@gmail.com"
-            className="underline decoration-dim underline-offset-4 transition-colors hover:text-sign"
+            className="underline decoration-dim underline-offset-4 transition-colors hover:text-sign-deep"
           >
             sw.yang43@gmail.com
           </a>{" "}

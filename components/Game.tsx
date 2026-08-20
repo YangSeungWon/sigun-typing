@@ -784,7 +784,7 @@ export function Game({
                   : formatClock(score.elapsedMs)}
               </span>
               {streak >= 3 && (
-                <span className="text-sign">무오타 ×{streak}</span>
+                <span className="text-sign-deep">무오타 ×{streak}</span>
               )}
               {geo && showMiniMap && (
                 // 배경을 깔아 준다. 같은 회색 위에 얹으면 이 크기에서는
@@ -870,7 +870,7 @@ export function Game({
             */}
             {hydrated && challenge && (
               <div className="flex flex-col items-center gap-1 rounded-xl border border-sign bg-sign/10 px-6 py-4">
-                <span className="font-mono text-sm tracking-[0.18em] text-sign uppercase">
+                <span className="font-mono text-sm tracking-[0.18em] text-sign-deep uppercase">
                   도전
                 </span>
                 {/*
@@ -942,7 +942,7 @@ export function Game({
                   {counting && hydrated && challenge && (
                     <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
                       <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint/90 px-4 py-2">
-                        <span className="font-mono text-xs tracking-[0.18em] text-sign uppercase">
+                        <span className="font-mono text-xs tracking-[0.18em] text-sign-deep uppercase">
                           도전
                         </span>
                         <span className="font-mono text-lg font-semibold tabular-nums">

@@ -14,7 +14,7 @@ export function MobileHeader() {
     <header className="flex items-center justify-between border-b border-concrete-deep px-5 py-3 md:hidden">
       <Link
         href="/"
-        className="flex items-center gap-2 text-base font-semibold transition-colors hover:text-sign focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="flex items-center gap-2 text-base font-semibold transition-colors hover:text-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <SignMark className="size-5 shrink-0" />
         시군 타이핑

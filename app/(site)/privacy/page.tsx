@@ -139,7 +139,7 @@ export default function PrivacyPage() {
           개인정보 처리 책임자는 <strong>양승원</strong>이며, 관련 문의는{" "}
           <a
             href="mailto:sw.yang43@gmail.com"
-            className="underline decoration-dim underline-offset-4 transition-colors hover:text-sign"
+            className="underline decoration-dim underline-offset-4 transition-colors hover:text-sign-deep"
           >
             sw.yang43@gmail.com
           </a>{" "}

@@ -58,7 +58,7 @@ export function CourseProgress({
             시간만 보면 많이 건너뛴 판이 더 좋아 보인다.
           */}
           {best.completed === total ? (
-            <span className="text-sign">완주</span>
+            <span className="text-sign-deep">완주</span>
           ) : (
             `${best.completed}/${total}`
           )}

@@ -328,9 +328,20 @@ export function Game({
     () => state.results.filter((r) => r.skipped).map((r) => r.id),
     [state.results],
   );
-  /** 결과 화면의 "다시 볼 곳". 오타만 낸 곳도 포함한다 — 헷갈렸다는 뜻이다. */
-  const missedItems = useMemo(
-    () => state.results.filter((r) => r.skipped || r.errors > 0),
+  /**
+   * 결과 화면의 "다시 볼 곳" — 한 번에 못 간 곳 전부.
+   *
+   * 판정은 `markOf()`로 통일한다. 여기만 따로 `skipped || errors > 0`으로
+   * 세고 있었고, 그래서 같은 화면에 다른 숫자가 셋 떴다 — 범례는 못 맞힌
+   * 곳만(1), 이 상자와 버튼은 오답까지(2). 게다가 초성만 보고 맞힌 곳은
+   * 지도에서 노랑인데 이 목록에는 없었다.
+   *
+   * 이제 셋이 배타적이다. 한 번에 + 헤맴 + 못 맞힘 = 코스의 전부이고,
+   * 다시 볼 곳은 뒤의 둘이다. 오답노트가 "몰랐다"고 보는 기준(오타·건너뛰기·
+   * 힌트)과도 같아서, 버튼이 데려가는 곳과 버튼에 적힌 숫자가 맞는다.
+   */
+  const reviewItems = useMemo(
+    () => state.results.filter((r) => markOf(r) !== MARK.clean),
     [state.results],
   );
 
@@ -661,7 +672,7 @@ export function Game({
           passedCodes={passedCodes}
           struggledCodes={struggledCodes}
           challenge={challenge}
-          missed={missedItems}
+          missed={reviewItems}
           coursesHref="/courses"
           nextSlot={
             practice ? null : (
@@ -680,7 +691,7 @@ export function Game({
           }
           onRestart={restartRun}
           reviewSlot={
-            practice || missedItems.length === 0 ? null : (
+            practice || reviewItems.length === 0 ? null : (
               <Link
                 href={`/review/${course.id}`}
                 onClick={() =>
@@ -693,7 +704,7 @@ export function Game({
                 }
                 className="rounded-lg bg-sign px-5 py-4 text-center text-lg font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
-                틀린 {missedItems.length}곳 다시 하기
+                다시 볼 {reviewItems.length}곳 연습
               </Link>
             )
           }

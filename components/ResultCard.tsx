@@ -29,7 +29,7 @@ interface ResultCardProps {
   struggledCodes?: string[];
   /** 도전장을 받고 온 판이면 그 기록. 끝난 자리에서 대조한다. */
   challenge?: Challenge | null;
-  /** 못 맞혔거나 틀린 채로 지나온 항목 */
+  /** 한 번에 못 간 곳 전부 — 헤맨 곳과 못 맞힌 곳. `markOf()`로 가른다. */
   missed?: ItemResult[];
   /** 랭킹 등록 영역. 결과 카드는 제출 방식을 몰라도 된다. */
   submitSlot?: ReactNode;
@@ -203,7 +203,13 @@ export function ResultCard({
                   <Legend
                     hatched
                     color="var(--color-alert)"
-                    label={`다시 볼 곳 ${missed.filter((r) => r.skipped).length}`}
+                    /*
+                      `다시 볼 곳`이라고 적었었다. 그런데 바로 아래 상자
+                      이름도 `다시 볼 곳`인데 그쪽은 노랑까지 세므로, 같은
+                      말이 한 화면에서 다른 숫자를 가리켰다. 범례의 셋은
+                      배타적이어야 하고 합이 코스 전체여야 한다.
+                    */
+                    label={`못 맞힌 곳 ${missed.filter((r) => r.skipped).length}`}
                   />
                 )}
               </span>

@@ -64,3 +64,30 @@ describe("다시 볼 곳", () => {
     expect(html).toContain("전남");
   });
 });
+
+describe("세 상태는 배타적이다", () => {
+  /*
+   * `한 번에 13`, `헤맨 곳 3`, `다시 볼 곳 1`, 버튼은 `틀린 2곳` — 한 화면에서
+   * `다시 볼 곳`이 두 숫자를 가리켰다. 범례의 셋은 합이 코스 전체여야 하고,
+   * `다시 볼 곳`은 뒤의 둘을 합친 하나의 뜻이어야 한다.
+   */
+  it("범례는 한 번에 + 헤맴 + 못 맞힘으로 갈린다", () => {
+    const html = renderToStaticMarkup(
+      <ResultCard
+        courseName="전국 17 시도"
+        modeLabel="지도 타이핑"
+        score={score}
+        geo={geo}
+        struggledCodes={[geo.regions[0].code]}
+        missed={[item("전북", ["전남"]), { ...item("광주", []), skipped: true }]}
+        coursesHref="/courses"
+        onRestart={() => {}}
+      />,
+    );
+    expect(html).toContain("한 번에 15");
+    expect(html).toContain("헤맨 곳 1");
+    // 못 맞힌 곳은 건너뛴 하나뿐이다. 상자 이름(다시 볼 곳)과 겹치지 않는다.
+    expect(html).toContain("못 맞힌 곳 1");
+    expect(html).toContain("다시 볼 곳 2");
+  });
+});

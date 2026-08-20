@@ -28,7 +28,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
      * 아래 여백은 탭 바 높이(3.5rem)에 홈 인디케이터를 더한 만큼. 넓은 화면에는
      * 탭 바가 없으므로 md에서 0으로 되돌린다.
      */
-    <div className="app-shell flex min-h-full flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="app-shell flex min-h-full flex-1 flex-col pb-[calc(3rem+env(safe-area-inset-bottom))] md:pb-0">
       {/*
         본문 바로가기.
         헤더 링크가 여섯이라, 키보드로 다니는 사람은 화면을 옮길 때마다 그

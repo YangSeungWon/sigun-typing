@@ -36,10 +36,36 @@ export function MobileBottomNav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-14 items-center justify-center text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
+                /*
+                  그림과 이름을 함께 둔다.
+
+                  글자만 있을 때는 넷이 같은 회색 낱말이라 엄지가 자리를
+                  외우기 전까지 매번 읽어야 했다. 그림은 읽지 않고 알아보는
+                  물건이라 그 일을 줄인다.
+
+                  그런데 높이는 줄인다(56 → 48). 그림을 얹으면서 키우면 좁은
+                  화면에서 본문이 그만큼 밀리는데, 이 바는 늘 떠 있는 물건이라
+                  한 번 차지한 자리를 끝까지 차지한다. 그림 18px에 글자 11px면
+                  48 안에 여유가 있다.
+                */
+                className={`flex h-12 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
                   active ? "text-sign-deep" : "text-dim"
                 }`}
               >
+                {item.icon && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="size-[18px]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.7}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d={item.icon} />
+                  </svg>
+                )}
                 {item.label}
               </Link>
             </li>

@@ -25,7 +25,9 @@ export function DailyLine() {
    * 아무것도 모르는 상태로 그린다 — 그래야 서버가 그린 것과 어긋나지 않는다.
    */
   const hydrated = useIsHydrated();
-  const [seen, setSeen] = useState<{ quiz: QuizState; streak: number } | null>(null);
+  const [seen, setSeen] = useState<{ day: number; quiz: QuizState; streak: number } | null>(
+    null,
+  );
   const [loaded, setLoaded] = useState(false);
   if (hydrated && !loaded) {
     setLoaded(true);
@@ -37,7 +39,7 @@ export function DailyLine() {
      */
     // eslint-disable-next-line react-hooks/purity
     const day = dayIndex(Date.now());
-    setSeen({ quiz: loadQuiz(day), streak: aliveOn(loadStreak(), day) });
+    setSeen({ day, quiz: loadQuiz(day), streak: aliveOn(loadStreak(), day) });
   }
 
   const done = seen ? isOver(seen.quiz) : false;
@@ -62,16 +64,16 @@ export function DailyLine() {
         <span className="font-medium lg:font-mono lg:text-sm lg:font-normal lg:text-dim">오늘의 퀴즈</span>
         <span className="flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
           {/*
-            푼 날에는 성적이, 안 푼 날에는 규칙이 온다. 이미 푼 사람에게 `여섯 번`은
-            더 이상 정보가 아니고, 안 푼 사람에게는 그게 오늘 할 일의 크기다.
+            푼 날에는 성적이, 안 푼 날에는 몇 번째 문제인지가 온다.
+
+            `하루 한 곳 여섯 번`이라고 적어 두었었다. 그건 값이 아니라 규칙이고,
+            규칙은 들어가면 화면이 다 말해 준다. 판 번호는 워들이 같은 자리에
+            두는 것이기도 하다 — 매일 새 문제가 나온다는 말을 문장 없이 한다.
           */}
           {done ? (
             <span className={seen?.quiz.solved ? "text-sign-deep" : undefined}>{score}</span>
           ) : (
-            <>
-              <span className="hidden sm:inline">하루 한 곳</span>
-              <span>여섯 번</span>
-            </>
+            seen && <span className="tabular-nums">{seen.day + 1}일차</span>
           )}
           {/* 첫날에는 안 띄운다. 하루짜리 연속은 아무 말도 아니다. */}
           {seen && seen.streak > 1 && <StreakBadge days={seen.streak} />}

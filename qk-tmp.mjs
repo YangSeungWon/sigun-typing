@@ -1,0 +1,12 @@
+import pw from "playwright";
+const OUT="/tmp/claude-1000/-home-whysw-Documents-sigun-typing/8c5115d9-e30a-4d21-8e51-e314e8bea1ae/scratchpad";
+const b=await pw.chromium.launch();
+const ctx=await b.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1.5});
+const p=await ctx.newPage();
+await p.goto("https://quiz-korea.ysw.kr/",{waitUntil:"networkidle"});
+await p.waitForTimeout(1500);
+await p.screenshot({path:`${OUT}/qk-home.png`, fullPage:true});
+console.log((await p.locator("body").innerText()).slice(0,1200));
+console.log("--- links ---");
+console.log((await p.$$eval("a", els=>els.map(e=>e.getAttribute("href")+" | "+e.innerText.trim().slice(0,24)))).join("\n").slice(0,1200));
+await b.close();

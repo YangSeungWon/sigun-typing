@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BackLink } from "@/components/BackLink";
+import { CourseTrend } from "@/components/CourseTrend";
 import { notFound } from "next/navigation";
 import { CourseMistakes } from "@/components/CourseMistakes";
 import { CourseMap } from "@/components/CourseMap";
@@ -127,6 +128,12 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
         </Link>
         <CourseMistakes courseId={course.id} />
       </div>
+
+      {/*
+        판을 세 번 넘게 돈 사람에게만 뜬다. 처음 온 사람 화면에는 아무것도
+        늘지 않는다 — 시작 단추 아래가 비어 있는 편이 낫다.
+      */}
+      <CourseTrend courseId={course.id} />
 
       {/*
         지역 목록은 액션이 아니라 도구다.

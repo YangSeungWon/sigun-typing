@@ -6,6 +6,7 @@ import { MODE_LABELS } from "@/lib/game/modes";
 import { useIsHydrated } from "@/lib/useIsHydrated";
 import { loadRuns, runsOf, type RunRecord } from "@/lib/score/history";
 import { formatClock } from "./Odometer";
+import { Sparkline } from "./Sparkline";
 
 /**
  * 늘고 있는가.
@@ -82,7 +83,7 @@ export function RunTrend() {
                 <span>{c.runs.length}판</span>
               </span>
             </span>
-            <Sparkline runs={c.runs} best={c.best} />
+            <Sparkline times={c.runs.map((r) => r.elapsedMs)} className="h-8 w-24 shrink-0" />
             <span className="flex flex-col items-end gap-0.5 font-mono text-sm">
               <span className="tabular-nums">{formatClock(c.latest)}</span>
               <span className="text-dim">최고 {formatClock(c.best)}</span>
@@ -91,62 +92,5 @@ export function RunTrend() {
         ))}
       </ul>
     </section>
-  );
-}
-
-/**
- * 줄 하나.
- *
- * 세로는 시간이고 **아래가 빠른 쪽**이다. 그래서 잘하고 있으면 선이 내려간다 —
- * 사람이 곡선에서 먼저 읽는 것은 숫자가 아니라 기울기다.
- *
- * 가로는 판 순서지 날짜가 아니다. 날짜로 두면 한 달 쉬었다 온 사람의 곡선이
- * 오른쪽 끝에 뭉치고, 이 화면이 답할 물음은 "언제 했나"가 아니라 "늘고 있나"다.
- */
-function Sparkline({ runs, best }: { runs: RunRecord[]; best: number }) {
-  /*
-   * 양옆을 조금 비운다. 끝 점이 viewBox 경계에 걸리면 동그라미가 반만 그려진다 —
-   * 하필 그게 마지막 판이라 제일 보여야 할 점이다.
-   */
-  const W = 96;
-  const H = 32;
-  const PAD = 4;
-  const times = runs.map((r) => r.elapsedMs);
-  const max = Math.max(...times);
-  const min = Math.min(...times);
-  const span = max - min || 1;
-
-  const points = times.map((t, i) => {
-    const x = PAD + (i / (times.length - 1)) * (W - PAD * 2);
-    // 빠를수록 아래. 값이 작을수록 y가 커진다.
-    const y = ((t - min) / span) * (H - 6) + 3;
-    return `${x.toFixed(1)},${(H - y).toFixed(1)}`;
-  });
-
-  const lastIsBest = times.at(-1) === best;
-
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="h-8 w-24 shrink-0"
-      role="img"
-      aria-label={`최근 ${runs.length}판의 기록 흐름`}
-    >
-      <polyline
-        points={points.join(" ")}
-        fill="none"
-        stroke="var(--color-sign)"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* 마지막 판. 최고 기록이면 노랑으로 — 그 판이 무엇이었는지가 곧 다음 판의 이유다. */}
-      <circle
-        cx={points.at(-1)!.split(",")[0]}
-        cy={points.at(-1)!.split(",")[1]}
-        r={3}
-        fill={lastIsBest ? "var(--color-centerline)" : "var(--color-sign)"}
-      />
-    </svg>
   );
 }

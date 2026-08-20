@@ -412,11 +412,20 @@ export function ResultCard({
           {reviewSlot ? "전체 다시 하기" : "한 번 더"}
         </button>
 
+        {/*
+          `다른 코스`였다. 위의 둘은 동사로 끝나는데(`연습`, `다시 하기`) 이것만
+          명사라 눌리는 것으로 안 읽혔다.
+
+          `다른 지역 연습하기`로 하자는 말이 있었는데 안 쓴다. 이 제품에서
+          `지역`은 시군구 하나를 가리키고, 그 말을 코스에 쓰면 두 단위가 한
+          화면에서 같은 이름을 갖는다. 그리고 이 버튼은 바로 시작하지 않고
+          목록으로 가므로, 동사는 `고르기`가 맞다.
+        */}
         <Link
           href={coursesHref}
           className="rounded-lg border border-concrete-deep px-5 py-3 text-center font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          다른 코스
+          다른 코스 고르기
         </Link>
 
         {/*

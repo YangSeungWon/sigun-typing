@@ -161,3 +161,69 @@ describe("힌트가 순위를 가른다", () => {
     expect(outranks(more, fewer)).toBe(true);
   });
 });
+
+describe("내린 기록", () => {
+  /*
+   * 순위표·등수·이웃 셋이 같은 모집단을 봐야 한다. 한 곳이라도 숨김을 안
+   * 걸면 `상위 8%`라고 해 놓고 등록했을 때 다른 자리에 가 있게 된다.
+   */
+  it("숨기면 순위표에서도 등수에서도 빠진다", async () => {
+    const repo = new MemoryScoreRepository();
+    const base = {
+      sessionId: "s1",
+      courseId: "seoul",
+      mode: "map" as const,
+      deviceId: "dev-a",
+      scoringVersion: 1,
+      courseVersion: 1,
+      cpm: 300,
+      accuracy: 1,
+      elapsedMs: 10_000,
+      correctKeystrokes: 100,
+      totalErrors: 0,
+      completed: 25,
+      total: 25,
+      hintsUsed: 0,
+    };
+    await repo.insert({ ...base, sessionId: "s1", nickname: "정상" });
+    await repo.insert({ ...base, sessionId: "s2", nickname: "내릴것", elapsedMs: 9_000 });
+
+    const before = await repo.leaderboard("seoul", "map", 10, 1, 1);
+    expect(before.map((r) => r.nickname)).toEqual(["내릴것", "정상"]);
+
+    const hidden = await repo.hide({ deviceId: "dev-a" }, "도배", new Date());
+    expect(hidden).toBe(2);
+
+    expect(await repo.leaderboard("seoul", "map", 10, 1, 1)).toEqual([]);
+    const standing = await repo.standing("seoul", "map", 1, 1, {
+      completed: 25,
+      elapsedMs: 10_000,
+      hintsUsed: 0,
+    });
+    expect(standing.total).toBe(0);
+  });
+
+  it("이미 내린 것은 두 번 세지 않는다", async () => {
+    // 사유와 시각이 처음 내린 그때의 것으로 남아야 한다.
+    const repo = new MemoryScoreRepository();
+    await repo.insert({
+      sessionId: "s1",
+      courseId: "seoul",
+      mode: "map",
+      nickname: "x",
+      deviceId: "dev-b",
+      scoringVersion: 1,
+      courseVersion: 1,
+      cpm: 1,
+      accuracy: 1,
+      elapsedMs: 1,
+      correctKeystrokes: 1,
+      totalErrors: 0,
+      completed: 1,
+      total: 1,
+      hintsUsed: 0,
+    });
+    expect(await repo.hide({ deviceId: "dev-b" }, "욕설", new Date())).toBe(1);
+    expect(await repo.hide({ deviceId: "dev-b" }, "다시", new Date())).toBe(0);
+  });
+});

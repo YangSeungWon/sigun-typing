@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { ModeId } from "../game/types";
 import {
@@ -54,9 +54,25 @@ export function outranks(a: RankKey, b: RankKey): boolean {
   return a.elapsedMs < b.elapsedMs;
 }
 
+/**
+ * 내려간 기록은 어디에서도 안 보인다.
+ *
+ * 순위표·등수·이웃 셋에 **전부** 걸어야 한다. 한 곳이라도 빠지면 `상위 8%`라고
+ * 해 놓고 등록했을 때 다른 자리에 가 있게 된다 — 그 셋은 같은 모집단을 봐야 한다.
+ */
+const VISIBLE = isNull(scores.hiddenAt);
+
 export interface ScoreRepository {
   /** 이미 제출된 세션이면 false. 중복 제출을 막는다. */
   insert(row: NewScoreRow): Promise<boolean>;
+  /**
+   * 기록을 내린다. 지우지 않고 숨긴다 — 왜 내렸는지가 남아야 나중에 규칙으로
+   * 만들 수 있고, 잘못 눌렀을 때 되돌릴 수 있다.
+   *
+   * `deviceId`를 주면 그 기기가 올린 것을 전부 내린다. 한 사람이 여러 줄을
+   * 도배했을 때 한 줄씩 지우는 것은 손해다.
+   */
+  hide(target: { id?: string; deviceId?: string }, reason: string, now: Date): Promise<number>;
   /**
    * 순위표. 채점 규칙 버전이 다른 기록은 비교할 수 없으므로 섞지 않는다.
    * @param since 이 시각 이후 기록만. null이면 전체 기간.
@@ -149,6 +165,20 @@ export class MemoryScoreRepository implements ScoreRepository {
     return true;
   }
 
+  async hide(target: { id?: string; deviceId?: string }, reason: string, now: Date) {
+    let n = 0;
+    for (const row of this.rows) {
+      if (row.hiddenAt) continue;
+      if (target.id && row.id !== target.id) continue;
+      if (target.deviceId && row.deviceId !== target.deviceId) continue;
+      if (!target.id && !target.deviceId) continue;
+      row.hiddenAt = now;
+      row.hiddenReason = reason;
+      n += 1;
+    }
+    return n;
+  }
+
   async leaderboard(
     courseId: string,
     mode: ModeId,
@@ -160,6 +190,7 @@ export class MemoryScoreRepository implements ScoreRepository {
     return this.rows
       .filter(
         (r) =>
+          !r.hiddenAt &&
           r.courseId === courseId &&
           r.mode === mode &&
           r.scoringVersion === scoringVersion &&
@@ -180,6 +211,7 @@ export class MemoryScoreRepository implements ScoreRepository {
   ) {
     const pool = this.rows.filter(
       (r) =>
+        !r.hiddenAt &&
         r.courseId === courseId &&
         r.mode === mode &&
         r.scoringVersion === scoringVersion &&
@@ -266,6 +298,26 @@ export class PostgresScoreRepository implements ScoreRepository {
     return inserted.length > 0;
   }
 
+  async hide(target: { id?: string; deviceId?: string }, reason: string, now: Date) {
+    /*
+     * 이미 내린 것은 건드리지 않는다. 사유와 시각이 처음 내린 그때의 것으로
+     * 남아야 한다 — 같은 줄을 두 번 내리면서 사유가 덮이면 기록이 아니게 된다.
+     */
+    const where = target.id
+      ? and(eq(scores.id, target.id), VISIBLE)
+      : target.deviceId
+        ? and(eq(scores.deviceId, target.deviceId), VISIBLE)
+        : null;
+    if (!where) return 0;
+
+    const rows = await this.db
+      .update(scores)
+      .set({ hiddenAt: now, hiddenReason: reason })
+      .where(where)
+      .returning({ id: scores.id });
+    return rows.length;
+  }
+
   async leaderboard(
     courseId: string,
     mode: ModeId,
@@ -283,6 +335,7 @@ export class PostgresScoreRepository implements ScoreRepository {
           eq(scores.mode, mode),
           eq(scores.scoringVersion, scoringVersion),
           eq(scores.courseVersion, courseVersion),
+          VISIBLE,
           ...(since ? [gte(scores.createdAt, since)] : []),
         ),
       )
@@ -303,6 +356,7 @@ export class PostgresScoreRepository implements ScoreRepository {
       eq(scores.mode, mode),
       eq(scores.scoringVersion, scoringVersion),
       eq(scores.courseVersion, courseVersion),
+      VISIBLE,
     );
     // 나보다 나은 기록 — 더 많이 끝냈거나, 같은 수를 더 빨리 끝낸 기록.
     const better = sql`(${scores.completed} > ${key.completed} or (${scores.completed} = ${key.completed} and ${scores.elapsedMs} < ${key.elapsedMs}))`;
@@ -368,6 +422,7 @@ export class PostgresScoreRepository implements ScoreRepository {
       eq(scores.mode, mode),
       eq(scores.scoringVersion, scoringVersion),
       eq(scores.courseVersion, courseVersion),
+      VISIBLE,
     );
     const better = sql`(${scores.completed} > ${key.completed} or (${scores.completed} = ${key.completed} and ${scores.elapsedMs} < ${key.elapsedMs}))`;
     const [above, below] = await Promise.all([

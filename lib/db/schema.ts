@@ -54,6 +54,19 @@ export const scores = pgTable(
      */
     hintsUsed: integer("hints_used").notNull().default(0),
 
+    /**
+     * 내린 기록.
+     *
+     * **지우지 않고 숨긴다.** 지우면 왜 지웠는지가 안 남고 잘못 눌렀을 때
+     * 되돌릴 수 없다. 같은 기기가 되풀이하는지도 숨긴 것이 남아 있어야 보인다.
+     *
+     * 순위표와 등수 계산에서 함께 빠져야 한다. 한쪽만 빼면 `상위 8%`라고
+     * 해 놓고 등록하면 다른 자리에 가 있게 된다.
+     */
+    hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+    /** 왜 내렸는가. 나중에 규칙으로 만들 수 있는 유일한 재료다. */
+    hiddenReason: text("hidden_reason"),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

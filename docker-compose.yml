@@ -41,6 +41,8 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-sigun}:${POSTGRES_PASSWORD:-sigun}@db:5432/${POSTGRES_DB:-sigun}
       SCORE_SECRET: ${SCORE_SECRET:?SCORE_SECRET을 설정하세요}
+      # 순위표에서 기록을 내리는 문의 열쇠. 안 심으면 그 문은 없는 것으로 동작한다.
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       HOSTNAME: "0.0.0.0"
     # 기본은 루프백. 바깥으로 나가는 길은 리버스 프록시 하나뿐이어야 한다.
     ports:

@@ -94,8 +94,17 @@ export function AdminNames() {
     if (token) void load(token);
   }, [token, load]);
 
+  /**
+   * 내린다 — 지우지 않는다.
+   *
+   * 몇 줄이 걸리는지 먼저 세어 보여 준다. `이 기기 전부`는 코스와 모드를
+   * 가리지 않고 걸리므로, 누르는 사람이 그 크기를 모르고 누르면 안 된다.
+   */
   const hide = async (target: { id?: string; deviceId?: string }, label: string) => {
-    const reason = window.prompt(`${label}\n왜 내리는지 적으세요`, "욕설");
+    const n = target.deviceId
+      ? (rows ?? []).filter((r) => r.deviceId === target.deviceId && !r.hiddenAt).length
+      : 1;
+    const reason = window.prompt(`${label} ${n}줄을 내립니다\n왜 내리는지 적으세요`, "욕설");
     if (!reason) return;
     setBusy(target.id ?? target.deviceId ?? null);
     try {
@@ -193,6 +202,7 @@ export function AdminNames() {
             {row.hiddenAt ? (
               <span className="font-mono text-xs text-alert">내림 {row.hiddenReason}</span>
             ) : (
+              /* 내리는 단추는 오른쪽 끝에 모은다. 이름을 읽는 눈길과 안 겹친다. */
               <span className="ml-auto flex gap-2">
                 <button
                   type="button"
@@ -200,7 +210,12 @@ export function AdminNames() {
                   onClick={() => void hide({ id: row.id }, row.nickname)}
                   className="rounded-md border border-concrete-deep px-3 py-1 font-mono text-xs hover:bg-concrete-deep disabled:opacity-40"
                 >
-                  이 줄
+                  {/*
+                    `이 줄`이었다. 무엇을 하는 단추인지가 이름에 없어서 눌러
+                    봐야 알았다. 동사를 준다 — 이 화면에서 하는 일은 하나뿐이고
+                    그 일의 이름은 `내리기`다.
+                  */}
+                  이 줄 내리기
                 </button>
                 {/*
                   한 사람이 여러 줄을 도배했을 때 한 줄씩 누르는 것은 손해다.
@@ -208,10 +223,10 @@ export function AdminNames() {
                 <button
                   type="button"
                   disabled={busy !== null}
-                  onClick={() => void hide({ deviceId: row.deviceId }, `${row.nickname}의 기기`)}
+                  onClick={() => void hide({ deviceId: row.deviceId }, `${row.nickname}의 기기에서`)}
                   className="rounded-md border border-alert/40 px-3 py-1 font-mono text-xs text-alert hover:bg-alert/10 disabled:opacity-40"
                 >
-                  이 기기 전부
+                  이 기기 전부 내리기
                 </button>
               </span>
             )}

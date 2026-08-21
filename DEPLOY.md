@@ -348,6 +348,32 @@ docker compose up migrate && docker compose up -d web
 그 컬럼을 조회하는 새 코드가 500으로 죽는다. 실제로 한 번 그랬다 —
 숨김 컬럼을 더한 배포에서 랭킹 페이지가 잠깐 내려갔다.
 
+**`server/`나 `lib/`를 건드린 커밋이면 `socket`도 함께 빌드한다.**
+
+```bash
+docker compose build web socket
+docker compose up -d web socket
+```
+
+소켓은 web과 같은 `lib/`를 복사해 들어가지만 이미지는 따로다. web만 다시 띄우면
+소켓은 옛 코드로 계속 돌면서 멀쩡히 응답한다. 실제로 한 번 그랬다 — 닉네임에
+욕설과 사칭을 막은 배포에서 web으로 올린 기록만 걸러지고, 멀티로 들어온 이름은
+이틀 동안 그대로 통과했다.
+
+무엇을 다시 빌드할지는 이렇게 본다.
+
+```bash
+git diff --name-only <지난 배포>..HEAD | grep -E '^(server|lib)/' && echo socket
+git diff --name-only <지난 배포>..HEAD | grep -E '^drizzle/'     && echo migrate
+```
+
+지금 떠 있는 것이 어느 커밋인지 헷갈리면 컨테이너 안을 직접 본다.
+
+```bash
+docker compose exec socket md5sum /app/server/index.mts
+md5sum server/index.mts
+```
+
 ```sql
 -- 어느 화면에서 첫 정답까지 갔는가
 SELECT revision,

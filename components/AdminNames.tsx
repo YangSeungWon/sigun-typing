@@ -95,7 +95,11 @@ export function AdminNames() {
   }, [token, load]);
 
   /**
-   * 내린다 — 지우지 않는다.
+   * 숨긴다 — 지우지 않는다.
+   *
+   * 한때 `내리기`라고 불렀다. 내리는 것은 받는 것일 수도, 낮추는 것일 수도
+   * 있어서 무슨 일이 일어나는지가 안 정해진다. 하는 일은 정확히 숨기는
+   * 것이고(`hidden_at`), 그 말은 반대말도 바로 나온다.
    *
    * 몇 줄이 걸리는지 먼저 세어 보여 준다. `이 기기 전부`는 코스와 모드를
    * 가리지 않고 걸리므로, 누르는 사람이 그 크기를 모르고 누르면 안 된다.
@@ -104,7 +108,7 @@ export function AdminNames() {
     const n = target.deviceId
       ? (rows ?? []).filter((r) => r.deviceId === target.deviceId && !r.hiddenAt).length
       : 1;
-    const reason = window.prompt(`${label} ${n}줄을 내립니다\n왜 내리는지 적으세요`, "욕설");
+    const reason = window.prompt(`${label} ${n}줄을 숨깁니다\n왜 숨기는지 적으세요`, "욕설");
     if (!reason) return;
     setBusy(target.id ?? target.deviceId ?? null);
     try {
@@ -113,7 +117,7 @@ export function AdminNames() {
         headers: { "x-admin-token": token, "content-type": "application/json" },
         body: JSON.stringify({ ...target, reason }),
       });
-      if (!res.ok) setError("내리지 못했습니다");
+      if (!res.ok) setError("숨기지 못했습니다");
       else await load(token);
     } finally {
       setBusy(null);
@@ -183,7 +187,7 @@ export function AdminNames() {
         {rows?.map((row) => (
           <li key={row.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3">
             {/*
-              내린 줄도 남긴다. 빼면 방금 내린 것이 사라져서 눌렸는지 알 수
+              숨긴 줄도 남긴다. 빼면 방금 숨긴 것이 사라져서 눌렸는지 알 수
               없고, 같은 기기가 다시 올리는지도 안 보인다.
             */}
             <span
@@ -200,9 +204,9 @@ export function AdminNames() {
             </span>
 
             {row.hiddenAt ? (
-              <span className="font-mono text-xs text-alert">내림 {row.hiddenReason}</span>
+              <span className="font-mono text-xs text-alert">숨김 {row.hiddenReason}</span>
             ) : (
-              /* 내리는 단추는 오른쪽 끝에 모은다. 이름을 읽는 눈길과 안 겹친다. */
+              /* 숨기는 단추는 오른쪽 끝에 모은다. 이름을 읽는 눈길과 안 겹친다. */
               <span className="ml-auto flex gap-2">
                 <button
                   type="button"
@@ -212,10 +216,9 @@ export function AdminNames() {
                 >
                   {/*
                     `이 줄`이었다. 무엇을 하는 단추인지가 이름에 없어서 눌러
-                    봐야 알았다. 동사를 준다 — 이 화면에서 하는 일은 하나뿐이고
-                    그 일의 이름은 `내리기`다.
+                    봐야 알았다. 동사를 준다 — 이 화면에서 하는 일은 하나뿐이다.
                   */}
-                  이 줄 내리기
+                  이 줄 숨기기
                 </button>
                 {/*
                   한 사람이 여러 줄을 도배했을 때 한 줄씩 누르는 것은 손해다.
@@ -226,7 +229,7 @@ export function AdminNames() {
                   onClick={() => void hide({ deviceId: row.deviceId }, `${row.nickname}의 기기에서`)}
                   className="rounded-md border border-alert/40 px-3 py-1 font-mono text-xs text-alert hover:bg-alert/10 disabled:opacity-40"
                 >
-                  이 기기 전부 내리기
+                  이 기기 전부 숨기기
                 </button>
               </span>
             )}

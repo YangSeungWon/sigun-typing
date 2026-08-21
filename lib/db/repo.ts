@@ -62,6 +62,37 @@ export function outranks(a: RankKey, b: RankKey): boolean {
  */
 const VISIBLE = isNull(scores.hiddenAt);
 
+/** 이름을 훑는 화면이 보는 한 줄. 기록 자체보다 **누가 무엇으로 올렸나**가 앞이다. */
+export interface RecentRow {
+  id: string;
+  nickname: string;
+  deviceId: string;
+  courseId: string;
+  mode: string;
+  completed: number;
+  total: number;
+  elapsedMs: number;
+  createdAt: Date;
+  hiddenAt: Date | null;
+  hiddenReason: string | null;
+}
+
+function toRecent(row: ScoreRow): RecentRow {
+  return {
+    id: row.id,
+    nickname: row.nickname,
+    deviceId: row.deviceId,
+    courseId: row.courseId,
+    mode: row.mode,
+    completed: row.completed,
+    total: row.total,
+    elapsedMs: row.elapsedMs,
+    createdAt: row.createdAt,
+    hiddenAt: row.hiddenAt,
+    hiddenReason: row.hiddenReason,
+  };
+}
+
 export interface ScoreRepository {
   /** 이미 제출된 세션이면 false. 중복 제출을 막는다. */
   insert(row: NewScoreRow): Promise<boolean>;
@@ -73,6 +104,13 @@ export interface ScoreRepository {
    * 도배했을 때 한 줄씩 지우는 것은 손해다.
    */
   hide(target: { id?: string; deviceId?: string }, reason: string, now: Date): Promise<number>;
+  /**
+   * 최근 올라온 기록. **내린 것도 함께 준다.**
+   *
+   * 이름을 훑어보는 화면이 쓴다. 내린 것을 빼면 방금 내린 줄이 사라져서
+   * 눌렸는지 아닌지를 알 수 없고, 같은 기기가 다시 올리는지도 안 보인다.
+   */
+  recent(limit: number): Promise<RecentRow[]>;
   /**
    * 순위표. 채점 규칙 버전이 다른 기록은 비교할 수 없으므로 섞지 않는다.
    * @param since 이 시각 이후 기록만. null이면 전체 기간.
@@ -177,6 +215,13 @@ export class MemoryScoreRepository implements ScoreRepository {
       n += 1;
     }
     return n;
+  }
+
+  async recent(limit: number) {
+    return [...this.rows]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit)
+      .map(toRecent);
   }
 
   async leaderboard(
@@ -316,6 +361,15 @@ export class PostgresScoreRepository implements ScoreRepository {
       .where(where)
       .returning({ id: scores.id });
     return rows.length;
+  }
+
+  async recent(limit: number) {
+    const rows = await this.db
+      .select()
+      .from(scores)
+      .orderBy(desc(scores.createdAt))
+      .limit(limit);
+    return rows.map(toRecent);
   }
 
   async leaderboard(

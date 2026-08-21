@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { getScoreRepository } from "@/lib/db/client";
+import { isAdmin, NOT_FOUND } from "@/lib/api/adminToken";
 
 export const dynamic = "force-dynamic";
 
@@ -28,27 +28,12 @@ export const dynamic = "force-dynamic";
  * ── 지우지 않는다 ────────────────────────────────────────
  * 숨김 표시만 남긴다. 지우면 왜 지웠는지가 안 남고 잘못 눌렀을 때 되돌릴 수
  * 없다. 같은 기기가 되풀이하는지도 숨긴 것이 남아 있어야 보인다.
+ *
+ * 훑어보는 화면은 /admin에 있다. 거기서도 이 라우트를 부른다.
  */
-function authorized(request: Request): boolean {
-  const expected = process.env.ADMIN_TOKEN;
-  /*
-   * 토큰을 안 심었으면 이 문은 없는 것으로 친다. 빈 값과 빈 헤더가 우연히
-   * 같아져서 아무나 들어오는 일은 없어야 한다.
-   */
-  if (!expected || expected.length < 16) return false;
-
-  const got = request.headers.get("x-admin-token") ?? "";
-  const a = Buffer.from(got);
-  const b = Buffer.from(expected);
-  // 길이가 다르면 비교 자체가 던진다. 길이도 비밀의 일부라 먼저 재지 않는다.
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 export async function POST(request: Request) {
-  if (!authorized(request)) {
-    // 문이 있다는 것도 알려 주지 않는다.
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  if (!isAdmin(request)) return NextResponse.json(NOT_FOUND, { status: 404 });
 
   let body: { id?: unknown; deviceId?: unknown; reason?: unknown };
   try {

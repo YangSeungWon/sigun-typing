@@ -37,6 +37,7 @@ class MisconfiguredScoreRepository implements ScoreRepository {
 
   insert() { return this.fail<boolean>(); }
   hide() { return this.fail<number>(); }
+  recent() { return this.fail<never[]>(); }
   leaderboard() { return this.fail<never[]>(); }
   standing() { return this.fail<{ better: number; total: number }>(); }
   bests() { return this.fail<Map<string, never>>(); }

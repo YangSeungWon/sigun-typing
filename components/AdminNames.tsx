@@ -124,6 +124,7 @@ export function AdminNames() {
         }}
       >
         <h1 className="text-2xl font-semibold">이름 훑기</h1>
+        {/* 서버가 무슨 값을 기다리는지 그대로 적는다. 이건 도구다. */}
         <input
           type="password"
           value={typed}
@@ -158,7 +159,11 @@ export function AdminNames() {
             }}
             className="hover:text-ink"
           >
-            열쇠 지우기
+            {/*
+              `열쇠 지우기`였다. 토큰을 무효로 만든다는 뜻으로 읽힌다 — 하는
+              일은 이 브라우저에 둔 것을 지우고 다시 물어보는 것뿐이다.
+            */}
+            잠그기
           </button>
         </span>
       </header>

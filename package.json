@@ -24,7 +24,8 @@
     "dev:socket": "tsx watch server/index.mts",
     "start:socket": "tsx server/index.mts",
     "drill:ops": "tsx --tsconfig tsconfig.scripts.json scripts/ops-drill.mts",
-    "drill:restore": "sh scripts/restore-drill.sh"
+    "drill:restore": "sh scripts/restore-drill.sh",
+    "gsc": "node scripts/search-console.mts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

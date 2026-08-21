@@ -336,6 +336,18 @@ UI_REVISION=$(git rev-parse --short HEAD) docker compose build web
 docker compose up -d web
 ```
 
+**스키마를 바꾼 커밋이면 `migrate`도 함께 빌드한다.**
+
+```bash
+UI_REVISION=$(git rev-parse --short HEAD) docker compose build web migrate
+docker compose up migrate && docker compose up -d web
+```
+
+`web`만 빌드하면 `migrate` 이미지가 옛것으로 남아 **옛 마이그레이션까지만
+돌리고 성공으로 끝난다.** `depends_on`은 통과하는데 컬럼은 없는 상태가 되고,
+그 컬럼을 조회하는 새 코드가 500으로 죽는다. 실제로 한 번 그랬다 —
+숨김 컬럼을 더한 배포에서 랭킹 페이지가 잠깐 내려갔다.
+
 ```sql
 -- 어느 화면에서 첫 정답까지 갔는가
 SELECT revision,

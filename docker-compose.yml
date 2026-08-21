@@ -16,6 +16,11 @@ services:
     restart: unless-stopped
 
   # 스키마를 맞춘 뒤 빠진다. 웹은 이 작업이 끝나야 뜬다.
+  # 스키마를 바꾼 커밋은 **이것도 함께 빌드해야 한다.**
+  #   docker compose build web migrate
+  # web만 빌드하면 이 이미지가 옛것으로 남아 옛 마이그레이션까지만 돌리고
+  # 성공으로 끝난다. depends_on은 통과하는데 컬럼은 없는 상태가 되고, 그
+  # 컬럼을 조회하는 새 코드가 500으로 죽는다. 실제로 한 번 그랬다.
   migrate:
     build:
       context: .

@@ -61,7 +61,7 @@ export function DailyLine() {
         className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
       />
       <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
-        <span className="font-medium lg:font-mono lg:text-sm lg:font-normal lg:text-dim">오늘의 퀴즈</span>
+        <span className="font-medium">오늘의 퀴즈</span>
         <span className="flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
           {/*
             푼 날에는 성적이, 안 푼 날에는 몇 번째 문제인지가 온다.

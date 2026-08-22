@@ -407,7 +407,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           거기서는 줄바꿈이 생겨 한 줄짜리가 두 줄이 된다.
         */}
         <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
-          <span className="font-medium lg:font-mono lg:text-sm lg:font-normal lg:text-dim">친구 대결</span>
+          <span className="font-medium">친구 대결</span>
           <span className="hidden items-baseline gap-3 font-mono text-sm text-dim sm:flex lg:text-lg">
             <span>같은 코스</span>
             <span>최대 8명</span>

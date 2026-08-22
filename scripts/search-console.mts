@@ -16,7 +16,7 @@
  * 아니라 주 1회로 잡는다.
  */
 import { createSign } from "node:crypto";
-import { readFileSync, appendFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 
 const SITE = process.env.GSC_SITE ?? "sc-domain:sigun-typing.ysw.kr";
@@ -121,6 +121,8 @@ if (flag("--index")) {
   console.log(`\n\nsitemap ${urls.length}개 검사 — 한 건에 7초쯤, 여섯씩 병렬로 돈다`);
 
   const found = new Map<string, Status>();
+  // 답을 받아 낸 주소. 할당량에 막힌 것과 구글이 모르는 것을 가른다.
+  const asked = new Set<string>();
   let done = 0;
   const one = async (url: string) => {
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -132,6 +134,7 @@ if (flag("--index")) {
       if (res.ok) {
         const body = await res.json() as { inspectionResult: { indexStatusResult: Status } };
         found.set(url, body.inspectionResult.indexStatusResult);
+        asked.add(url);
         return;
       }
       // 429는 분당 한도다. 하루 한도(2000)에 걸린 것이면 네 번 쉬어도 안 열린다.
@@ -163,14 +166,16 @@ if (flag("--index")) {
   const INDEXED = "Submitted and indexed";
   const DISCOVERED = "Discovered - currently not indexed";
   const table = new Map<string, { all: number; indexed: number; discovered: number; unknown: number }>();
-  counts = { 전체: urls.length, 색인: 0, 발견만: 0, 모름: 0, 크롤됐는데_색인안됨: 0 };
+  counts = { 전체: urls.length, 색인: 0, 발견만: 0, 모름: 0, 크롤됐는데_색인안됨: 0, 못물어봄: 0 };
   for (const [url, s] of found) {
     const k = section(url);
     const row = table.get(k) ?? { all: 0, indexed: 0, discovered: 0, unknown: 0 };
     row.all++;
     if (s.coverageState === INDEXED) { row.indexed++; counts.색인++; }
     else if (s.coverageState === DISCOVERED) { row.discovered++; counts.발견만++; }
-    else { row.unknown++; counts.모름++; }
+    // 물어보지도 못한 것은 "구글이 모른다"가 아니다. 섞으면 로그가 거짓말을 한다.
+    else if (asked.has(url)) { row.unknown++; counts.모름++; }
+    else counts.못물어봄++;
     if (s.lastCrawlTime && s.coverageState !== INDEXED) counts.크롤됐는데_색인안됨++;
     table.set(k, row);
   }
@@ -185,12 +190,37 @@ if (flag("--index")) {
     ? `\n크롤하고도 색인 안 한 페이지 ${stuck}개 — 여기부터 본다. 나머지는 순서가 안 온 것이다.`
     : "\n크롤한 것은 전부 색인됐다. 남은 것은 아직 안 가져간 것이라 기다리면 된다.");
 
+
+  /* 크롤하고도 색인 안 한 페이지는 이름을 대야 볼 수 있다. 숫자만 남기면
+   * 다음 회차에 몇 개인지는 알아도 어느 것인지는 다시 못 찾는다. */
+  const stuckUrls = [...found].filter(([, s]) => s.lastCrawlTime && s.coverageState !== INDEXED);
+  for (const [url, s] of stuckUrls.slice(0, 20)) {
+    console.log(`  ${new URL(url).pathname}  ${s.coverageState}  마지막 크롤 ${s.lastCrawlTime?.slice(0, 10)}`);
+  }
+
   const wrong = [...found].filter(([u, s]) => s.googleCanonical && s.googleCanonical !== u);
   if (wrong.length) console.log(`구글이 다른 주소를 정규로 본 페이지 ${wrong.length}개`);
+
+  /* 회차별 원본. 지난주와 무엇이 달라졌는지는 이것 없이는 못 짚는다 —
+   * 표의 숫자만으로는 어느 주소가 움직였는지가 안 남는다. */
+  const dump = value("--dump");
+  if (dump) {
+    writeFileSync(dump, JSON.stringify(Object.fromEntries(found), null, 1));
+    console.log(`\n${dump}에 주소별 결과를 남겼다.`);
+  }
+
+  /* URL 검사는 하루 2000건이다. 한도에 걸린 회차는 색인이 줄어든 것처럼
+   * 보이므로, 추이에 남기지 않고 표에서도 뺀다. */
+  if (counts.못물어봄) {
+    console.log(`\n답을 못 받은 주소 ${counts.못물어봄}개 — 하루 2000건 한도일 것이다.`);
+    console.log("이 회차는 추이에 남기지 않는다. 위 표도 나머지 주소만 센 것이다.");
+  }
 }
 
 const log = value("--log");
-if (log) {
+if (log && counts?.못물어봄) {
+  console.log("\n색인을 다 못 물어봐서 추이에는 남기지 않았다.");
+} else if (log) {
   const line = [
     endDate, days, total?.clicks ?? 0, total?.impressions ?? 0, (total?.position ?? 0).toFixed(1),
     counts?.전체 ?? "", counts?.색인 ?? "", counts?.발견만 ?? "", counts?.모름 ?? "",

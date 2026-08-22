@@ -361,7 +361,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
             aria-hidden
             className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
           />
-          <h2 className="relative font-mono text-sm text-dim">자꾸 헷갈리는 곳</h2>
+          <h2 className="relative font-medium">자꾸 헷갈리는 곳</h2>
           <p className="relative text-2xl font-semibold">
             {data.confusion.a} <span className="text-dim">↔</span>{" "}
             {data.confusion.b}

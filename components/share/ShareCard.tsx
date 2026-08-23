@@ -19,7 +19,7 @@ import { tweetUrl } from "@/lib/share/x";
  * 하나를 크게 두면 나머지가 곁다리로 보인다.
  */
 export interface ShareCardProps {
-  /** 붙여넣을 덩어리. 링크는 빼고 준다 — 붙이는 자리를 여기가 정한다. */
+  /** 붙여넣을 덩어리. 링크는 빼고 준다 — 뒤에 붙이는 것은 여기가 한다. */
   text: string;
   /** 공유할 주소. 상대 경로로 준다(`window`를 렌더 중에 못 읽는다). */
   path: string;
@@ -67,6 +67,18 @@ export function ShareCard({
 
   const linkOf = () =>
     `${window.location.origin}${path}${query ? `?${query}` : ""}`;
+  /*
+   * 붙여 넣을 한 덩이 — 본문과 링크.
+   *
+   * 한동안 링크만 복사했다. 결과 화면에서는 그래도 됐다. 거기서는 **링크가
+   * 곧 기록**이라(`/c/map/seoul/41080~JAZg/승원`) 받는 쪽에서 카드가 펼쳐지며
+   * 숫자가 나온다. 오늘의 퀴즈는 주소가 `/today` 하나뿐이라 그 규칙이 안
+   * 통했다 — 자랑하려고 누른 사람이 아무것도 안 담긴 주소를 얻는다.
+   *
+   * 그래서 두 화면 다 본문을 함께 싣는다. 링크가 기록을 지고 있는 쪽에서도
+   * 손해가 없다. 카드를 안 펼치는 앱에서는 오히려 이쪽만 읽힌다.
+   */
+  const payload = () => `${text}\n${linkOf()}`;
 
   const [file, setFile] = useState<File | null>(null);
   useEffect(() => {
@@ -87,9 +99,9 @@ export function ShareCard({
     };
   }, [canShare, imagePath]);
 
-  const copy = async (payload: string) => {
+  const copy = async (body: string) => {
     try {
-      await navigator.clipboard.writeText(payload);
+      await navigator.clipboard.writeText(body);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
@@ -116,7 +128,7 @@ export function ShareCard({
       imageUrl: `${window.location.origin}/og.png`,
     });
     // 도메인 미등록이나 SDK 실패. 조용히 붙여 넣을 수 있게 떨어뜨린다.
-    if (!ok) await copy(`${text}\n${linkOf()}`);
+    if (!ok) await copy(payload());
   };
 
   const toX = () => {
@@ -173,10 +185,10 @@ export function ShareCard({
         )}
 
         <ShareOption
-          label="링크 복사"
+          label="복사"
           onClick={() => {
             onShare?.();
-            void copy(linkOf());
+            void copy(payload());
           }}
         >
           <svg
@@ -188,8 +200,9 @@ export function ShareCard({
             strokeLinecap="round"
             aria-hidden
           >
-            <path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 1 0-5.7-5.7l-1.3 1.3" />
-            <path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 1 0 5.7 5.7l1.3-1.3" />
+            <rect x="9" y="3" width="6" height="3.2" rx="1" />
+            <path d="M9 4.6H7.2A1.2 1.2 0 0 0 6 5.8v13a1.2 1.2 0 0 0 1.2 1.2h9.6a1.2 1.2 0 0 0 1.2-1.2v-13a1.2 1.2 0 0 0-1.2-1.2H15" />
+            <path d="M9 11h6M9 14.5h6M9 18h3.5" />
           </svg>
         </ShareOption>
       </div>

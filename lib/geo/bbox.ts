@@ -60,43 +60,19 @@ export function mainPathBox(d: string): Box {
 }
 
 /**
- * 지금 문제인 지역을 화면 가운데로 끌어오는 변환.
- *
- * viewBox를 직접 바꾸지 않고 안쪽 <g>에 transform을 거는 이유: viewBox는 CSS로
- * 부드럽게 이어지지 않지만 transform은 된다. 같은 결과를 얻으면서 애니메이션이
- * 공짜로 따라온다. 반환값은 CSS transform 문법이다(아래 참고).
- *
- * 배율은 지역이 화면의 일정 비율을 차지하도록 잡되 상한을 둔다. 작은 구 하나를
- * 꽉 채우도록 당기면 주변이 다 잘려 나가 "여기가 어디인가"를 물을 수 없다 —
- * 이 게임에서 주변 모양은 문제의 일부다.
- */
-/**
  * 지금 지역을 보려면 몇 배로 당겨야 하는가.
  *
- * 미니맵을 띄울지 정하는 데 쓴다. 조금만 당긴 상태에서는 화면에 이미 전체가
- * 거의 다 들어와 있어서, 미니맵이 같은 그림을 작게 한 번 더 그리는 꼴이 된다.
+ * `focusTransform`이 쓰는 바로 그 배율이다. 미니맵을 띄울지 정하는 데 쓰고,
+ * 지도 위에 얹는 것들(테두리 두께·이름표)이 당김에 같이 부풀지 않도록
+ * 나누는 데도 쓴다. 값이 갈라지면 얹은 것이 지도와 어긋나므로 한 곳에서만
+ * 센다.
  */
 export function focusScale(
   region: RegionShape | undefined,
   view: { width: number; height: number },
-  options: { fill?: number; maxScale?: number } = {},
+  options: { fill?: number; maxScale?: number; minSpan?: number } = {},
 ): number {
   if (!region) return 1;
-  const box = mainPathBox(region.d);
-  if (box.width <= 0 || box.height <= 0) return 1;
-  const raw = Math.min(
-    (view.width * (options.fill ?? 0.42)) / box.width,
-    (view.height * (options.fill ?? 0.42)) / box.height,
-  );
-  return Math.min(Math.max(raw, 1), options.maxScale ?? 4);
-}
-
-export function focusTransform(
-  region: RegionShape | undefined,
-  view: { width: number; height: number },
-  options: { fill?: number; maxScale?: number; minSpan?: number } = {},
-): string {
-  if (!region) return "";
 
   /*
    * 지역이 화면에서 차지할 비율.
@@ -115,7 +91,7 @@ export function focusTransform(
   const maxScale = options.maxScale ?? 3;
 
   const box = mainPathBox(region.d);
-  if (box.width <= 0 || box.height <= 0) return "";
+  if (box.width <= 0 || box.height <= 0) return 1;
 
   // 지역이 화면의 fill 비율만큼 차지하게 하는 배율. 가로세로 중 빡빡한 쪽에 맞춘다.
   const raw = Math.min(
@@ -145,7 +121,34 @@ export function focusTransform(
           ((options.minSpan ?? 0.09) * Math.min(view.width, view.height)) /
             Math.min(box.width, box.height),
         );
-  const scale = Math.min(Math.max(raw, 1), cap);
+
+  return Math.min(Math.max(raw, 1), cap);
+}
+
+/**
+ * 지금 문제인 지역을 화면 가운데로 끌어오는 변환.
+ *
+ * viewBox를 직접 바꾸지 않고 안쪽 <g>에 transform을 거는 이유: viewBox는 CSS로
+ * 부드럽게 이어지지 않지만 transform은 된다. 같은 결과를 얻으면서 애니메이션이
+ * 공짜로 따라온다. 반환값은 CSS transform 문법이다(아래 참고).
+ *
+ * 배율은 지역이 화면의 일정 비율을 차지하도록 잡되 상한을 둔다. 작은 구 하나를
+ * 꽉 채우도록 당기면 주변이 다 잘려 나가 "여기가 어디인가"를 물을 수 없다 —
+ * 이 게임에서 주변 모양은 문제의 일부다.
+ */
+export function focusTransform(
+  region: RegionShape | undefined,
+  view: { width: number; height: number },
+  options: { fill?: number; maxScale?: number; minSpan?: number } = {},
+): string {
+  if (!region) return "";
+
+  const box = mainPathBox(region.d);
+  if (box.width <= 0 || box.height <= 0) return "";
+
+  // 배율은 `focusScale`이 센다. 여기서 한 번 더 세면 지도 위에 얹는 것들이
+  // 나눠 쓸 값과 갈라진다.
+  const scale = focusScale(region, view, options);
 
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;

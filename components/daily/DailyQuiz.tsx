@@ -206,17 +206,6 @@ export function DailyQuiz({
       {stage !== "done" && alive > 1 && <StreakBadge days={alive} />}
 
       {/*
-        지도 두 장.
-
-        본편은 문제인 곳으로 카메라를 당기고, 전체 안에서 어디인지는 옆에
-        붙는 미니맵이 맡는다. 여기서는 그 둘이 뒤집힌다 — **전국 어디쯤인가가
-        이 퀴즈의 단서 자체**라 큰 지도는 당기면 안 된다.
-
-        그래서 없던 쪽을 붙인다. 전국 지도에서 시군구 하나는 몇 픽셀이라
-        모양이 읽히지 않는데, 이 퀴즈에서 모양은 위치 다음가는 단서다.
-      */}
-      {/* 지도에 붙인다. 폭을 다 쓰면 넓은 화면에서 창만 저 혼자 오른쪽 끝에 뜬다. */}
-      {/*
         본편과 같은 구조로 둔다.
 
         한때 반대로 짰다 — 전국 어디쯤인가가 이 퀴즈의 단서 자체라 큰 지도를
@@ -228,7 +217,7 @@ export function DailyQuiz({
         전체 안에서 어디인가는 미니맵이 맡는다. 잃는 것 없이 둘 다 얻는
         구조이고, 무엇보다 사용자가 이미 아는 화면이다.
       */}
-      <div className="relative mx-auto w-fit">
+      <div className="relative w-full">
         <RegionMap
           geo={geo}
           variant="hint"
@@ -247,7 +236,19 @@ export function DailyQuiz({
           missedCodes={stage === "done" && !state.solved ? [answerCode] : undefined}
           explore={stage === "done"}
           focus
-          className="mx-auto h-[38vh] max-h-[26rem] w-auto max-w-full"
+          /*
+           * 폭은 다 쓰고 높이만 잡는다.
+           *
+           * `w-auto`로 두면 창의 모양을 지도 파일이 정한다 — 전국 지도의
+           * viewBox는 울릉이 동쪽 끝을, 서귀포가 남쪽 끝을 밀어 935×1001,
+           * 거의 정사각형이다. 본토는 그런 모양이 아닌데 창만 정사각형이라
+           * 지도가 네모 칸에 끼인 것처럼 보였다.
+           *
+           * 어차피 카메라가 당기고 있으므로 창의 비율은 지도 파일과 아무
+           * 상관이 없다. 넓힌 만큼 좌우로 이웃이 더 들어오고, 이 퀴즈에서
+           * 이웃은 곧 단서다.
+           */
+          className="h-[38vh] max-h-[26rem] w-full"
         />
 
         {/*

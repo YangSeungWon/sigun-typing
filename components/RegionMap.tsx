@@ -2,7 +2,7 @@
 
 import { memo, useId, useMemo, useState, type CSSProperties } from "react";
 import type { CourseGeo } from "@/data/geo/types";
-import { focusTransform } from "@/lib/geo/bbox";
+import { focusScale, focusTransform } from "@/lib/geo/bbox";
 
 export type MapVariant =
   /** 퀴즈 문제 — 어디인지만 보여주고 이름은 절대 쓰지 않는다 */
@@ -139,6 +139,19 @@ export const RegionMap = memo(function RegionMap({
 
   const transform = useMemo(
     () => (focus ? focusTransform(camera, geo, zoom) : ""),
+    [focus, camera, geo, zoom],
+  );
+  /*
+   * 카메라가 당긴 배율.
+   *
+   * 지도 위에 **얹는 것들**은 이 값으로 나눠야 한다. 팬 그룹 안에 든 것은
+   * 지도와 함께 부풀기 때문이다 — 전국 지도에서 작은 구가 문제인 날에는
+   * 배율이 열 배를 넘어서, 3px짜리 테두리가 손가락만 해지고 이름표 하나가
+   * 도를 통째로 덮는다. 지역 경계와 지금 묻는 곳의 테두리가 이미
+   * `non-scaling-stroke`로 같은 일을 하고 있다.
+   */
+  const zoomScale = useMemo(
+    () => (focus ? focusScale(camera, geo, zoom) : 1),
     [focus, camera, geo, zoom],
   );
   /** 모든 경계를 이어 붙인 한 장. 각 조각이 `M`으로 시작하므로 그대로 이으면 된다. */
@@ -476,6 +489,8 @@ export const RegionMap = memo(function RegionMap({
                 strokeWidth={3}
                 strokeDasharray="8 6"
                 strokeLinejoin="round"
+                // 당겨도 3px. 안 걸면 배율만큼 두꺼워져 지역을 덮는다.
+                vectorEffect="non-scaling-stroke"
               />
             ))}
         </g>
@@ -568,7 +583,12 @@ export const RegionMap = memo(function RegionMap({
       */}
       {lastNamed && (
         <g style={{ ...PAN, transform }} pointerEvents="none">
-          <NamePlate region={lastNamed} fontSize={fontSize} mapWidth={geo.width} />
+          <NamePlate
+            region={lastNamed}
+            // 당긴 만큼 되돌린다. 화면에서는 어느 배율에서나 같은 크기다.
+            fontSize={fontSize / zoomScale}
+            mapWidth={geo.width}
+          />
         </g>
       )}
 

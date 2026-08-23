@@ -66,8 +66,14 @@ export function CourseProgress({
         </span>
       )}
       {stuck > 0 && (
-        // 다시 볼 곳이 남아 있다는 것은 다음에 뭘 할지 알려 주는 말이다.
-        <span className="text-alert">헷갈리는 곳 {stuck}</span>
+        /*
+          다시 볼 곳이 남아 있다는 것은 다음에 뭘 할지 알려 주는 말이다.
+
+          빨강은 쓰지 않는다. 그 색은 지금 틀렸다는 신호이고(SignPlate 참조),
+          이 숫자는 지난 일이다. 줄의 나머지와 같은 흐린색으로 둔다 —
+          `완주`의 초록만 이 줄에서 색을 갖는다.
+        */
+        <span>헷갈리는 곳 {stuck}</span>
       )}
       {topMs !== undefined && (
         /*

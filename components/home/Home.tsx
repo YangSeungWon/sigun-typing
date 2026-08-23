@@ -362,11 +362,20 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
             className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
           />
           <h2 className="relative font-medium">자꾸 헷갈리는 곳</h2>
-          <p className="relative text-2xl font-semibold">
+          {/*
+            값이지 제목이 아니다. 24px 600으로 두었더니 히어로 다음으로 크고
+            `이어하기`(20px)보다 커서, 보조 카드가 주 단추를 눌렀다. 옆 두 칸의
+            값과 같은 18px로 내린다 — 굵기와 색은 남겨 셋 중 가장 무겁게 둔다.
+          */}
+          <p className="relative text-lg font-semibold">
             {data.confusion.a} <span className="text-dim">↔</span>{" "}
             {data.confusion.b}
           </p>
-          <p className="relative font-mono text-sm text-alert tabular-nums">
+          {/*
+            빨강은 지금 틀렸다는 신호다(SignPlate 참조). 여기 숫자는 지난
+            일이라 같은 색을 쓰면 화면에서 유일한 빨강이 되어 먼저 읽힌다.
+          */}
+          <p className="relative font-mono text-sm text-dim tabular-nums">
             최근 오답 {data.confusion.count}회
           </p>
           <Link

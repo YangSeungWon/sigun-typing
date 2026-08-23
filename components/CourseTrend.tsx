@@ -48,7 +48,11 @@ export function CourseTrend({ courseId }: { courseId: string }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="font-mono text-sm text-dim">지나온 기록</h2>
+      {/*
+        제목을 달지 않는다. 카드가 모드 이름과 판수와 기록과 곡선을 이미
+        말하고 있어, 그 위에 얹는 말은 무엇을 보고 있는지를 한 번 더 부르는
+        것뿐이다. 아래 `지역 목록 보기`도 제목 없이 선다.
+      */}
       {lines.map((l) => (
         <div
           key={l.mode}

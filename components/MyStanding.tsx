@@ -113,6 +113,13 @@ export function MyStanding({ courseId, courseVersion, mode }: MyStandingProps) {
  *
  * 순위를 가른 값을 그대로 말한다 — 끝낸 곳 수가 다르면 곳 수로, 같으면 시간으로.
  * "몇 타/분 차이"는 이제 순위와 상관없는 숫자다.
+ *
+ * **라벨이 앞, 값이 뒤다.** `바로 위와 1곳 차이`는 값을 문장 한가운데 끼워
+ * 두어서, 숫자를 읽고도 `차이`가 나올 때까지 붙들고 있어야 뜻이 닫힌다.
+ * 이 사이트의 다른 줄은 전부 `새 최고 기록 00:09.80` 꼴이다.
+ *
+ * `까지`가 이 값을 거리로 만든다. `바로 위 00:03`으로 두면 윗줄에 적힌
+ * 그 사람의 기록으로 읽힌다 — 바로 위에 그 숫자가 실제로 있다.
  */
 function Gap({
   ahead,
@@ -124,13 +131,12 @@ function Gap({
   const places = ahead.completed - mine.completed;
   return (
     <p className="font-mono text-sm text-dim">
-      바로 위와{" "}
+      바로 위까지{" "}
       <span className="text-ink">
         {places > 0
           ? `${places}곳`
           : formatClock(Math.max(1000, mine.elapsedMs - ahead.elapsedMs))}
-      </span>{" "}
-      차이
+      </span>
     </p>
   );
 }

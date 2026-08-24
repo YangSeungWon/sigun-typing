@@ -123,8 +123,19 @@ export function DailyQuiz({
     return out;
   }, [state.guesses, regions]);
 
+  /*
+   * 짚은 시도는 꺼진다. 그 이상 말하지 않는다.
+   *
+   * `거기가 아닙니다`를 띄우고 있었다. 단추가 이미 흐려지고 눌리지 않게 되는데
+   * 그 옆에 문장을 하나 더 놓는 꼴이었고, 게다가 다음 시도를 짚는 동안에도
+   * 그 자리에 그대로 남아 있었다 — 방금 일어난 일이 아니라 화면에 붙박인
+   * 잔소리로 읽힌다.
+   *
+   * `거기`도 이 화면에서는 헷갈리는 말이다. 지도가 켜져 있는 판이라 지도 위
+   * 어딘가를 가리키는 말로 먼저 읽힌다.
+   */
   const pickSido = (code: string) => {
-    setNote(code === answerSido ? null : "거기가 아닙니다");
+    setNote(null);
     put({ ...state, sidoPicks: [...state.sidoPicks, code] });
   };
 

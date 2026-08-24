@@ -556,7 +556,12 @@ function NextRound({
         </ul>
       )}
 
-      {isHost ? (
+      {/*
+        방장이 아니면 이 자리는 빈다. `방장이 다음 판을 열면 대기실로
+        돌아갑니다`를 적어 두었는데, 그건 일어날 일을 미리 설명하는 문장이고
+        실제로 그 일이 일어나면 화면이 바뀌면서 스스로 말한다.
+      */}
+      {isHost && (
         <button
           type="button"
           onClick={() => onNext(leading)}
@@ -564,8 +569,6 @@ function NextRound({
         >
           {leading ? `${getCourse(leading)?.name ?? leading} 한 판 더` : "같은 코스 한 판 더"}
         </button>
-      ) : (
-        <p className="text-sm text-dim">방장이 다음 판을 열면 대기실로 돌아갑니다</p>
       )}
     </section>
   );

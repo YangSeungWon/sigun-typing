@@ -36,11 +36,12 @@ export default function Error({
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 px-6 py-16 text-center">
+      {/*
+        제목과 단추뿐이다. `무슨 일이 났는지는 저희에게 전달되었습니다`는
+        사용자가 할 일이 없는 정보이고, 그 뒤는 위로와 부탁이다. 여기서
+        할 수 있는 일은 아래 단추 둘이 이미 말한다.
+      */}
       <h1 className="text-4xl font-bold">화면이 멈췄습니다</h1>
-      <p className="text-dim">
-        무슨 일이 났는지는 저희에게 전달되었습니다. 다시 시도해 보시고,
-        계속 같은 자리에서 멈추면 알려 주세요.
-      </p>
       <div className="flex gap-3">
         <button
           type="button"

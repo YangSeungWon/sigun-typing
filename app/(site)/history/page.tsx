@@ -81,7 +81,7 @@ export default function HistoryPage() {
           한 해의 일이 아니므로 지도도 없다 — 그걸 밝히지 않으면 1995년 하루에
           쉰여덟 곳이 사라진 것처럼 읽힌다.
         */}
-        <p className="text-sm break-keep text-dim">
+        <p className="text-base break-keep text-dim">
           2000년까지는 자료가 5년 단위라 그사이 일이 한 줄에 뭉쳐 있습니다.
         </p>
         <ul className="flex flex-col divide-y divide-edge border-y border-edge">
@@ -151,7 +151,7 @@ export default function HistoryPage() {
       */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-semibold">아직 지도가 없는 개편</h2>
-        <p className="text-sm break-keep text-dim">
+        <p className="text-base break-keep text-dim">
           {DATA_VINTAGE.boundarySource}가 {DATA_VINTAGE.year}년까지라 아래는
           지도로 그리지 못했습니다. 게임의 정답도 같은 이유로 {DATA_VINTAGE.year}년
           기준입니다.
@@ -177,7 +177,7 @@ export default function HistoryPage() {
         같은 이유다 — 언제까지 반영된 자료인지 모르면 빠진 것이 오류인지
         시점 차이인지 알 수 없다.
       */}
-      <p className="text-sm break-keep text-dim">
+      <p className="text-base break-keep text-dim">
         통계청 SGIS 센서스용 행정구역경계(1975~2025)를 바탕으로 만들었습니다.
         경계가 실제로 달라진 해만 그립니다.
       </p>

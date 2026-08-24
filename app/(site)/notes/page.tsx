@@ -15,7 +15,7 @@ export default function NotesPage() {
           "오답노트"는 학교 시험의 말이고, 규칙(2번 연속 정답)은 시스템의 말이다.
           사용자에게 필요한 것은 자기 상태뿐이다 — 어디가 아직 헷갈리는가.
         */}
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="text-4xl font-bold tracking-tight">
           헷갈리는 지역
         </h1>
         {/*

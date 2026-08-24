@@ -74,7 +74,7 @@ export default async function RankingPage({
         종류라, 표 아래로 내렸다.
       */}
       <header className="flex flex-col gap-3">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">랭킹</h1>
+        <h1 className="text-4xl font-bold tracking-tight">랭킹</h1>
       </header>
 
       <nav className="flex flex-col gap-4" aria-label="순위표 고르기">

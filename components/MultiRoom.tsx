@@ -199,7 +199,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
           제목이 없었다. 다른 화면은 다 갖고 있고, 탭 바로 들어온 사람에게는
           여기가 어디인지 말해 주는 것이 이 한 줄뿐이다.
         */}
-        <h1 className="text-3xl font-bold tracking-tight">친구와 대결</h1>
+        <h1 className="text-4xl font-bold tracking-tight">친구와 대결</h1>
 
         <section className="flex flex-col gap-3">
           <label htmlFor="nickname" className="text-sm font-medium text-dim">

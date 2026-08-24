@@ -97,8 +97,8 @@ export default async function CoursesPage() {
         코스를 고를 줄 아는 사람의 눈은 어차피 아래 지도들로 먼저 간다.
       */}
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">지도 타이핑 코스</h1>
-        <p className="text-base text-dim break-keep">{LEAD}</p>
+        <h1 className="text-4xl font-bold tracking-tight">지도 타이핑 코스</h1>
+        <p className="text-lg text-dim break-keep">{LEAD}</p>
       </header>
 
       {/* 제목은 자기 아래 카드와 가깝게, 앞 묶음과는 멀게. 그래야 구조가 읽힌다. */}

@@ -143,7 +143,7 @@ export function AdminNames() {
           value={typed}
           onChange={(e) => setTyped(e.target.value)}
           placeholder="ADMIN_TOKEN"
-          className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 font-mono"
+          className="rounded-lg border border-edge bg-paint px-4 py-3 font-mono"
         />
         <button
           type="submit"
@@ -183,7 +183,7 @@ export function AdminNames() {
 
       {error && <p className="font-mono text-sm text-alert">{error}</p>}
 
-      <ul className="flex flex-col divide-y divide-concrete-deep">
+      <ul className="flex flex-col divide-y divide-edge">
         {rows?.map((row) => (
           <li key={row.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3">
             {/*
@@ -212,7 +212,7 @@ export function AdminNames() {
                   type="button"
                   disabled={busy !== null}
                   onClick={() => void hide({ id: row.id }, row.nickname)}
-                  className="rounded-md border border-concrete-deep px-3 py-1 font-mono text-xs hover:bg-concrete-deep disabled:opacity-40"
+                  className="rounded-md border border-edge px-3 py-1 font-mono text-xs hover:bg-concrete-deep disabled:opacity-40"
                 >
                   {/*
                     `이 줄`이었다. 무엇을 하는 단추인지가 이름에 없어서 눌러

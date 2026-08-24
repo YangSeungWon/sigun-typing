@@ -55,7 +55,7 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
 
       <EventMaps event={event} />
 
-      <nav className="flex justify-between gap-4 border-t border-concrete-deep pt-4 text-base">
+      <nav className="flex justify-between gap-4 border-t border-edge pt-4 text-base">
         {prev ? (
           <Link href={`/history/${prev.year}`} className="text-dim hover:text-ink">
             ← {prev.year}

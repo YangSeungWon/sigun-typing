@@ -17,7 +17,7 @@ export function DesktopHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="hidden border-b border-concrete-deep md:block">
+    <header className="hidden border-b border-edge md:block">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-6 px-6 py-3">
         {/*
           이름은 하나여야 한다. 여기만 `SIGUN`이었고 나머지 전부 — 제목 template,

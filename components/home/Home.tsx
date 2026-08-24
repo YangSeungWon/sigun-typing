@@ -338,7 +338,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
               const pick = pool[Math.floor(Math.random() * pool.length)];
               router.push(`/play/map/${pick.id}?from=home_secondary`);
             }}
-            className="rounded-xl border border-concrete-deep px-6 py-4 text-center text-base font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="rounded-xl border border-edge px-6 py-4 text-center text-base font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             랜덤 도전
           </button>
@@ -356,10 +356,10 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         그럴듯하게 지어내느니 아는 것만 적는다.
       */}
       {data.confusion && (
-        <section className="home-confuse relative flex flex-col gap-2 rounded-md bg-paint/70 p-5 pt-4 shadow-[0_1px_0_0_var(--color-concrete-deep)]">
+        <section className="home-confuse relative flex flex-col gap-2 rounded-md bg-paint p-5 pt-4 shadow-[0_1px_0_0_var(--color-edge)]">
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
+            className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
           />
           <h2 className="relative font-medium">자꾸 헷갈리는 곳</h2>
           {/*
@@ -402,10 +402,10 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       */}
       <DailyLine />
 
-      <section className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
+      <section className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
+          className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
         />
         {/*
           여기는 설명이 한 줄 있어야 하는 자리다. 위 카드들은 무엇인지 이름만

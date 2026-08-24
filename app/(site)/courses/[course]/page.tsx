@@ -122,7 +122,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
         */}
         <Link
           href={`/play/learn/${course.id}?from=course_select`}
-          className="mx-auto block w-full max-w-md rounded-xl border border-concrete-deep px-6 py-3 text-center text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="mx-auto block w-full max-w-md rounded-xl border border-edge px-6 py-3 text-center text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           {MODE_LABELS.learn}
         </Link>
@@ -141,7 +141,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
         보조 모드보다 더 눌러야 할 것처럼 보였다. 위계를 면적에서도 맞춘다 —
         한 줄짜리 선반으로 낮추고, 개수는 가운뎃점으로 잇는 대신 오른쪽에 붙인다.
       */}
-      <details className="group flex flex-col border-y border-concrete-deep py-2">
+      <details className="group flex flex-col border-y border-edge py-2">
         <summary className="cursor-pointer list-none text-sm text-dim marker:content-none">
           <span className="flex items-center justify-between gap-4">
             지역 목록 보기
@@ -170,7 +170,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
               <li key={region.code}>
                 <Link
                   href={`/courses/${down.id}`}
-                  className="underline decoration-concrete-deep underline-offset-4 transition-colors hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                  className="underline decoration-edge underline-offset-4 transition-colors hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                 >
                   {region.name}
                 </Link>
@@ -193,7 +193,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
               <li key={c.id}>
                 <Link
                   href={`/courses/${c.id}`}
-                  className="inline-block rounded-lg border border-concrete-deep px-4 py-2 text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                  className="inline-block rounded-lg border border-edge px-4 py-2 text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                 >
                   {c.name}
                 </Link>
@@ -211,7 +211,7 @@ export default async function CoursePage({ params }: PageProps<"/courses/[course
       {(dongHistoryIds as string[]).includes(course.id) && (
         <Link
           href={`/history/dong/${course.id}`}
-          className="flex items-center justify-between gap-4 border-y border-concrete-deep py-3 text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
+          className="flex items-center justify-between gap-4 border-y border-edge py-3 text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
         >
           이 동네는 이렇게 나뉘어 왔습니다
           <span className="text-dim">›</span>

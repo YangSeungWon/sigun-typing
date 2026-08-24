@@ -58,7 +58,7 @@ export function Odometer({
   const low = timed && remainingMs <= 10_000;
 
   return (
-    <div className="flex w-full items-start justify-center gap-8 border-t border-concrete-deep pt-4 sm:gap-12">
+    <div className="flex w-full items-start justify-center gap-8 border-t border-edge pt-4 sm:gap-12">
       {!compact && (
         <>
           <Readout label="타/분" value={String(Math.round(cpm))} emphasis />

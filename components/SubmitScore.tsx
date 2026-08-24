@@ -119,7 +119,7 @@ export function SubmitScore({
    */
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-3 rounded-lg border border-concrete-deep px-4 py-2.5">
+      <div className="flex items-center gap-3 rounded-lg border border-edge px-4 py-2.5">
         <span className="font-mono text-sm text-dim">랭킹</span>
         {/*
           가운데는 서버 응답을 기다렸다 채운다. 자리는 처음부터 잡아 둔다 —
@@ -130,7 +130,7 @@ export function SubmitScore({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="rounded-lg border border-concrete-deep px-4 py-1.5 font-medium whitespace-nowrap text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="rounded-lg border border-edge px-4 py-1.5 font-medium whitespace-nowrap text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             등록
           </button>
@@ -155,14 +155,14 @@ export function SubmitScore({
               onKeyDown={(e) => e.key === "Enter" && send()}
               maxLength={12}
               placeholder="이름"
-              className="flex-1 rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="flex-1 rounded-lg border border-edge bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             />
             <button
               type="button"
               onClick={send}
               disabled={status.kind === "sending"}
               // 줄바꿈을 막는다. 좁은 칸에서 "랭킹 등 록"으로 접혔다.
-              className="rounded-lg border border-concrete-deep bg-paint px-5 py-3 font-medium whitespace-nowrap text-ink transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="rounded-lg border border-edge bg-paint px-5 py-3 font-medium whitespace-nowrap text-ink transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               {status.kind === "sending" ? "올리는 중" : "랭킹 등록"}
             </button>

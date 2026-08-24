@@ -111,7 +111,7 @@ export default async function CoursesPage() {
               <li key={course.id}>
                 <Link
                   href={`/courses/${course.id}`}
-                  className="group flex items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-2 pr-4 transition-colors hover:border-dim hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:gap-5 sm:p-3 sm:pr-5"
+                  className="group flex items-center gap-4 rounded-xl border border-edge bg-paint p-2 pr-4 transition-colors hover:border-dim hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:gap-5 sm:p-3 sm:pr-5"
                 >
                   {/*
                     글자 카드가 아니라 지도 조각으로 읽히게 한다. 이 화면에서는

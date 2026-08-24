@@ -84,7 +84,7 @@ export default function HistoryPage() {
         <p className="text-sm break-keep text-dim">
           2000년까지는 자료가 5년 단위라 그사이 일이 한 줄에 뭉쳐 있습니다.
         </p>
-        <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
+        <ul className="flex flex-col divide-y divide-edge border-y border-edge">
           {sigungu.map((e) => {
             const { all, shown } = paired(e.to);
             const rest = all.length - shown.length;
@@ -156,7 +156,7 @@ export default function HistoryPage() {
           지도로 그리지 못했습니다. 게임의 정답도 같은 이유로 {DATA_VINTAGE.year}년
           기준입니다.
         </p>
-        <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
+        <ul className="flex flex-col divide-y divide-edge border-y border-edge">
           {UNMAPPED.map((c) => (
             <li
               key={c.to.join()}

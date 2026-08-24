@@ -57,7 +57,7 @@ export default async function DongHistoryPage({
 
       <DongHistory story={story} />
 
-      <nav className="border-t border-concrete-deep pt-4 text-base">
+      <nav className="border-t border-edge pt-4 text-base">
         <Link href="/history" className="text-dim hover:text-ink">
           ← 전국 변천사
         </Link>

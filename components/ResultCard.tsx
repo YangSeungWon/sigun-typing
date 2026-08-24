@@ -213,7 +213,7 @@ export function ResultCard({
           그 답이 지도 바로 아래 붙어 있어야 두 개가 한 장면이 된다.
         */}
         {missed.length > 0 && (
-          <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5 md:max-w-none">
+          <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-edge bg-paint p-5 md:max-w-none">
             <h2 className="text-sm font-medium text-dim">
               다시 볼 곳 {missed.length}
             </h2>
@@ -393,7 +393,7 @@ export function ResultCard({
           onClick={onRestart}
           className={`rounded-lg px-5 py-4 text-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
             reviewSlot
-              ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
+              ? "border border-edge text-ink hover:bg-concrete-deep"
               : "bg-sign text-on-sign hover:bg-sign-deep"
           }`}
         >
@@ -411,7 +411,7 @@ export function ResultCard({
         */}
         <Link
           href={coursesHref}
-          className="rounded-lg border border-concrete-deep px-5 py-3 text-center font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-lg border border-edge px-5 py-3 text-center font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           다른 코스 고르기
         </Link>
@@ -422,7 +422,7 @@ export function ResultCard({
           먼저 필요한 것은 공유가 아니라 순위다.
         */}
         {(shareSlot || submitSlot || nextSlot) && (
-          <div className="flex flex-col gap-3 border-t border-concrete-deep pt-5">
+          <div className="flex flex-col gap-3 border-t border-edge pt-5">
             {emphasis === "count" ? (
               <>
                 {submitSlot}

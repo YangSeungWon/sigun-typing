@@ -54,7 +54,7 @@ export function DongHistory({ story }: { story: DongStory }) {
             className={`rounded-lg border px-3.5 py-2 font-mono text-sm tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               i === index
                 ? "border-ink bg-ink text-paint"
-                : "border-concrete-deep text-dim hover:bg-concrete-deep hover:text-ink"
+                : "border-edge text-dim hover:bg-concrete-deep hover:text-ink"
             }`}
           >
             {s.year}
@@ -93,7 +93,7 @@ export function DongHistory({ story }: { story: DongStory }) {
         이 화면에서 제일 어려운데, 그걸 읽는 사람이 하지 않아도 된다.
       */}
       {changes.length > 0 && (
-        <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
+        <ul className="flex flex-col divide-y divide-edge border-y border-edge">
           {changes.map((c, i) => (
             <li
               key={i}

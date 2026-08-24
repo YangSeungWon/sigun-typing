@@ -36,7 +36,7 @@ export function NextChallenge({ courseId, mode, score }: NextChallengeProps) {
     <Link
       href={`/play/map/${courseId}?from=result_cta`}
       onClick={() => track({ name: "mode_switch", courseId, mode, toMode: "map" })}
-      className="rounded-lg border border-concrete-deep px-5 py-3 text-center text-base text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      className="rounded-lg border border-edge px-5 py-3 text-center text-base text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
       이제 이름 없이 — 지도 타이핑 →
     </Link>

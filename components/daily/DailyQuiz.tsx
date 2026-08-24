@@ -269,7 +269,7 @@ export function DailyQuiz({
           왼쪽 위에 둔다. 오른쪽 위는 강원 동해안이라, 하필 그 근처가 답인 날에
           답을 가린다. 왼쪽 위는 서해뿐이다.
         */}
-        <span className="pointer-events-none absolute top-0 left-0 rounded-md border border-concrete-deep bg-paint/70 px-1.5 py-1">
+        <span className="pointer-events-none absolute top-0 left-0 rounded-md border border-edge bg-paint px-1.5 py-1">
           <MiniMap
             geo={geo}
             currentCode={answerCode}
@@ -285,7 +285,7 @@ export function DailyQuiz({
           {state.guesses.map((g, i) => (
             <li
               key={`${g.name}-${i}`}
-              className="flex items-center gap-3 rounded-lg border border-concrete-deep px-4 py-2.5"
+              className="flex items-center gap-3 rounded-lg border border-edge px-4 py-2.5"
             >
               <span aria-hidden>{QUIZ_EMOJI[g.closeness]}</span>
               <span className="flex-1 font-medium">{g.name}</span>
@@ -309,7 +309,7 @@ export function DailyQuiz({
                   type="button"
                   onClick={() => pickSido(s.code)}
                   disabled={missed}
-                  className="rounded-lg border border-concrete-deep px-4 py-2.5 font-medium transition-colors hover:bg-concrete-deep disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                  className="rounded-lg border border-edge px-4 py-2.5 font-medium transition-colors hover:bg-concrete-deep disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                 >
                   {s.name}
                 </button>
@@ -342,7 +342,7 @@ export function DailyQuiz({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="이름"
-              className="flex-1 rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="flex-1 rounded-lg border border-edge bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             />
             <button
               type="button"
@@ -362,7 +362,7 @@ export function DailyQuiz({
       )}
 
       {stage === "done" && (
-        <section className="flex flex-col gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+        <section className="flex flex-col gap-4 rounded-xl border border-edge bg-paint p-5">
           {/*
             맞힌 판과 못 맞힌 판이 같은 모양이면, 이름만 보고 자기가 맞혔는지를
             다시 헤아려야 한다. 못 맞혔을 때만 `정답`이라는 딱지를 앞에 붙인다.

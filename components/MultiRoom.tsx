@@ -171,7 +171,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
           aria-label="이름"
           autoFocus
           onKeyDown={(e) => e.key === "Enter" && doJoinCode(initialCode)}
-          className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-center text-lg text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-lg border border-edge bg-paint px-4 py-3 text-center text-lg text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         />
         <button
           type="button"
@@ -210,7 +210,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             ref={attachName}
             maxLength={12}
             placeholder="이름"
-            className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="rounded-lg border border-edge bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           />
         </section>
 
@@ -230,7 +230,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
               className={`flex-1 rounded-lg px-4 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 tab === id
                   ? "bg-sign text-on-sign"
-                  : "border border-concrete-deep text-ink hover:bg-concrete-deep"
+                  : "border border-edge text-ink hover:bg-concrete-deep"
               }`}
             >
               {label}
@@ -239,7 +239,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         </div>
 
         {tab === "create" ? (
-        <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-6">
+        <section className="flex flex-col gap-3 rounded-xl border border-edge bg-paint p-6">
           <label htmlFor="course" className="text-sm font-medium text-dim">
             코스
           </label>
@@ -260,7 +260,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             id="course"
             value={courseId}
             onChange={(e) => setCourseId(e.target.value)}
-            className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="rounded-lg border border-edge bg-paint px-4 py-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             {COURSE_PICKER_GROUPS.map((g) => (
               <optgroup key={g.label} label={g.label}>
@@ -282,7 +282,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
           </button>
         </section>
         ) : (
-        <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep p-6">
+        <section className="flex flex-col gap-3 rounded-xl border border-edge p-6">
           <h2 className="text-sm font-medium text-dim">
             받은 방 코드를 넣으세요
           </h2>
@@ -293,13 +293,13 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
               placeholder="ABC123"
               aria-label="방 코드"
               onKeyDown={(e) => e.key === "Enter" && doJoin()}
-              className="w-40 rounded-lg border border-concrete-deep bg-paint px-4 py-3 font-mono tracking-[0.2em] text-ink uppercase placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="w-40 rounded-lg border border-edge bg-paint px-4 py-3 font-mono tracking-[0.2em] text-ink uppercase placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             />
             <button
               type="button"
               onClick={doJoin}
               disabled={!connected || busy}
-              className="flex-1 rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="flex-1 rounded-lg border border-edge px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               들어가기
             </button>
@@ -398,7 +398,7 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
             onClick={() => setReady(!me?.ready)}
             className={`flex-1 rounded-lg px-5 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               me?.ready
-                ? "border border-concrete-deep text-ink hover:bg-concrete-deep"
+                ? "border border-edge text-ink hover:bg-concrete-deep"
                 : "bg-expressway text-on-sign hover:brightness-110"
             }`}
           >
@@ -450,7 +450,7 @@ function RoomRules({
   ];
 
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-concrete-deep p-4">
+    <section className="flex flex-col gap-2 rounded-xl border border-edge p-4">
       <h2 className="text-sm font-medium text-dim">이 판의 규칙</h2>
       <ul className="flex flex-col gap-1">
         {rows.map((r) => (
@@ -467,7 +467,7 @@ function RoomRules({
                 className={`shrink-0 rounded-lg border px-3 py-1.5 font-mono text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                   r.on
                     ? "border-sign bg-sign/15 text-ink"
-                    : "border-concrete-deep text-dim hover:bg-concrete-deep"
+                    : "border-edge text-dim hover:bg-concrete-deep"
                 }`}
               >
                 {r.on ? "켜짐" : "꺼짐"}
@@ -515,7 +515,7 @@ function NextRound({
   const leading = picks[0]?.courseId;
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep p-5">
+    <section className="flex flex-col gap-3 rounded-xl border border-edge p-5">
       <h2 className="text-sm font-medium text-dim">다음 판</h2>
 
       <label className="sr-only" htmlFor="next-course">
@@ -525,7 +525,7 @@ function NextRound({
         id="next-course"
         value={myPick ?? ""}
         onChange={(e) => onNominate(e.target.value || null)}
-        className="rounded-lg border border-concrete-deep bg-paint px-4 py-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="rounded-lg border border-edge bg-paint px-4 py-3 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <option value="">하고 싶은 코스 고르기</option>
         {COURSE_PICKER_GROUPS.map((g) => (

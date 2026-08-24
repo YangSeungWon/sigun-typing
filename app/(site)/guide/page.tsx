@@ -108,7 +108,7 @@ export default function GuidePage() {
         </Fold>
 
         <Fold title="모드">
-          <dl className="flex flex-col divide-y divide-concrete-deep">
+          <dl className="flex flex-col divide-y divide-edge">
             {MODE_LADDER.map((mode) => (
               <div key={mode} className="flex flex-col gap-1 py-3 first:pt-0">
                 <dt className="font-medium">{MODE_LABELS[mode]}</dt>
@@ -162,7 +162,7 @@ export default function GuidePage() {
                 href={atlasLearnUrl("sido", "guide")!}
                 target="_blank"
                 rel="noopener"
-                className="underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="underline decoration-edge underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
                 지도에서 위치부터 익히기
               </a>
@@ -172,7 +172,7 @@ export default function GuidePage() {
                 href={ATLAS_BLANK_MAPS.sigun}
                 target="_blank"
                 rel="noopener"
-                className="underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="underline decoration-edge underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
                 인쇄용 백지도 PDF
               </a>
@@ -194,7 +194,7 @@ export default function GuidePage() {
         </Fold>
       </div>
 
-      <nav className="flex flex-wrap gap-3 border-t border-concrete-deep pt-8">
+      <nav className="flex flex-wrap gap-3 border-t border-edge pt-8">
         <Link
           href="/play/map/sido?from=guide"
           className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
@@ -203,7 +203,7 @@ export default function GuidePage() {
         </Link>
         <Link
           href="/play/learn/sido?from=guide"
-          className="rounded-lg border border-concrete-deep px-5 py-3 font-medium transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-lg border border-edge px-5 py-3 font-medium transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           이름 보고 연습하기
         </Link>
@@ -227,7 +227,7 @@ const MODE_DESCRIPTIONS: Record<keyof typeof MODES, string> = {
 /** 궁금해진 사람만 여는 상자. 기본은 접힌 상태다. */
 function Fold({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <details className="group rounded-xl border border-concrete-deep bg-paint/60 px-5 py-4">
+    <details className="group rounded-xl border border-edge bg-paint px-5 py-4">
       <summary className="cursor-pointer list-none font-medium marker:content-none">
         <span className="flex items-center justify-between gap-4">
           {title}

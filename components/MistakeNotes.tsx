@@ -59,7 +59,7 @@ export function MistakeNotes() {
 
   if (entries.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-8">
+      <div className="flex flex-col items-start gap-4 rounded-xl border border-edge bg-paint p-8">
         <p className="text-dim">
 아직 헷갈리는 곳이 없습니다. 틀리거나 힌트를 본 지역이 여기 모입니다.
         </p>
@@ -89,7 +89,7 @@ export function MistakeNotes() {
             {entry.records.slice(0, VISIBLE).map((r) => (
               <li
                 key={r.code}
-                className="flex items-baseline gap-2 rounded-lg border border-concrete-deep bg-paint/60 px-3 py-2"
+                className="flex items-baseline gap-2 rounded-lg border border-edge bg-paint px-3 py-2"
               >
                 <span className="text-lg font-medium">{r.name}</span>
                 {/*
@@ -123,7 +123,7 @@ export function MistakeNotes() {
             <button
               type="button"
               onClick={() => forget(entry.courseId)}
-              className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-dim transition-colors hover:bg-concrete-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="rounded-lg border border-edge px-5 py-3 font-medium text-dim transition-colors hover:bg-concrete-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               기록 지우기
             </button>
@@ -145,7 +145,7 @@ export function MistakeNotes() {
               href={entry.atlas}
               target="_blank"
               rel="noopener"
-              className="self-start text-sm text-dim underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="self-start text-sm text-dim underline decoration-edge underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               {entry.courseName} 지도에서 위치부터 익히기
             </a>

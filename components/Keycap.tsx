@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
  */
 export function Keycap({ children }: { children: ReactNode }) {
   return (
-    <kbd className="inline-flex min-w-7 items-center justify-center rounded border border-concrete-deep border-b-2 bg-paint px-1.5 py-0.5 font-mono text-xs text-ink shadow-[0_1px_0_0_var(--color-concrete-deep)]">
+    <kbd className="inline-flex min-w-7 items-center justify-center rounded border border-edge border-b-2 bg-paint px-1.5 py-0.5 font-mono text-xs text-ink shadow-[0_1px_0_0_var(--color-edge)]">
       {children}
     </kbd>
   );

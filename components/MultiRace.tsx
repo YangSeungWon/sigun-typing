@@ -213,7 +213,7 @@ export function MultiRace({
   return (
     <div className="flex w-full flex-col gap-8">
       {done ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-8 text-center">
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-edge bg-paint p-8 text-center">
           <p className="font-mono text-xs tracking-[0.25em] text-dim uppercase">
             완주
           </p>
@@ -354,7 +354,7 @@ export function MultiRace({
             <button
               type="button"
               onClick={onGiveUp}
-              className="mx-auto text-sm text-dim underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="mx-auto text-sm text-dim underline decoration-edge underline-offset-4 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               여기까지 하기
             </button>

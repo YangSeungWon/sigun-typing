@@ -67,8 +67,8 @@ export function SidoPicker({
                 selected
                   ? "border-sign bg-sign text-on-sign"
                   : hovered
-                    ? "border-dim bg-paint text-ink"
-                    : "border-concrete-deep bg-paint/50 text-ink"
+                    ? "border-dim bg-concrete-deep text-ink"
+                    : "border-edge bg-paint text-ink"
               }`}
             >
               <span>{region.name}</span>

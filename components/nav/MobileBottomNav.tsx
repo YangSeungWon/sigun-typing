@@ -22,11 +22,11 @@ export function MobileBottomNav() {
     <nav
       aria-label="주요 메뉴"
       /*
-       * pb는 margin이 아니라 padding이어야 한다. 그래야 반투명한 판면이 iOS
+       * pb는 margin이 아니라 padding이어야 한다. 그래야 판면이 iOS
        * 홈 인디케이터 **밑까지** 이어지고, 그 자리에 페이지 색이 띠로 남지 않는다.
        * env()가 0이 아니려면 layout.tsx의 viewportFit: "cover"가 필요하다.
        */
-      className="app-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-concrete-deep bg-paint/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="app-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-edge bg-paint pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="flex">
         {TAB_ITEMS.map((item) => {

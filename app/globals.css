@@ -22,6 +22,7 @@
 @theme inline {
   --color-concrete: var(--sig-concrete);
   --color-concrete-deep: var(--sig-concrete-deep);
+  --color-edge: var(--sig-edge);
   --color-map-idle: var(--sig-map-idle);
   --color-map-line: var(--sig-map-line);
   --color-water: var(--sig-water);
@@ -67,6 +68,21 @@
 :root {
   --sig-concrete: #dee0db;
   --sig-concrete-deep: #c7cac3;
+  /*
+   * 면과 면을 가르는 선.
+   *
+   * `concrete-deep`이 이 일까지 겸하고 있었다. 그 색은 **면을 칠하는** 값이라
+   * (손 얹힌 칩, 진행 막대 서른네 곳) 바탕에서 한 칸만 떨어져 있으면 되는데,
+   * 선은 그 정도로는 안 보인다 — 밝은 판에서 바탕 대비 1.25, 카드 대비
+   * 1.43이었다. 경계로 읽히는 데 필요한 3:1의 절반도 안 된다.
+   *
+   * 그래서 글자 대비는 멀쩡한데 화면이 물감 한 장처럼 보였다. 카드가 어디서
+   * 시작하는지를 눈이 매번 더듬는다.
+   *
+   * 색조는 그대로 두고 명도만 옮긴다. 밝은 판은 바탕 3.04·카드 3.82,
+   * 어두운 판은 3.74·3.03이다. 밑줄과 구분선도 같은 일을 하므로 함께 쓴다.
+   */
+  --sig-edge: #7d7f7b;
   /* 지도 비활성 지역. 배경(#dee0db)과 확실히 갈리되 현재 지역을 덮지 않을 만큼만. */
   --sig-map-idle: #bfc3bb;
   --sig-map-line: #e8eae5;
@@ -116,10 +132,10 @@
   :root {
     --sig-concrete: #060d12;
     --sig-concrete-deep: #2b3d47;
+    --sig-edge: #4f7183;
     --sig-map-idle: #2f4350;
     --sig-map-line: #0a141b;
     --sig-water: #4d7d99;
-  --sig-relief: #46565f;
     --sig-relief: #46565f;
     --sig-sign: #24c17e;
     --sig-sign-deep: #1da56b;
@@ -155,6 +171,7 @@
 :root[data-theme="light"] {
   --sig-concrete: #dee0db;
   --sig-concrete-deep: #c7cac3;
+  --sig-edge: #7d7f7b;
   --sig-map-idle: #bfc3bb;
   --sig-map-line: #e8eae5;
   --sig-water: #7d99a8;
@@ -178,6 +195,7 @@
 :root[data-theme="dark"] {
   --sig-concrete: #060d12;
   --sig-concrete-deep: #2b3d47;
+  --sig-edge: #4f7183;
   --sig-map-idle: #2f4350;
   --sig-water: #4d7d99;
   --sig-relief: #46565f;

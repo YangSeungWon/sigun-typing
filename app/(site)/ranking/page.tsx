@@ -100,7 +100,7 @@ export default async function RankingPage({
             id="ranking-course"
             name="course"
             defaultValue={course.id}
-            className="min-w-0 flex-1 rounded-lg border border-concrete-deep bg-paint px-4 py-2 text-base font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="min-w-0 flex-1 rounded-lg border border-edge bg-paint px-4 py-2 text-base font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             {COURSE_PICKER_GROUPS.map((g) => (
               <optgroup key={g.label} label={g.label}>
@@ -132,7 +132,7 @@ export default async function RankingPage({
               className={`rounded-lg px-4 py-2 text-base transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 p === period
                   ? "bg-ink text-on-sign"
-                  : "border border-concrete-deep text-dim hover:bg-concrete-deep hover:text-ink"
+                  : "border border-edge text-dim hover:bg-concrete-deep hover:text-ink"
               }`}
             >
               {PERIOD_LABELS[p]}
@@ -149,7 +149,7 @@ export default async function RankingPage({
 
       {entries.length === 0 ? (
         // 빈 화면은 상태 보고가 아니라 다음 행동을 권하는 자리다.
-        <div className="flex flex-col items-start gap-4 rounded-xl border border-concrete-deep bg-paint/60 p-8">
+        <div className="flex flex-col items-start gap-4 rounded-xl border border-edge bg-paint p-8">
           {/*
             세 줄이 한 가지를 말하고 있었다 — 1등 자리가 비었다, 아무도 기록을
             남기지 않았다, 1등으로 이름을 올려라. 어느 코스의 어느 기간인지는
@@ -171,7 +171,7 @@ export default async function RankingPage({
         <div className="overflow-x-auto">
           <table className="w-full min-w-md border-collapse text-left">
             <thead>
-              <tr className="border-b border-concrete-deep font-mono text-sm tracking-[0.12em] text-dim uppercase">
+              <tr className="border-b border-edge font-mono text-sm tracking-[0.12em] text-dim uppercase">
                 <th scope="col" className="py-3 pr-4 font-normal">순위</th>
                 <th scope="col" className="py-3 pr-4 font-normal">이름</th>
                 {/*
@@ -190,7 +190,7 @@ export default async function RankingPage({
             </thead>
             <tbody>
               {entries.map((entry, i) => (
-                <tr key={entry.id} className="border-b border-concrete-deep/60">
+                <tr key={entry.id} className="border-b border-edge/60">
                   <td className="py-3 pr-4 font-mono tabular-nums text-dim">
                     {i + 1}
                   </td>
@@ -222,7 +222,7 @@ export default async function RankingPage({
         다음이 맞다. 접어 두지 않고 그냥 작게 둔다 — 두 줄짜리를 여닫게 만들면
         누르는 수고가 읽는 수고보다 커진다.
       */}
-      <p className="mt-auto border-t border-concrete-deep pt-6 font-mono text-xs text-dim">
+      <p className="mt-auto border-t border-edge pt-6 font-mono text-xs text-dim">
         서버에서 다시 계산해 검증한 기록만 올라갑니다. 채점 규칙이 같은
         기록끼리만 비교합니다.
       </p>

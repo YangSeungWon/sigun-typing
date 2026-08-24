@@ -24,7 +24,7 @@ import { ATLAS_HOME } from "@/lib/atlas";
  */
 export function SiteFooter() {
   return (
-    <footer className="mx-auto mt-auto flex w-full max-w-5xl flex-col gap-2 border-t border-concrete-deep px-6 py-6 font-mono text-sm text-dim">
+    <footer className="mx-auto mt-auto flex w-full max-w-5xl flex-col gap-2 border-t border-edge px-6 py-6 font-mono text-sm text-dim">
       {/*
         기준 연도가 변천사로 가는 문이다.
         메뉴를 하나 더 다는 대신 이미 있는 줄을 쓴다 — 이 줄이 하는 말이
@@ -36,7 +36,7 @@ export function SiteFooter() {
       */}
       <Link
         href="/history"
-        className="w-fit underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="w-fit underline decoration-edge underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <span className="flex flex-wrap gap-x-3">
           <span>행정구역 데이터 기준 {DATA_VINTAGE.year}</span>

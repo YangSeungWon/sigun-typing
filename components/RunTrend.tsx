@@ -87,7 +87,7 @@ export function RunTrend() {
             */}
             <Link
               href={`/courses/${c.courseId}`}
-              className="flex items-center gap-4 rounded-xl border border-concrete-deep px-5 py-4 transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="flex items-center gap-4 rounded-xl border border-edge px-5 py-4 transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate font-medium">{c.courseName}</span>

@@ -63,7 +63,7 @@ export function MyStanding({ courseId, courseVersion, mode }: MyStandingProps) {
   if (!best || !around || around.total === 0) return null;
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-concrete-deep bg-paint/60 p-5">
+    <section className="flex flex-col gap-3 rounded-xl border border-edge bg-paint p-5">
       <h2 className="font-mono text-sm tracking-[0.18em] text-dim uppercase">
         내 주변
       </h2>

@@ -800,7 +800,7 @@ export function Game({
               {geo && showMiniMap && (
                 // 배경을 깔아 준다. 같은 회색 위에 얹으면 이 크기에서는
                 // 지도가 아니라 얼룩으로 보인다.
-                <span className="rounded-md border border-concrete-deep bg-paint/70 px-1.5 py-1">
+                <span className="rounded-md border border-edge bg-paint px-1.5 py-1">
                   <MiniMap
                     geo={geo}
                     // 세는 동안에는 표시점을 찍지 않는다. 미리 보여 주면
@@ -919,7 +919,7 @@ export function Game({
                 지도 없이 이름만 따라 치면 그냥 타자연습이 된다.
               */}
               {geo && (
-                <div className="play-map relative w-full max-w-2xl overflow-hidden rounded-xl border border-concrete-deep bg-paint/40">
+                <div className="play-map relative w-full max-w-2xl overflow-hidden rounded-xl border border-edge bg-paint">
                   <RegionMap
                     geo={geo}
                     /*
@@ -952,7 +952,7 @@ export function Game({
                 */}
                   {counting && hydrated && challenge && (
                     <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
-                      <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint/90 px-4 py-2">
+                      <span className="flex items-baseline gap-2 rounded-lg border border-sign bg-paint px-4 py-2">
                         <span className="font-mono text-xs tracking-[0.18em] text-sign-deep uppercase">
                           도전
                         </span>
@@ -1051,7 +1051,7 @@ export function Game({
                           type="button"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={submitAnswer}
-                          className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
+                          className="rounded-lg border border-edge bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
                         >
                           제출
                         </button>
@@ -1061,7 +1061,7 @@ export function Game({
                           type="button"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={onHintPressed}
-                          className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
+                          className="rounded-lg border border-edge bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
                         >
                           힌트
                           {/*
@@ -1082,7 +1082,7 @@ export function Game({
                           onClick={() =>
                             revealing ? skipReveal() : giveUpItem()
                           }
-                          className="rounded-lg border border-concrete-deep bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
+                          className="rounded-lg border border-edge bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
                         >
                           {revealing ? "건너뛰기" : "모르겠어요"}
                         </button>

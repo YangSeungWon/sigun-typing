@@ -48,7 +48,7 @@ export function DailyLine() {
     : `X / ${MAX_TRIES}`;
 
   return (
-    <section className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint/70 px-5 py-3.5 shadow-[0_1px_0_0_var(--color-concrete-deep)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
+    <section className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
       {/*
         판면으로 세운다.
 
@@ -58,7 +58,7 @@ export function DailyLine() {
       */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-1.5 rounded-sm border border-concrete-deep"
+        className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
       />
       <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
         <span className="font-medium">오늘의 퀴즈</span>

@@ -138,7 +138,7 @@ export function ShareCard({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-concrete-deep bg-paint/60 p-3">
+    <div className="flex flex-col gap-2 rounded-xl border border-edge bg-paint p-3">
       {preview}
 
       <div className="flex items-stretch">

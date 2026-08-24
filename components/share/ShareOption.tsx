@@ -32,7 +32,7 @@ export function ShareOption({
          * 마크를 담는 원. 브랜드 색은 여기 배경에만 쓰고 마크 자체는 안 건드린다 —
          * 상표는 상표 그대로 두고, 이 사이트의 톤은 그 주변에서 낸다.
          */
-        className="flex size-11 items-center justify-center rounded-full border border-concrete-deep"
+        className="flex size-11 items-center justify-center rounded-full border border-edge"
       >
         {children}
       </span>

@@ -51,7 +51,7 @@ export default function Error({
         </button>
         <Link
           href="/"
-          className="rounded-lg border border-concrete-deep px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="rounded-lg border border-edge px-5 py-3 font-medium text-ink transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           처음으로
         </Link>

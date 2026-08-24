@@ -58,7 +58,7 @@ export function ReviewGame({ course, geo }: ReviewGameProps) {
           </Link>
           <Link
             href="/notes"
-            className="rounded-lg border border-concrete-deep px-5 py-3 font-medium transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="rounded-lg border border-edge px-5 py-3 font-medium transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             오답노트
           </Link>

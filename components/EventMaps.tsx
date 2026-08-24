@@ -195,7 +195,7 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
         왼쪽이 전, 오른쪽이 후. 한 줄이 곧 한 사건이라 건수가 늘어도 세로로
         쌓일 뿐 문장이 길어지지 않는다.
       */}
-      <ul className="flex flex-col divide-y divide-concrete-deep border-y border-concrete-deep">
+      <ul className="flex flex-col divide-y divide-edge border-y border-edge">
         {event.changes.map((c, i) => {
           const codes = [...c.from, ...c.to].map((x) => x.code).filter(Boolean) as string[];
           return (

@@ -56,7 +56,7 @@ export function CourseTrend({ courseId }: { courseId: string }) {
       {lines.map((l) => (
         <div
           key={l.mode}
-          className="flex flex-col gap-3 rounded-xl border border-concrete-deep px-5 py-4"
+          className="flex flex-col gap-3 rounded-xl border border-edge px-5 py-4"
         >
           <div className="flex items-baseline justify-between gap-4 font-mono text-sm">
             <span className="flex items-baseline gap-3">

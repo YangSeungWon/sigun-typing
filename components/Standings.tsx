@@ -32,7 +32,7 @@ export function Standings({
           <li
             key={p.id}
             className={`rounded-lg border px-4 py-3 ${
-              isSelf ? "border-sign bg-paint/70" : "border-concrete-deep bg-paint/40"
+              isSelf ? "border-sign bg-paint" : "border-edge bg-paint"
             } ${p.connected ? "" : "opacity-45"}`}
           >
             <div className="flex items-baseline justify-between gap-3">

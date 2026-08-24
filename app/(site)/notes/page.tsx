@@ -34,7 +34,7 @@ export default function NotesPage() {
           <span className="whitespace-nowrap">
             <Link
               href="/ranking"
-              className="underline decoration-concrete-deep underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="underline decoration-edge underline-offset-4 transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               랭킹
             </Link>

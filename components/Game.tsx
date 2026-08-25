@@ -1099,8 +1099,6 @@ export function Game({
                           <span>정답을 직접 쳐 보세요</span>
                           <KeyHint keys="Esc">건너뛰기</KeyHint>
                         </>
-                      ) : !focused ? (
-                        "표지판을 눌러 계속 입력하세요"
                       ) : (
                         <>
                           {/*

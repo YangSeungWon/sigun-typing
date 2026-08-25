@@ -105,6 +105,43 @@ export function TypingSurface({
     }
   }, [resetAt]);
 
+  /*
+   * 치면 잡는다.
+   *
+   * 포커스는 판면을 눌렀을 때만 돌아왔다. 지도나 소리 단추처럼 판면 **밖**을
+   * 누르면 나가고, 그 뒤로는 아무리 쳐도 화면이 반응하지 않는다. 그래서
+   * `표지판을 눌러 계속 입력하세요`라는 줄이 화면에 있었다 — 기능이 못 하는
+   * 일을 글로 때우고 있었던 것이다.
+   *
+   * `keydown` 단계에서 잡으므로 **그 글자부터 들어간다.** 포커스를 옮긴 뒤에
+   * 기본 동작(글자 삽입)이 일어나기 때문이고, 그래서 첫 글자를 잃지 않는다.
+   *
+   * 안 가로채는 자리가 셋이다.
+   *   · 다른 입력칸에 손이 가 있을 때(이름 칸 같은 것)
+   *   · Ctrl·Meta·Alt가 눌렸을 때 — 브라우저 단축키다
+   *   · 단추에 초점이 있고 스페이스나 엔터일 때 — 그건 그 단추를 누르는 것이다
+   */
+  useEffect(() => {
+    if (disabled || !autoFocus) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = inputRef.current;
+      const at = document.activeElement;
+      if (!el || at === el) return;
+      if (at instanceof HTMLElement) {
+        if (at.isContentEditable) return;
+        const tag = at.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (tag === "BUTTON" && (e.key === " " || e.key === "Enter")) return;
+      }
+      // 글자 한 자이거나 IME가 삼킨 키. 방향키·탭·기능키는 그대로 둔다.
+      if (e.key.length !== 1 && e.key !== "Process") return;
+      el.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [disabled, autoFocus]);
+
   return (
     <div
       className="relative w-full cursor-text"

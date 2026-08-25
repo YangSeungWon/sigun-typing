@@ -74,7 +74,7 @@ export function DailyLine() {
         aria-hidden
         className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
       />
-      <span className="relative font-medium">오늘의 퀴즈</span>
+      <span className="relative font-semibold">오늘의 퀴즈</span>
       <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
         {/*
           푼 날에는 성적이, 안 푼 날에는 며칠 문제인지가 온다.

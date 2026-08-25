@@ -36,7 +36,7 @@ import { NextChallenge } from "./NextChallenge";
 import { RunLifecycle } from "./RunLifecycle";
 import { RunRecorder } from "./RunRecorder";
 import { formatClock, Odometer } from "./Odometer";
-import { KeyHint } from "./Keycap";
+import { KeyHint, Keycap } from "./Keycap";
 import { BackLink } from "./BackLink";
 import { CountdownPlate } from "./CountdownPlate";
 import { CourseComplete } from "./CourseComplete";
@@ -1082,6 +1082,18 @@ export function Game({
                               ? `${state.hintsUsed}회 봄`
                               : "기록에 남음"}
                           </span>
+                          {/*
+                      키는 단추가 단다. 아래 줄에서 `Tab 힌트, 기록에 남음`을
+                      한 번 더 말하고 있었는데, 이 파일이 `제출`에는 이미 그
+                      규칙을 적용해 두었다 — 같은 말을 두 곳에서 하면 읽어야
+                      할 것만 늘어난다.
+
+                      자판이 있는 화면에만 붙인다. 손가락으로 누르는 사람에게
+                      Tab은 아무 말도 아니다.
+                    */}
+                          <span className="ml-2 hidden sm:inline-flex">
+                            <Keycap>Tab</Keycap>
+                          </span>
                         </button>
                       )}
                       {config.allowSkip && (
@@ -1094,6 +1106,9 @@ export function Game({
                           className="rounded-lg border border-edge bg-paint px-4 py-2.5 text-base text-ink active:bg-concrete-deep"
                         >
                           {revealing ? "건너뛰기" : "모르겠어요"}
+                          <span className="ml-2 hidden sm:inline-flex">
+                            <Keycap>Esc</Keycap>
+                          </span>
                         </button>
                       )}
                     </div>
@@ -1104,34 +1119,27 @@ export function Game({
                       role="status"
                       aria-live="polite"
                     >
-                      {revealing ? (
-                        <>
-                          <span>정답을 직접 쳐 보세요</span>
-                          <KeyHint keys="Esc">건너뛰기</KeyHint>
-                        </>
-                      ) : (
-                        <>
-                          {/*
-                      제출은 여기서 말하지 않는다. 판 오른쪽의 `제출 ↵`이
-                      이미 그 자리에서 말하고 있고, 같은 말을 두 곳에서 하면
-                      읽어야 할 것만 늘어난다.
+                      {/*
+                        단추가 안 하는 말만 남는다.
 
-                      "초성 힌트"도 "힌트"로 줄인다 — 눌러 보면 초성이
-                      뜨므로 시스템 용어를 미리 가르칠 이유가 없다.
-                    */}
-                          {config.allowHint && (
-                            <KeyHint keys="Tab">
-                              {state.hintShown
-                                ? "한 번 더 누르면 정답"
-                                : state.hintsUsed > 0
-                                  ? `힌트 ${state.hintsUsed}회 봄`
-                                  : "힌트, 기록에 남음"}
-                            </KeyHint>
-                          )}
-                          {config.allowSkip && (
-                            <KeyHint keys="Esc">모르겠어요</KeyHint>
-                          )}
-                        </>
+                        여기서 `제출`을 말하지 않는 규칙은 진작 세워 두었다 —
+                        판 오른쪽의 `제출 ↵`이 이미 그 자리에서 말한다. 그런데
+                        `힌트`와 `모르겠어요`는 그 규칙을 안 지키고 바로 위
+                        단추와 같은 말을 하고 있었다. 키는 단추로 옮겼다.
+
+                        남는 것은 둘이다. 정답이 떠 있는 동안 그것을 손으로
+                        쳐야 한다는 것과(단추에는 `건너뛰기`만 있다), 초성이
+                        떠 있을 때 같은 키를 한 번 더 누르면 정답이 나온다는
+                        것이다. 그때는 힌트 단추가 사라지므로 이 줄이 유일한
+                        자리다.
+                      */}
+                      {revealing ? (
+                        <span>정답을 직접 쳐 보세요</span>
+                      ) : (
+                        config.allowHint &&
+                        state.hintShown && (
+                          <KeyHint keys="Tab">한 번 더 누르면 정답</KeyHint>
+                        )
                       )}
                     </p>
                   </>

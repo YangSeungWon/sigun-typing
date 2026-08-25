@@ -369,13 +369,21 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
             aria-hidden
             className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
           />
-          <span className="relative font-medium">오답 복습</span>
+          {/*
+            제목이 값보다 무거워야 한다. 500으로 두었더니 바로 아래 값이
+            18px 600이라 제목이 제목으로 안 읽혔다 — 카드의 첫 줄이 무엇에
+            관한 카드인지 말하는 자리인데 두 번째 줄이 먼저 눈에 들어왔다.
+
+            제목은 600, 값은 500으로 바꾼다. 값이 큰 것은 그대로 두고(크기가
+            그쪽 몫이다) 무게만 되돌린다.
+          */}
+          <span className="relative font-semibold">오답 복습</span>
           {/*
             값이지 제목이 아니다. 24px 600으로 두었더니 히어로 다음으로 크고
             `이어하기`(20px)보다 커서, 보조 카드가 주 단추를 눌렀다. 옆 두 칸의
             값과 같은 18px로 내린다 — 굵기와 색은 남겨 셋 중 가장 무겁게 둔다.
           */}
-          <span className="relative text-lg font-semibold">
+          <span className="relative text-lg font-medium">
             {data.confusion.a} <span className="text-dim">↔</span>{" "}
             {data.confusion.b}
           </span>
@@ -412,7 +420,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           aria-hidden
           className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
         />
-        <span className="relative font-medium">친구 대결</span>
+        <span className="relative font-semibold">친구 대결</span>
         {/*
           여기는 값이 한 줄 있어야 하는 자리다. 대결은 처음 보는 사람에게
           무엇이 벌어지는지가 이름만으로 안 그려진다. 그래도 문장은 아니다 —

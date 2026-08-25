@@ -48,7 +48,9 @@ export function DailyLine() {
     : `X / ${MAX_TRIES}`;
 
   return (
-    <section className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
+    <section
+      aria-label="오늘의 퀴즈"
+      className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
       {/*
         판면으로 세운다.
 
@@ -60,8 +62,15 @@ export function DailyLine() {
         aria-hidden
         className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
       />
+      {/*
+        이름은 단추가 맡는다. `오늘의 퀴즈`를 왼쪽에 적고 오른쪽 단추가
+        `풀기`라고 하고 있었는데, 옆 카드 둘도 같은 꼴이라 첫 화면이 카드마다
+        이름을 두 번씩 대고 있었다. 눌러서 가는 곳의 이름이 그 카드의 이름이다.
+
+        푼 날과 안 푼 날을 단추로 가르지 않아도 된다(`풀기` / `다시 보기`).
+        바로 왼쪽의 값이 이미 가른다 — 안 푼 날은 날짜, 푼 날은 성적이다.
+      */}
       <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
-        <span className="font-medium">오늘의 퀴즈</span>
         <span className="flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
           {/*
             푼 날에는 성적이, 안 푼 날에는 몇 번째 문제인지가 온다.
@@ -81,13 +90,14 @@ export function DailyLine() {
       </span>
       <Link
         href="/today"
+        aria-label="오늘의 퀴즈 풀기"
         /*
           단추를 채운다. 실선 하나로는 누를 것으로 안 보였다. 초록은 안 쓴다 —
           첫 화면의 초록은 `전국 시작` 하나여야 한다.
         */
         className="relative rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium whitespace-nowrap transition-colors lg:mt-auto hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
-        {done ? "다시 보기" : "풀기"}
+        오늘의 퀴즈
       </Link>
     </section>
   );

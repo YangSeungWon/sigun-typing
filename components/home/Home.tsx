@@ -367,12 +367,24 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         그럴듯하게 지어내느니 아는 것만 적는다.
       */}
       {data.confusion && (
-        <section className="home-confuse relative flex flex-col gap-2 rounded-md bg-paint p-5 pt-4 shadow-[0_1px_0_0_var(--color-edge)]">
+        <section
+          aria-label="자꾸 헷갈리는 곳"
+          className="home-confuse relative flex flex-col gap-2 rounded-md bg-paint p-5 pt-4 shadow-[0_1px_0_0_var(--color-edge)]"
+        >
           <span
             aria-hidden
             className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
           />
-          <h2 className="relative font-medium">자꾸 헷갈리는 곳</h2>
+          {/*
+            제목을 걷었다.
+
+            `자꾸 헷갈리는 곳`이 무슨 카드인지 말하고, 아래 단추가 `오답 복습`이라고
+            한 번 더 말하고 있었다. 게다가 그 사이의 `최근 오답 2회`가 이미
+            같은 말을 값으로 하고 있다 — 한 카드가 자기 이름을 세 번 댔다.
+
+            **이름은 단추가 맡는다.** 눌러서 가는 곳의 이름이 그 카드의 이름이고,
+            그러면 카드마다 한 줄씩 짧아진다. 옆 두 칸도 같은 규칙이다.
+          */}
           {/*
             값이지 제목이 아니다. 24px 600으로 두었더니 히어로 다음으로 크고
             `이어하기`(20px)보다 커서, 보조 카드가 주 단추를 눌렀다. 옆 두 칸의
@@ -413,31 +425,32 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
       */}
       <DailyLine />
 
-      <section className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
+      <section
+        aria-label="친구 대결"
+        className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
         />
         {/*
-          여기는 설명이 한 줄 있어야 하는 자리다. 위 카드들은 무엇인지 이름만
-          봐도 알지만(`오늘의 도전`, `대한민국 정복도`) 대결은 처음 보는
-          사람에게 무엇이 벌어지는지가 이름만으로 안 그려진다.
+          여기는 설명이 한 줄 있어야 하는 자리다. 대결은 처음 보는 사람에게
+          무엇이 벌어지는지가 이름만으로 안 그려진다. 그래도 문장은 아니다 —
+          명사와 숫자로 적는다.
 
-          그래도 문장은 아니다. 명사와 숫자로 적고, 좁은 화면에서는 감춘다 —
-          거기서는 줄바꿈이 생겨 한 줄짜리가 두 줄이 된다.
+          좁은 화면에서 감추고 있었다. 이름(`친구 대결`)과 나란히 두면 줄바꿈이
+          생겨 한 줄짜리가 두 줄이 됐기 때문인데, 그 이름이 단추로 갔으므로
+          이제 자리가 남는다. 그리고 이 값이 사라지면 좁은 화면에서는 카드에
+          단추만 남는다.
         */}
-        <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
-          <span className="font-medium">친구 대결</span>
-          <span className="hidden items-baseline gap-3 font-mono text-sm text-dim sm:flex lg:text-lg">
-            <span>같은 코스</span>
-            <span>최대 8명</span>
-          </span>
+        <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim lg:flex-col lg:items-start lg:gap-1 lg:text-lg">
+          <span>같은 코스</span>
+          <span>최대 8명</span>
         </span>
         <Link
           href="/rooms"
           className="relative rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium whitespace-nowrap transition-colors lg:mt-auto hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          대결
+          친구 대결
         </Link>
       </section>
     </main>

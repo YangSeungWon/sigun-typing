@@ -38,6 +38,7 @@
   --color-ink: var(--sig-ink);
   --color-dim: var(--sig-dim);
   --color-alert: var(--sig-alert);
+  --color-flame: var(--sig-flame);
 }
 
 /* 글꼴은 테마를 타지 않는다. 갈아 끼울 값이 아니므로 평범한 @theme에 둔다. */
@@ -106,6 +107,21 @@
   --sig-ink: #101410;
   --sig-dim: #586353;
   --sig-alert: #b92021;
+  /*
+   * 이어 온 날의 불꽃.
+   *
+   * `sign-deep`(초록)으로 그리고 있었다. 의미로 고른 색이 아니라 남은 색이다 —
+   * 불꽃에 어울리는 중앙선 노랑은 밝은 판 바탕에서 대비 1.29라 안 보인다.
+   * 그래서 초록 불꽃이 됐는데, 초록으로 칠한 불꽃은 잎사귀로 읽힌다.
+   *
+   * 기준을 잘못 잡고 있었다. 이건 **글자가 아니라 그림**이라 4.5가 아니라
+   * 3:1이면 된다. 그 기준에서는 같은 색조의 어두운 쪽이 선다 — 중앙선 노랑을
+   * 밝은 바탕용으로 태운 색이고, `sign`과 `sign-deep`의 관계와 같다.
+   * 밝은 판 바탕 3.50·카드 4.39, 어두운 판은 중앙선 그대로 10.23·8.29다.
+   *
+   * 옆의 숫자까지 이 색으로 칠하지는 않는다. 그건 글자라 4.5가 필요하다.
+   */
+  --sig-flame: #b15f0c;
 
   /* 스크롤바와 입력 위젯도 함께 따라오게 한다. */
   color-scheme: light;
@@ -148,6 +164,7 @@
     --sig-ink: #e6f0ec;
     --sig-dim: #93a7ab;
     --sig-alert: #fb5a51;
+    --sig-flame: #faac25;
 
     color-scheme: dark;
   }
@@ -188,6 +205,7 @@
   --sig-ink: #101410;
   --sig-dim: #586353;
   --sig-alert: #b92021;
+  --sig-flame: #b15f0c;
 
   color-scheme: light;
 }
@@ -211,6 +229,7 @@
   --sig-ink: #e6f0ec;
   --sig-dim: #93a7ab;
   --sig-alert: #fb5a51;
+  --sig-flame: #faac25;
 
   color-scheme: dark;
 }

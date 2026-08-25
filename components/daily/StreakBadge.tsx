@@ -7,11 +7,15 @@
  *
  * 눈으로 못 읽는 사람에게는 그 관용이 없으므로 `aria-label`로 말해 준다 —
  * 걷어 낸 것은 글자지 정보가 아니다.
+ *
+ * 불꽃만 따뜻한 색이고 숫자는 본문색이다. 그림은 3:1이면 되지만 숫자는
+ * 글자라 4.5가 필요한데, 밝은 판에서 그 둘을 한 색으로 맞추면 불꽃이
+ * 그을린 갈색이 된다. 색을 지고 있어야 하는 쪽은 그림이다.
  */
 export function StreakBadge({ days }: { days: number }) {
   return (
     <span
-      className="inline-flex items-baseline gap-1 font-mono text-sign-deep"
+      className="inline-flex items-baseline gap-1 font-mono text-ink"
       role="img"
       aria-label={`${days}일 이어서 풀었습니다`}
     >
@@ -22,7 +26,7 @@ export function StreakBadge({ days }: { days: number }) {
       */}
       <svg
         viewBox="0 0 24 24"
-        className="size-[18px] self-center"
+        className="size-[18px] self-center text-flame"
         fill="currentColor"
         aria-hidden
         focusable="false"

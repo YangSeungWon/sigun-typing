@@ -45,17 +45,24 @@ export function MobileBottomNav() {
 
                   그런데 높이는 줄인다(56 → 48). 그림을 얹으면서 키우면 좁은
                   화면에서 본문이 그만큼 밀리는데, 이 바는 늘 떠 있는 물건이라
-                  한 번 차지한 자리를 끝까지 차지한다. 그림 18px에 글자 11px면
-                  48 안에 여유가 있다.
+                  한 번 차지한 자리를 끝까지 차지한다.
+
+                  그 예산 안에서 그림 18px에 글자 11px까지 줄였었는데, 거기까지
+                  갈 필요가 없었다. 11px은 보조 글자의 **하한**이지 적정값이
+                  아니고, 이건 사이트의 주 메뉴다. 22 + 2 + 14 = 38이라 48
+                  안에 위아래로 5px씩 남는다 — 높이는 그대로 두고 둘 다 키운다.
+
+                  글자는 임의값 대신 계단에서 고른다(text-xs = 12px). 크기를
+                  자리마다 눈대중으로 고르지 않기로 한 것과 같은 이유다.
                 */
-                className={`flex h-12 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
+                className={`flex h-12 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
                   active ? "text-sign-deep" : "text-dim"
                 }`}
               >
                 {item.icon && (
                   <svg
                     viewBox="0 0 24 24"
-                    className="size-[18px]"
+                    className="size-[22px]"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.7}

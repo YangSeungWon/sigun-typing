@@ -17,6 +17,11 @@ import { ATLAS_HOME } from "@/lib/atlas";
  * 읽히지 않는다. 좁은 화면에서 랭킹으로 가는 길은 /notes 안에 있다 — 내 기록
  * 옆이 남의 기록을 궁금해하는 자리다.
  *
+ * 넓은 화면에서는 한 줄이다. 세 덩이(자료 출처 · 지도 출처 · 약관)를 세로로
+ * 쌓아 두었는데, 그건 좁은 화면의 사정이지 넓은 화면의 사정이 아니다 —
+ * 976px 칸에 다 넣고도 남는다. 덩이 안은 `gap-x-3`, 덩이 사이는 `gap-x-4`라
+ * 한 줄이 되어도 무엇이 한 묶음인지 읽힌다. 넘치면 알아서 접힌다.
+ *
  * 이용안내는 `md:hidden`으로 좁은 화면에만 둔다. 넓은 화면에는 헤더에 있으니
  * 중복이고, 좁은 화면에는 헤더 링크가 아예 없다(갈 곳은 전부 아래 탭 바인데
  * 그건 넷으로 고정이다). 한때 그냥 뺐었는데, 그러면 이용안내로 가는 유일한
@@ -24,7 +29,7 @@ import { ATLAS_HOME } from "@/lib/atlas";
  */
 export function SiteFooter() {
   return (
-    <footer className="mx-auto mt-auto flex w-full max-w-5xl flex-col gap-2 border-t border-edge px-6 py-6 font-mono text-sm text-dim">
+    <footer className="mx-auto mt-auto flex w-full max-w-5xl flex-col gap-2 border-t border-edge px-6 py-6 font-mono text-sm text-dim md:flex-row md:flex-wrap md:items-center md:gap-x-4">
       {/*
         기준 연도가 변천사로 가는 문이다.
         메뉴를 하나 더 다는 대신 이미 있는 줄을 쓴다 — 이 줄이 하는 말이
@@ -48,7 +53,7 @@ export function SiteFooter() {
         <span>지형 NASA SRTM</span>
       </span>
 
-      <span className="flex gap-4 pt-1">
+      <span className="flex gap-4 pt-1 md:pt-0">
         <Link href="/guide" className="transition-colors hover:text-ink md:hidden">
           이용안내
         </Link>

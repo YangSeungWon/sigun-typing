@@ -78,7 +78,7 @@ export function SubmitScore({
   const send = async () => {
     const name = (inputRef.current?.value ?? "").trim();
     if (!name) {
-      setStatus({ kind: "failed", error: "이름을 입력하세요" });
+      setStatus({ kind: "failed", error: "닉네임을 입력하세요" });
       return;
     }
     setStatus({ kind: "sending" });
@@ -147,14 +147,14 @@ export function SubmitScore({
         <>
           <div className="flex flex-col gap-2 sm:flex-row">
             <label className="sr-only" htmlFor="nickname">
-              랭킹에 표시할 이름
+              랭킹에 표시할 닉네임
             </label>
             <input
               id="nickname"
               ref={attach}
               onKeyDown={(e) => e.key === "Enter" && send()}
               maxLength={12}
-              placeholder="이름"
+              placeholder="닉네임"
               className="flex-1 rounded-lg border border-edge bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             />
             <button

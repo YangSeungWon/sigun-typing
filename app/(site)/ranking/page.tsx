@@ -173,7 +173,7 @@ export default async function RankingPage({
             <thead>
               <tr className="border-b border-edge font-mono text-sm tracking-[0.12em] text-dim uppercase">
                 <th scope="col" className="py-3 pr-4 font-normal">순위</th>
-                <th scope="col" className="py-3 pr-4 font-normal">이름</th>
+                <th scope="col" className="py-3 pr-4 font-normal">닉네임</th>
                 {/*
                   순위는 완주 수 · 힌트 · 시간 순으로 매겨진다. 그래서 그 셋이 앞에 온다.
                   힌트를 시간에 얹지 않는 이유는 lib/game/modes.ts에 적어 두었다 —

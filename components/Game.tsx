@@ -721,20 +721,30 @@ export function Game({
             )
           }
           submitSlot={
-            practice ? (
-              <p className="font-mono text-sm text-dim">
-                오답 연습은 랭킹과 개인 기록에 남지 않습니다
-              </p>
-            ) : !ranked ? (
+            practice || !ranked ? (
               /*
+                이 자리에 원래 오는 것은 `SubmitScore`이고, 그 줄은 `랭킹` 라벨
+                하나와 상태 하나로 되어 있다. 올릴 수 없는 판에서도 그 문법을
+                쓴다 — 문장으로 바꿔 쓰면 같은 자리가 판마다 다른 종류의 물건이
+                된다.
+
+                문장이 둘이었다. `연습 판이라 랭킹에 올리지 않습니다`와
+                `개인 기록에는 남습니다`. 규칙을 말로 푼 것이고, 여기서 알고
+                싶은 것은 두 곳에 남느냐 마느냐뿐이다.
+
                 답이 화면에 있는 판은 순위표에 올리지 않는다. 거기서 재는 것은
                 회상이 아니라 타자 속도라, 회상 모드들과 같은 표에 놓으면
-                기억을 쓰지 않아도 되는 모드가 가장 유리해진다.
-                개인 기록은 그대로 남는다 — 어제의 나와는 겨룰 만하다.
+                기억을 쓰지 않아도 되는 모드가 가장 유리해진다. 개인 기록은
+                그대로 남는다 — 어제의 나와는 겨룰 만하다. 오답 연습은 어느
+                쪽에도 안 남는다.
               */
-              <p className="flex flex-wrap gap-x-3 font-mono text-sm text-dim">
-                <span>연습 판이라 랭킹에 올리지 않습니다</span>
-                <span>개인 기록에는 남습니다</span>
+              <p className="flex flex-wrap items-baseline gap-x-5 gap-y-1 font-mono text-sm text-dim">
+                <span className="flex items-baseline gap-2">
+                  랭킹 <span className="text-ink">안 올라감</span>
+                </span>
+                <span className="flex items-baseline gap-2">
+                  개인 기록 <span className="text-ink">{practice ? "안 남음" : "남음"}</span>
+                </span>
               </p>
             ) : (
               <SubmitScore

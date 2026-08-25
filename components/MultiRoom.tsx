@@ -167,8 +167,8 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         <input
           ref={attachName}
           maxLength={12}
-          placeholder="이름"
-          aria-label="이름"
+          placeholder="닉네임"
+          aria-label="닉네임"
           autoFocus
           onKeyDown={(e) => e.key === "Enter" && doJoinCode(initialCode)}
           className="rounded-lg border border-edge bg-paint px-4 py-3 text-center text-lg text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
@@ -203,13 +203,13 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
 
         <section className="flex flex-col gap-3">
           <label htmlFor="nickname" className="text-sm font-medium text-dim">
-            이름
+            닉네임
           </label>
           <input
             id="nickname"
             ref={attachName}
             maxLength={12}
-            placeholder="이름"
+            placeholder="닉네임"
             className="rounded-lg border border-edge bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           />
         </section>
@@ -419,9 +419,22 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         </div>
       )}
 
-      <p className="font-mono text-sm text-dim" role="status" aria-live="polite">
-        {error ?? (isHost ? "전원이 준비하면 출발할 수 있습니다" : "방장이 출발시킬 때까지 기다립니다")}
-      </p>
+      {/*
+        오류만 적는다.
+
+        `전원이 준비하면 출발할 수 있습니다` / `방장이 출발시킬 때까지 기다립니다`가
+        늘 떠 있었다. 바로 위 순위표가 사람마다 `준비됨`·`대기 중`을 찍고 있고,
+        방장에게는 `출발` 단추가 있고 아닌 사람에게는 없다. 규칙은 이미 화면에
+        그려져 있는데 그걸 문장으로 한 번 더 말하고 있었다.
+
+        자리는 지운다. 오류가 났을 때만 줄이 생기는데, 그건 드물게 일어나는
+        일이라 그때 아래가 밀려도 된다.
+      */}
+      {error && (
+        <p className="font-mono text-sm text-alert" role="status" aria-live="polite">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -436,12 +449,18 @@ function RoomRules({
   isHost: boolean;
   onChange: (r: { hint?: boolean; skip?: boolean }) => void;
 }) {
-  const rows = [
+  const rows: { key: "hint" | "skip"; name: string; note: string | null; on: boolean }[] = [
     {
       key: "hint" as const,
       name: "초성 힌트",
-      /* 값을 안 물린다. 경주에서는 힌트를 여는 동안 상대가 달리는 것이 이미 값이다. */
-      note: "Tab을 누르면 초성이 보입니다",
+      /*
+        값을 안 물린다. 경주에서는 힌트를 여는 동안 상대가 달리는 것이 이미 값이다.
+
+        `Tab을 누르면 초성이 보입니다`라고 적어 두었었다. 이름이 이미 한 말이고,
+        키는 판 안에서 그 자리에 적혀 있다. 아래 `모르겠으면 넘기기`의 딸림 줄은
+        남긴다 — 그건 이름이 안 하는 말이다(넘긴 곳이 어떻게 세어지는가).
+      */
+      note: null,
       on: rules.hint,
     },
     {
@@ -460,7 +479,7 @@ function RoomRules({
           <li key={r.key} className="flex items-baseline justify-between gap-3">
             <span className="flex flex-col">
               <span className="text-base">{r.name}</span>
-              <span className="text-xs text-dim">{r.note}</span>
+              {r.note && <span className="text-xs text-dim">{r.note}</span>}
             </span>
             {isHost ? (
               <button
@@ -483,8 +502,12 @@ function RoomRules({
           </li>
         ))}
       </ul>
-      {/* 달리는 중에 규칙이 바뀌면 먼저 지나간 사람과 나중 사람이 다른 게임을 한 것이 된다. */}
-      {isHost && <p className="text-xs text-dim">출발하면 바꿀 수 없습니다</p>}
+      {/*
+        `출발하면 바꿀 수 없습니다`를 방장에게 늘 띄우고 있었다. 달리는 중에
+        규칙이 바뀌면 먼저 지나간 사람과 나중 사람이 다른 게임을 한 것이 되므로
+        규칙 자체는 맞는데, 그것을 미리 알려 줄 이유가 없다 — 출발하는 순간
+        단추들이 눌리지 않게 되고, 그때 화면이 스스로 말한다.
+      */}
     </section>
   );
 }
@@ -519,8 +542,11 @@ function NextRound({
 
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-edge p-5">
-      <h2 className="text-sm font-medium text-dim">다음 판</h2>
-
+      {/*
+        제목을 걷었다. `다음 판` 위에 셀렉트가 `하고 싶은 코스 고르기`라고
+        적혀 있고 그 밑에 `한 판 더` 단추가 있다 — 한 컨트롤에 이름이 셋이었다.
+        가려 둔 라벨은 남긴다. 그건 화면에 없는 사람을 위한 것이라 겹치지 않는다.
+      */}
       <label className="sr-only" htmlFor="next-course">
         하고 싶은 코스
       </label>

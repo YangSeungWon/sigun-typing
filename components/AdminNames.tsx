@@ -136,7 +136,7 @@ export function AdminNames() {
           setToken(key);
         }}
       >
-        <h1 className="text-2xl font-semibold">이름 훑기</h1>
+        <h1 className="text-2xl font-semibold">닉네임 훑기</h1>
         {/* 서버가 무슨 값을 기다리는지 그대로 적는다. 이건 도구다. */}
         <input
           type="password"
@@ -158,7 +158,7 @@ export function AdminNames() {
   return (
     <>
       <header className="flex items-baseline justify-between gap-4">
-        <h1 className="text-2xl font-semibold">이름 훑기</h1>
+        <h1 className="text-2xl font-semibold">닉네임 훑기</h1>
         <span className="flex gap-3 font-mono text-sm text-dim">
           <button type="button" onClick={() => void load(token)} className="hover:text-ink">
             새로고침

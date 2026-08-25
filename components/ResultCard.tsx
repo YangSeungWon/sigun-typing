@@ -320,7 +320,15 @@ export function ResultCard({
           안 올라가므로, 같은 숫자라도 다른 판이다.
         */}
         <p className="relative mt-3 flex flex-wrap items-baseline justify-center gap-x-3 font-mono text-base text-on-sign/75">
-          <span>{perfect ? "완주" : "도착"}</span>
+          {/*
+            `도착`을 걷었다. 다 못 돈 판에서는 바로 위에 `16 / 18`이 떠 있고,
+            그 분수가 이미 다 못 돌았다고 말한다. `도착`은 그것을 완곡하게 한 번
+            더 말하는 낱말이라 새로 알려 주는 것이 없다.
+
+            `완주`는 남긴다. 완주한 판에는 위에 시간만 뜨므로, 다 돌았다는 것을
+            말하는 것이 이 낱말뿐이다.
+          */}
+          {perfect && <span>완주</span>}
           <span>{modeLabel}</span>
         </p>
 

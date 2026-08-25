@@ -209,7 +209,7 @@ export function ShareCard({
 
       {/* 복사는 아무 화면 변화가 없다. 눌린 것을 알려 주지 않으면 다시 누른다. */}
       <p className="text-center font-mono text-xs text-dim" role="status" aria-live="polite">
-        {copied ? "복사했습니다 — 붙여 넣어 보내세요" : " "}
+        {copied ? "복사했습니다" : " "}
       </p>
     </div>
   );

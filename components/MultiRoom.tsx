@@ -283,9 +283,12 @@ export function MultiRoom({ initialCode }: MultiRoomProps) {
         </section>
         ) : (
         <section className="flex flex-col gap-3 rounded-xl border border-edge p-6">
-          <h2 className="text-sm font-medium text-dim">
-            받은 방 코드를 넣으세요
-          </h2>
+          {/*
+            제목을 걷었다. `받은 방 코드를 넣으세요`가 시키는 말인 데다,
+            바로 아래 칸이 `ABC123`을 띄우고 그 옆 단추가 무엇을 하는지
+            말한다 — 같은 것을 세 번 말하고 있었다. 칸에는 `aria-label`이
+            이미 붙어 있어 눈으로 못 읽는 사람도 잃는 것이 없다.
+          */}
           <div className="flex gap-2">
             <input
               ref={attachCode}
@@ -680,7 +683,7 @@ function InviteLink({ code, courseName }: { code: string; courseName: string }) 
         onClick={copy}
         className="rounded-lg border border-sign bg-sign/10 px-5 py-3 font-medium text-ink transition-colors hover:bg-sign/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
-        {copied ? "복사했습니다 — 단톡방에 붙여 넣으세요" : "친구 초대 링크 복사"}
+        {copied ? "복사했습니다" : "친구 초대 링크 복사"}
       </button>
       {/* `이름만 넣으면 들어옵니다`는 눌러 보면 아는 것이다. 남길 값은 정원뿐이다. */}
       <p className="font-mono text-sm text-dim">최대 8명</p>

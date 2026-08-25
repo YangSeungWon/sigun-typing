@@ -35,7 +35,7 @@ import { COURSE_GROUPS } from "@/data/groups";
 const COURSE_COUNT = COURSES.length;
 const REGION_COUNT = nationwide.regions.length;
 
-const LEAD = `지도에 표시된 지역이 어디인지 떠올려 이름을 입력하는 타자 연습입니다. 시·도부터 전국 ${REGION_COUNT}개 시군구까지, 외우고 싶은 범위를 골라 시작하세요.`;
+const LEAD = `지도에 표시된 지역이 어디인지 떠올려 이름을 입력하는 타자 연습입니다. 시도부터 전국 ${REGION_COUNT}개 시군구까지, 외우고 싶은 범위를 골라 시작하세요.`;
 
 export const metadata = {
   title: `지도 타이핑 코스 ${COURSE_COUNT}개`,

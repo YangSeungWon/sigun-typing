@@ -479,7 +479,7 @@ export function SignPlate({
 
       {extra.length > 0 && !blind && (
         <span className="font-mono text-sm text-alert" role="status">
-          {extra.length}자 더 쳤습니다 — 지우세요
+          {extra.length}자 더 쳤습니다
         </span>
       )}
     </div>

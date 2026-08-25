@@ -894,7 +894,6 @@ export function Game({
                 <span className="font-mono text-2xl font-bold tabular-nums">
                   {formatChallengeTime(challenge.beatMs)}
                 </span>
-                <span className="text-base text-dim">이 기록을 깨 보세요</span>
               </div>
             )}
             {/*

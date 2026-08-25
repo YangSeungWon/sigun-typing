@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayIndex, EPOCH_KST, pickForDay, pickIndex } from "./pick";
+import { dayIndex, EPOCH_KST, pickForDay, pickIndex, quizDate } from "./pick";
 
 /** KST 벽시계로 읽은 시각을 UTC epoch로. */
 function kst(y: number, m: number, d: number, h = 0): number {
@@ -77,5 +77,22 @@ describe("오늘의 한 곳", () => {
 
   it("고를 것이 없으면 null이다", () => {
     expect(pickForDay([], Date.now())).toBeNull();
+  });
+});
+
+describe("quizDate", () => {
+  it("0일차는 첫날이다", () => {
+    expect(quizDate(0)).toBe("8월 19일");
+  });
+
+  it("달을 넘어간다", () => {
+    // 8월 19일 + 13일 = 9월 1일
+    expect(quizDate(13)).toBe("9월 1일");
+  });
+
+  it("해를 넘어가도 KST 달력을 따른다", () => {
+    // 2026-08-19 + 134일 = 2026-12-31, + 135일 = 2027-01-01
+    expect(quizDate(134)).toBe("12월 31일");
+    expect(quizDate(135)).toBe("1월 1일");
   });
 });

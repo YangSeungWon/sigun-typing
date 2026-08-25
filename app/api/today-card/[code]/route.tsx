@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { MAX_TRIES, type Closeness } from "@/lib/daily/quiz";
+import { quizDate } from "@/lib/daily/pick";
 
 /**
  * 오늘의 퀴즈 공유 그림.
@@ -91,7 +92,7 @@ export async function GET(
             오늘의 퀴즈
           </div>
           <div style={{ fontSize: 34 }}>
-            {Number.isFinite(day) ? `${day + 1}일차` : ""}
+            {Number.isFinite(day) ? quizDate(day) : ""}
           </div>
         </div>
 

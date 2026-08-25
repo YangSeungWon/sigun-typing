@@ -66,9 +66,10 @@ describe("공유 덩어리", () => {
     solved: true,
   };
 
-  it("회차와 성적과 격자가 들어간다", () => {
+  it("날짜와 성적과 격자가 들어간다", () => {
     const t = quizShareText(solved);
-    expect(t).toContain("오늘의 퀴즈 3일차");
+    // 회차(`3일차`)가 아니라 날짜다. 받는 사람이 어느 날 문제인지 아는 값이어야 한다.
+    expect(t).toContain("오늘의 퀴즈 8월 21일");
     expect(t).toContain("3 / 6");
     expect(t).toContain("🟥🟨🟩");
   });

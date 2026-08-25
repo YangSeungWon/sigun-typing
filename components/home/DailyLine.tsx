@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useIsHydrated } from "@/lib/useIsHydrated";
-import { dayIndex } from "@/lib/daily/pick";
+import { dayIndex, quizDate } from "@/lib/daily/pick";
 import { isOver, MAX_TRIES, type QuizState } from "@/lib/daily/quiz";
 import { loadQuiz } from "@/lib/daily/store";
 import { aliveOn, loadStreak } from "@/lib/daily/streak";
@@ -73,7 +73,7 @@ export function DailyLine() {
           {done ? (
             <span className={seen?.quiz.solved ? "text-sign-deep" : undefined}>{score}</span>
           ) : (
-            seen && <span className="tabular-nums">{seen.day + 1}일차</span>
+            seen && <span className="tabular-nums">{quizDate(seen.day)}</span>
           )}
           {/* 첫날에는 안 띄운다. 하루짜리 연속은 아무 말도 아니다. */}
           {seen && seen.streak > 1 && <StreakBadge days={seen.streak} />}

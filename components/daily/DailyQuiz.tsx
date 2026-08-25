@@ -14,6 +14,7 @@ import {
   type QuizState,
 } from "@/lib/daily/quiz";
 import { cardCode, quizShareText } from "@/lib/daily/quiz";
+import { quizDate } from "@/lib/daily/pick";
 import { loadQuiz, saveQuiz } from "@/lib/daily/store";
 import { ShareCard } from "@/components/share/ShareCard";
 import { StreakBadge } from "./StreakBadge";
@@ -543,7 +544,7 @@ export function DailyQuiz({
             }
             tweet={text}
             kakao={{
-              title: `오늘의 퀴즈 ${day + 1}일차`,
+              title: `오늘의 퀴즈 ${quizDate(day)}`,
               // 카드에도 시도를 안 적는다. 받는 사람이 첫 질문의 답을 알고 시작한다.
               description: `${
                 state.solved ? `${state.guesses.length} / ${MAX_TRIES}` : `X / ${MAX_TRIES}`

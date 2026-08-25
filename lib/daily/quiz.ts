@@ -21,6 +21,8 @@
  * 그리고 힌트가 할 일은 이미 다른 것이 한다 — 틀린 답이 지도에서 켜진다.
  */
 
+import { quizDate } from "./pick";
+
 export const MAX_TRIES = 6;
 
 /**
@@ -102,7 +104,7 @@ export function isOver(state: QuizState): boolean {
  * 통째로 사라진다.
  */
 export function quizShareText(state: QuizState): string {
-  const lines = ["시군 타이핑", `오늘의 퀴즈 ${state.day + 1}일차`];
+  const lines = ["시군 타이핑", `오늘의 퀴즈 ${quizDate(state.day)}`];
 
   /*
    * **시도는 안 적는다.**

@@ -356,103 +356,73 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         </div>
       </section>
 
-      {/*
-        메타와 버튼을 한 줄에 둔다. 세로로 쌓으면 내용에 비해 카드가 길어져
-        빈 칸이 남는데, 이 카드가 말하는 것은 코스 이름 하나와 기록 하나뿐이다.
-      */}
-      {/*
-        헷갈리는 짝.
-
-        `최근 5번 중 3번 혼동`이라고 쓸 수 없다. 분모를 저장하지 않기 때문이고,
-        그럴듯하게 지어내느니 아는 것만 적는다.
-      */}
       {data.confusion && (
-        <section
-          aria-label="자꾸 헷갈리는 곳"
-          className="home-confuse relative flex flex-col gap-2 rounded-md bg-paint p-5 pt-4 shadow-[0_1px_0_0_var(--color-edge)]"
+        /*
+          카드가 곧 단추다. 이름은 맨 윗줄에 한 번, 그 아래는 값이다.
+          자세한 사정은 components/home/DailyLine.tsx에 적어 두었다.
+        */
+        <Link
+          href={`/review/${data.confusion.courseId}`}
+          className="home-confuse relative flex flex-col gap-1 rounded-md bg-paint p-5 pt-4 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-2"
         >
           <span
             aria-hidden
             className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
           />
-          {/*
-            제목을 걷었다.
-
-            `자꾸 헷갈리는 곳`이 무슨 카드인지 말하고, 아래 단추가 `오답 복습`이라고
-            한 번 더 말하고 있었다. 게다가 그 사이의 `최근 오답 2회`가 이미
-            같은 말을 값으로 하고 있다 — 한 카드가 자기 이름을 세 번 댔다.
-
-            **이름은 단추가 맡는다.** 눌러서 가는 곳의 이름이 그 카드의 이름이고,
-            그러면 카드마다 한 줄씩 짧아진다. 옆 두 칸도 같은 규칙이다.
-          */}
+          <span className="relative font-medium">오답 복습</span>
           {/*
             값이지 제목이 아니다. 24px 600으로 두었더니 히어로 다음으로 크고
             `이어하기`(20px)보다 커서, 보조 카드가 주 단추를 눌렀다. 옆 두 칸의
             값과 같은 18px로 내린다 — 굵기와 색은 남겨 셋 중 가장 무겁게 둔다.
           */}
-          <p className="relative text-lg font-semibold">
+          <span className="relative text-lg font-semibold">
             {data.confusion.a} <span className="text-dim">↔</span>{" "}
             {data.confusion.b}
-          </p>
+          </span>
           {/*
+            `최근 5번 중 3번 혼동`이라고 쓸 수 없다. 분모를 저장하지 않기
+            때문이고, 그럴듯하게 지어내느니 아는 것만 적는다.
+
             빨강은 지금 틀렸다는 신호다(SignPlate 참조). 여기 숫자는 지난
             일이라 같은 색을 쓰면 화면에서 유일한 빨강이 되어 먼저 읽힌다.
           */}
-          <p className="relative font-mono text-sm text-dim tabular-nums">
+          <span className="relative font-mono text-sm text-dim tabular-nums">
             최근 오답 {data.confusion.count}회
-          </p>
-          <Link
-            href={`/review/${data.confusion.courseId}`}
-            className="relative mt-auto rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium transition-colors hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-          >
-            오답 복습
-          </Link>
-        </section>
+          </span>
+        </Link>
       )}
 
       {/*
-        대결은 한 줄로 둔다. 혼자 하는 흐름이 이 서비스의 본체라, 카드로 키우면
-        그 흐름을 가로막는다.
-      */}
-      {/*
         오늘의 퀴즈로 가는 문.
 
-        대결과 같은 한 줄짜리다. 매일 한 번뿐이라 자리를 크게 줄 이유가 없고,
-        오히려 늘 같은 자리에 조용히 있는 편이 매일 들르게 만든다.
+        보조 카드 셋은 같은 꼴이다 — 이름 한 줄, 값 한두 줄, 카드 전체가 문.
+        혼자 하는 흐름이 이 서비스의 본체라 이 셋 중 어느 것도 시작 버튼보다
+        무거워지면 안 된다.
 
         아래 탭 바는 넷으로 고정이라(홈·도전·대결·기록) 거기에는 못 넣는다.
         첫 화면에서 시작 버튼 다음에 오는 것이 지금은 대결뿐이라 그 위에 둔다.
       */}
       <DailyLine />
 
-      <section
-        aria-label="친구 대결"
-        className="home-friends relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
+      <Link
+        href="/rooms"
+        className="home-friends relative flex flex-col gap-1 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-2 lg:p-5 lg:pt-4"
+      >
         <span
           aria-hidden
           className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
         />
+        <span className="relative font-medium">친구 대결</span>
         {/*
-          여기는 설명이 한 줄 있어야 하는 자리다. 대결은 처음 보는 사람에게
+          여기는 값이 한 줄 있어야 하는 자리다. 대결은 처음 보는 사람에게
           무엇이 벌어지는지가 이름만으로 안 그려진다. 그래도 문장은 아니다 —
           명사와 숫자로 적는다.
-
-          좁은 화면에서 감추고 있었다. 이름(`친구 대결`)과 나란히 두면 줄바꿈이
-          생겨 한 줄짜리가 두 줄이 됐기 때문인데, 그 이름이 단추로 갔으므로
-          이제 자리가 남는다. 그리고 이 값이 사라지면 좁은 화면에서는 카드에
-          단추만 남는다.
         */}
-        <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim lg:flex-col lg:items-start lg:gap-1 lg:text-lg">
+        <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
           <span>같은 코스</span>
           <span>최대 8명</span>
         </span>
-        <Link
-          href="/rooms"
-          className="relative rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium whitespace-nowrap transition-colors lg:mt-auto hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          친구 대결
-        </Link>
-      </section>
+      </Link>
     </main>
   );
 }

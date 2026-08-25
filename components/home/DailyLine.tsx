@@ -48,9 +48,21 @@ export function DailyLine() {
     : `X / ${MAX_TRIES}`;
 
   return (
-    <section
-      aria-label="오늘의 퀴즈"
-      className="home-daily relative flex items-center justify-between gap-4 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] lg:flex-col lg:items-stretch lg:gap-2 lg:p-5 lg:pt-4">
+    /*
+     * **카드가 곧 단추다.**
+     *
+     * 카드 안에 단추를 하나 두고 있었다. 그러면 그 단추에 이름을 적어야 하고,
+     * 카드에도 이름이 있으니 한 카드가 자기 이름을 두 번 댄다. 이름을 단추로
+     * 옮겨 봤는데 이번엔 카드와 단추가 따로 놀았다 — 누를 것은 오른쪽 끝
+     * 조각뿐인데 그 조각이 카드의 이름을 달고 있다.
+     *
+     * 카드 전체가 가는 문이면 둘 다 풀린다. 이름은 맨 윗줄에 한 번, 그 아래는
+     * 값이고, 누르는 자리는 카드 전체다. 옆 두 칸도 같은 규칙이다.
+     */
+    <Link
+      href="/today"
+      className="home-daily relative flex flex-col gap-1 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-2 lg:p-5 lg:pt-4"
+    >
       {/*
         판면으로 세운다.
 
@@ -62,43 +74,22 @@ export function DailyLine() {
         aria-hidden
         className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
       />
-      {/*
-        이름은 단추가 맡는다. `오늘의 퀴즈`를 왼쪽에 적고 오른쪽 단추가
-        `풀기`라고 하고 있었는데, 옆 카드 둘도 같은 꼴이라 첫 화면이 카드마다
-        이름을 두 번씩 대고 있었다. 눌러서 가는 곳의 이름이 그 카드의 이름이다.
+      <span className="relative font-medium">오늘의 퀴즈</span>
+      <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
+        {/*
+          푼 날에는 성적이, 안 푼 날에는 며칠 문제인지가 온다.
 
-        푼 날과 안 푼 날을 단추로 가르지 않아도 된다(`풀기` / `다시 보기`).
-        바로 왼쪽의 값이 이미 가른다 — 안 푼 날은 날짜, 푼 날은 성적이다.
-      */}
-      <span className="relative flex items-baseline gap-3 lg:flex-col lg:items-start lg:gap-1">
-        <span className="flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
-          {/*
-            푼 날에는 성적이, 안 푼 날에는 몇 번째 문제인지가 온다.
-
-            `하루 한 곳 여섯 번`이라고 적어 두었었다. 그건 값이 아니라 규칙이고,
-            규칙은 들어가면 화면이 다 말해 준다. 판 번호는 워들이 같은 자리에
-            두는 것이기도 하다 — 매일 새 문제가 나온다는 말을 문장 없이 한다.
-          */}
-          {done ? (
-            <span className={seen?.quiz.solved ? "text-sign-deep" : undefined}>{score}</span>
-          ) : (
-            seen && <span className="tabular-nums">{quizDate(seen.day)}</span>
-          )}
-          {/* 첫날에는 안 띄운다. 하루짜리 연속은 아무 말도 아니다. */}
-          {seen && seen.streak > 1 && <StreakBadge days={seen.streak} />}
-        </span>
+          `하루 한 곳 여섯 번`이라고 적어 두었었다. 그건 값이 아니라 규칙이고,
+          규칙은 들어가면 화면이 다 말해 준다.
+        */}
+        {done ? (
+          <span className={seen?.quiz.solved ? "text-sign-deep" : undefined}>{score}</span>
+        ) : (
+          seen && <span className="tabular-nums">{quizDate(seen.day)}</span>
+        )}
+        {/* 첫날에는 안 띄운다. 하루짜리 연속은 아무 말도 아니다. */}
+        {seen && seen.streak > 1 && <StreakBadge days={seen.streak} />}
       </span>
-      <Link
-        href="/today"
-        aria-label="오늘의 퀴즈 풀기"
-        /*
-          단추를 채운다. 실선 하나로는 누를 것으로 안 보였다. 초록은 안 쓴다 —
-          첫 화면의 초록은 `전국 시작` 하나여야 한다.
-        */
-        className="relative rounded-sm bg-concrete-deep px-5 py-2 text-center font-medium whitespace-nowrap transition-colors lg:mt-auto hover:bg-dim hover:text-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        오늘의 퀴즈
-      </Link>
-    </section>
+    </Link>
   );
 }

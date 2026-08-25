@@ -269,7 +269,21 @@ export function DailyQuiz({
 
   return (
     <div className="flex w-full flex-col gap-5">
-      {stage !== "done" && alive > 1 && <StreakBadge days={alive} />}
+      {/*
+        한 줄이다.
+
+        이름·날짜·이어 온 날이 세 줄로 쌓여 있었다. 셋 다 짧아서 한 줄에 다
+        들어가는데, 세로로 두면 지도가 그만큼 아래로 밀린다. 이 화면의 본체는
+        지도다.
+
+        불꽃을 페이지 쪽 머리글로 못 올린다. 판을 끝내는 순간 하루치가 세어져
+        숫자가 오르는데, 서버 컴포넌트에 두면 그때 안 따라온다.
+      */}
+      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 className="text-4xl font-bold tracking-tight">오늘의 퀴즈</h1>
+        <p className="font-mono text-sm text-dim">{quizDate(day)}</p>
+        {alive > 1 && <StreakBadge days={alive} />}
+      </header>
 
       {/*
         본편과 같은 구조로 둔다.
@@ -344,7 +358,7 @@ export function DailyQuiz({
           그리는 꼴이다. 카메라가 들어간 뒤부터 맡을 일이 생긴다.
         */}
         {stage !== "sido" && (
-        <span className="pointer-events-none absolute top-0 left-0 rounded-md border border-edge bg-paint px-1.5 py-1">
+        <span className="pointer-events-none absolute top-0 left-0 border border-edge bg-paint px-1.5 py-1">
           <MiniMap
             geo={geo}
             currentCode={answerCode}
@@ -397,16 +411,47 @@ export function DailyQuiz({
 
       {stage === "region" && (
         <section className="flex flex-col gap-3">
-          <h2 className="flex items-baseline justify-between gap-4 font-mono text-sm text-dim">
-            <span>어느 시군구입니까</span>
-            {/*
-              규칙을 문장으로 설명하지 않는다. 없는 이름을 냈을 때 이 숫자가
-              잠깐 반응하고, 그대로인 것을 사람이 스스로 본다.
-            */}
-            <span key={rejected} className={rejected > 0 ? "tally-hold" : undefined}>
-              {left}번 남음
-            </span>
-          </h2>
+          {/*
+            남은 횟수를 칸으로 보인다.
+
+            `2번 남음`이라고 적고 있었다. 그건 셀 수 있는 것을 글로 옮긴 것이고,
+            칸 여섯을 늘어놓으면 몇 칸이 남았는지가 세지 않아도 보인다. 채워진
+            칸의 색은 공유될 격자와 같은 색이라, 무엇이 나가는지도 여기서 미리
+            읽힌다.
+
+            `어느 시군구입니까`도 걷었다. 지도에 한 곳이 켜져 있고 그 아래
+            입력칸이 있으면 무엇을 하라는 것인지 문장 없이 읽힌다. 시도 단계의
+            물음은 남긴다 — 거기는 선택지가 열일곱 개라 무엇을 고르는 목록인지
+            말해 주지 않으면 지도와 이어지지 않는다.
+
+            없는 이름을 냈을 때 여기가 한 번 반응한다. 안 깎였다는 것을 안
+            깎인 칸이 스스로 말한다.
+          */}
+          <p
+            key={rejected}
+            className={`flex gap-1.5 ${rejected > 0 ? "tally-hold" : ""}`}
+            role="status"
+            aria-label={`${left}번 남았습니다`}
+          >
+            {Array.from({ length: MAX_TRIES }, (_, i) => {
+              const g = state.guesses[i];
+              return (
+                <span
+                  key={i}
+                  aria-hidden
+                  className={`h-2.5 w-6 rounded-xs ${
+                    g
+                      ? g.closeness === "hit"
+                        ? "bg-sign"
+                        : g.closeness === "near"
+                          ? "bg-centerline"
+                          : "bg-alert"
+                      : "border border-edge"
+                  }`}
+                />
+              );
+            })}
+          </p>
           {/*
             물린 답은 **입력칸이 말한다.** 아래에 뜨는 한 줄은 눈이 이미
             지나간 자리에 있어서, 친 사람은 자기가 친 글자를 보고 있다.
@@ -554,12 +599,12 @@ export function DailyQuiz({
 
           {/*
             하루에 한 번인 게임에서 "끝"만 적으면 오늘 여기서 관계가 끊긴다.
-            그 자리에 문장을 두는 대신 값을 둔다 — 줄어드는 시계와 이어 온 날.
+            그 자리에 문장을 두는 대신 값을 둔다 — 줄어드는 시계.
 
-            첫날에는 불꽃을 안 띄운다. 하루짜리 연속은 아무 말도 아니다.
+            이어 온 날은 여기 없다. 머리글이 늘 들고 있고, 판을 끝내는 순간
+            거기 숫자가 오른다. 한 화면에 불꽃이 둘일 이유가 없다.
           */}
           <p className="flex flex-wrap items-baseline gap-x-4 font-mono text-sm text-dim">
-            {streak && streak.current > 1 && <StreakBadge days={streak.current} />}
             <NextQuiz />
           </p>
         </section>

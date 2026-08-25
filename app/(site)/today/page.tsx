@@ -1,6 +1,6 @@
 import { getCourse } from "@/data/courses";
 import { loadCourseGeo } from "@/lib/geo";
-import { pickForDay, quizDate } from "@/lib/daily/pick";
+import { pickForDay } from "@/lib/daily/pick";
 import { DailyQuiz, type QuizRegion } from "@/components/daily/DailyQuiz";
 
 /**
@@ -40,11 +40,6 @@ export default async function TodayPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-4xl font-bold tracking-tight">오늘의 퀴즈</h1>
-        <p className="font-mono text-sm text-dim">{quizDate(today.day)}</p>
-      </header>
-
       <DailyQuiz
         day={today.day}
         geo={geo}

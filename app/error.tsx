@@ -48,7 +48,12 @@ export default function Error({
           onClick={reset}
           className="rounded-lg bg-sign px-5 py-3 font-medium text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          다시 시도
+          {/*
+            `다시 시도`가 아니다. 이 사이트는 `시도`를 행정구역 뜻으로 쓴다
+            (`어느 시도입니까`, `전국 17 시도`, 연표의 `시도 17곳`). 한 낱말이
+            한 사이트에서 두 뜻을 지면 둘 다 한 번씩 멈칫하게 된다.
+          */}
+          다시 불러오기
         </button>
         <Link
           href="/"

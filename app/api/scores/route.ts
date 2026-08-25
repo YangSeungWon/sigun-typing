@@ -63,7 +63,8 @@ export async function POST(request: Request) {
   const recent = await repo.recentCount(deviceId, RATE_WINDOW_MS, now);
   if (recent >= RATE_LIMIT) {
     return NextResponse.json(
-      { error: "잠시 후 다시 시도해 주세요" },
+      // `시도`는 이 사이트에서 행정구역을 가리키는 낱말이라 여기서는 안 쓴다.
+      { error: "잠시 후 다시 보내 주세요" },
       { status: 429 },
     );
   }

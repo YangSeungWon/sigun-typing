@@ -20,6 +20,9 @@ import { StreakBadge } from "./StreakBadge";
 import { NextQuiz } from "./NextQuiz";
 import { aliveOn, loadStreak, recordDay, type Streak } from "@/lib/daily/streak";
 
+/** 시군구를 이루는 끝 글자 셋. 화면에 쓰는 `시군구`와 같은 차례로 둔다. */
+const SUFFIXES = ["시", "군", "구"] as const;
+
 export interface QuizRegion {
   code: string;
   name: string;
@@ -162,30 +165,43 @@ export function DailyQuiz({
     return pool.length > 0 ? pool[(day * 89) % pool.length].name : "이름";
   }, [regions, answerSido, day]);
 
+  /**
+   * 접미사 단추를 낼 자리인가.
+   *
+   * 접미사 **하나만** 붙이면 실재하는 이름이 될 때 낸다 — `해운대`를 아는
+   * 사람이 `구`를 붙여야 하는 줄 몰랐던 것뿐인 자리다. 이미 온전한 이름이면
+   * 안 낸다.
+   *
+   * 앞부분이기만 하면 내도록 두었더니 치는 도중에 계속 떴다. `해`에서 벌써
+   * `해시`·`해군`·`해구`가 뜨는데, 그건 도와주는 것이 아니라 말이 안 되는
+   * 것을 세 개 보여 주는 것이다.
+   *
+   * 셋을 **늘 함께** 낸다. 실제로 완성되는 것만 남기면(`해운대` → `구` 하나)
+   * 그날 답의 접미사를 알려 주는 셈이 된다. 시인지 군인지 구인지는 이 게임이
+   * 묻는 지식이라 거기까지는 안 준다. 주는 것은 형식뿐이다.
+   */
+  const completable = useMemo(() => {
+    const typed = input.trim();
+    if (typed === "") return false;
+    if (regions.some((r) => r.name === typed || r.aliases?.includes(typed))) return false;
+    return SUFFIXES.some((x) => regions.some((r) => r.name === typed + x));
+  }, [input, regions]);
+
   const pickSido = (code: string) => {
     setNote(null);
     put({ ...state, sidoPicks: [...state.sidoPicks, code] });
   };
 
-  const submit = () => {
-    const typed = input.trim();
+  /** 접미사 단추가 부를 때는 그 값을 넘긴다. 상태가 아직 안 반영됐을 수 있다. */
+  const submit = (raw: string = input) => {
+    const typed = raw.trim();
     if (typed === "" || stage !== "region") return;
 
     const matches = regions.filter(
       (r) => r.name === typed || r.aliases?.includes(typed),
     );
     if (matches.length === 0) {
-      /*
-       * 접미사만 빠진 것과 정말 모르는 이름은 다른 일이다.
-       *
-       * `해운대`는 아는 이름이다. 그 사람에게 `없는 이름입니다`라고 하면
-       * 자기 기억을 의심하게 되는데, 실제로 틀린 것은 기억이 아니라 표기다.
-       *
-       * 어떤 접미사인지는 말하지 않는다. 그러면 그날 답을 절반 알려 주는
-       * 날이 생긴다. 끝까지 쓰라는 것만으로 충분하다 — 이름은 이미 알고 있다.
-       */
-      const partial = regions.some((r) => r.name.startsWith(typed) && r.name !== typed);
-      setNote(partial ? "이름 끝까지 씁니다" : "없는 이름입니다");
+      setNote("없는 이름입니다");
       setRejected((n) => n + 1);
       return;
     }
@@ -246,7 +262,7 @@ export function DailyQuiz({
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (stage === "region") inputRef.current?.focus();
-  }, [stage, state.guesses.length]);
+  }, [stage, state.guesses.length, rejected]);
 
   const alive = streak ? aliveOn(streak, day) : 0;
 
@@ -390,7 +406,19 @@ export function DailyQuiz({
               {left}번 남음
             </span>
           </h2>
-          <div className="flex gap-2">
+          {/*
+            물린 답은 **입력칸이 말한다.** 아래에 뜨는 한 줄은 눈이 이미
+            지나간 자리에 있어서, 친 사람은 자기가 친 글자를 보고 있다.
+            표지판이 오답에 쓰는 흔들림을 그대로 가져온다.
+
+            `key`로 다시 붙여 애니메이션을 되감는다 — 클래스를 껐다 켜는
+            것으로는 두 번째부터 안 돈다. 그래서 초점이 날아가므로 아래
+            `useEffect`가 `rejected`까지 보고 되돌린다.
+          */}
+          <div
+            key={`shake-${rejected}`}
+            className={`flex gap-2 ${rejected > 0 ? "plate-shake" : ""}`}
+          >
             <label className="sr-only" htmlFor="guess">
               시군구 이름
             </label>
@@ -398,19 +426,52 @@ export function DailyQuiz({
               id="guess"
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              /* 고치기 시작하면 물렸다는 표시는 사라진다. 손대는 중에 빨간 테두리가 남아 있으면 그것도 지금 상태로 읽힌다. */
+              onChange={(e) => {
+                setInput(e.target.value);
+                if (note) setNote(null);
+              }}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder={sample}
-              className="flex-1 rounded-lg border border-edge bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className={`flex-1 rounded-lg border bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                note ? "border-alert" : "border-edge"
+              }`}
             />
             <button
               type="button"
-              onClick={submit}
+              onClick={() => submit()}
               className="rounded-lg bg-sign px-5 py-3 font-medium whitespace-nowrap text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               제출
             </button>
           </div>
+
+          {/*
+            친 이름을 그대로 두고 끝만 고른다.
+
+            `이름 끝까지 씁니다`라고 적어 두었었는데, 그건 사실을 말하는 것이
+            아니라 시키는 말이라 건방지다. 시킬 것이 있으면 시키는 대신
+            누를 것을 준다.
+          */}
+          {completable && (
+            <div className="flex gap-2">
+              {SUFFIXES.map((suffix) => (
+                <button
+                  key={suffix}
+                  type="button"
+                  onClick={() => {
+                    const full = input.trim() + suffix;
+                    setInput(full);
+                    submit(full);
+                  }}
+                  className="rounded-lg border border-edge px-4 py-2 font-mono text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                >
+                  {input.trim()}
+                  <span className="font-bold text-ink">{suffix}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

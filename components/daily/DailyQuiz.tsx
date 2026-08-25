@@ -134,6 +134,34 @@ export function DailyQuiz({
    * `거기`도 이 화면에서는 헷갈리는 말이다. 지도가 켜져 있는 판이라 지도 위
    * 어딘가를 가리키는 말로 먼저 읽힌다.
    */
+  /**
+   * 입력칸에 미리 앉혀 두는 이름.
+   *
+   * 이 게임의 정답은 지도에 적히는 정식 명칭이다 — `해운대구`, `이천시`,
+   * `가평군`(data/courses/place.ts). 본편에서는 표지판이 이름이나 초성을
+   * 보여 주므로 그 규칙이 눈에 보이는데, **이 화면에서만 안 보인다.** 지도가
+   * 이름을 안 띄우는 것이 이 퀴즈의 전부이기 때문이다.
+   *
+   * 그래서 `해운대`를 아는 사람이 `해운대`를 치고 `없는 이름입니다`를 받았다.
+   * 규칙을 문장으로 적는 대신 형식을 하나 앉혀 둔다 — 빈 칸에 놓인 이름은
+   * 예시로 읽힌다.
+   *
+   * 정답의 시도 밖에서 고른다. 제주는 두 곳, 세종은 한 곳이라 같은 시도에서
+   * 뽑으면 그날 답이 반쯤 드러난다. 접미사가 보이도록 세 글자 이상만 쓴다 —
+   * `중구`로는 무엇을 붙이라는 것인지 알 수 없다.
+   */
+  const sample = useMemo(() => {
+    const pool = regions.filter(
+      (r) => !r.code.startsWith(answerSido) && [...r.name].length >= 3,
+    );
+    /*
+     * 성큼성큼 건너뛴다. `day % pool.length`로 두면 첫 며칠의 예시가 목록
+     * 앞쪽에 몰려 전부 인천 언저리가 된다 — 답일 수는 없지만 그 근처를
+     * 가리키는 것처럼 읽힌다.
+     */
+    return pool.length > 0 ? pool[(day * 89) % pool.length].name : "이름";
+  }, [regions, answerSido, day]);
+
   const pickSido = (code: string) => {
     setNote(null);
     put({ ...state, sidoPicks: [...state.sidoPicks, code] });
@@ -147,7 +175,17 @@ export function DailyQuiz({
       (r) => r.name === typed || r.aliases?.includes(typed),
     );
     if (matches.length === 0) {
-      setNote("없는 이름입니다");
+      /*
+       * 접미사만 빠진 것과 정말 모르는 이름은 다른 일이다.
+       *
+       * `해운대`는 아는 이름이다. 그 사람에게 `없는 이름입니다`라고 하면
+       * 자기 기억을 의심하게 되는데, 실제로 틀린 것은 기억이 아니라 표기다.
+       *
+       * 어떤 접미사인지는 말하지 않는다. 그러면 그날 답을 절반 알려 주는
+       * 날이 생긴다. 끝까지 쓰라는 것만으로 충분하다 — 이름은 이미 알고 있다.
+       */
+      const partial = regions.some((r) => r.name.startsWith(typed) && r.name !== typed);
+      setNote(partial ? "이름 끝까지 씁니다" : "없는 이름입니다");
       setRejected((n) => n + 1);
       return;
     }
@@ -246,7 +284,22 @@ export function DailyQuiz({
            */
           missedCodes={stage === "done" && !state.solved ? [answerCode] : undefined}
           explore={stage === "done"}
-          focus
+          /*
+           * 카메라가 질문을 따라간다.
+           *
+           * 처음부터 정답 지역으로 당겨 두었었다. 그런데 1단계가 묻는 것은
+           * `어느 시도인가`이고 그 답을 주는 것은 큰 지도가 아니라 구석의
+           * 미니맵이었다 — 큰 지도는 아직 필요 없는 것을 보여 주고, 필요한
+           * 것은 20px짜리 창이 맡고 있었다.
+           *
+           * 그래서 시도를 맞혀도 화면이 안 변했다. 변할 것이 없었다.
+           *
+           * 이제 1단계는 전국을 펴 놓고 문제인 곳만 켠다(`어디쯤인가`),
+           * 맞히면 그 곳으로 들어간다(`이 모양은 무엇인가`). **카메라가
+           * 움직이는 것 자체가 맞혔다는 신호다.** 따로 축하 문구를 놓지
+           * 않아도 되고, 각 단계는 그 질문에 필요한 것만 보여 준다.
+           */
+          focus={stage !== "sido"}
           /*
            * 폭은 다 쓰고 높이만 잡는다.
            *
@@ -269,6 +322,11 @@ export function DailyQuiz({
           왼쪽 위에 둔다. 오른쪽 위는 강원 동해안이라, 하필 그 근처가 답인 날에
           답을 가린다. 왼쪽 위는 서해뿐이다.
         */}
+        {/*
+          큰 지도가 전국을 펴 놓은 동안에는 미니맵이 같은 그림을 작게 한 번 더
+          그리는 꼴이다. 카메라가 들어간 뒤부터 맡을 일이 생긴다.
+        */}
+        {stage !== "sido" && (
         <span className="pointer-events-none absolute top-0 left-0 rounded-md border border-edge bg-paint px-1.5 py-1">
           <MiniMap
             geo={geo}
@@ -277,6 +335,7 @@ export function DailyQuiz({
             className="size-20 sm:size-24"
           />
         </span>
+        )}
       </div>
 
       {/* 낸 답들. 색이 곧 공유될 격자다. */}
@@ -341,7 +400,7 @@ export function DailyQuiz({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="이름"
+              placeholder={sample}
               className="flex-1 rounded-lg border border-edge bg-paint px-4 py-3 text-ink placeholder:text-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             />
             <button

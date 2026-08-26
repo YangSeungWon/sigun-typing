@@ -333,26 +333,50 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           </Link>
 
           {/*
+            **층을 갈라 낸다.**
+
+            `랜덤 도전` 하나였다. 겹치는 코스만 걸러 뽑았는데, 그 뒤에 읍면동
+            코스 이백쉰두 개가 들어오면서 후보 이백예순아홉 중 94%가 읍면동이
+            됐다. 이름은 `랜덤`인데 실제로는 거의 읍면동 랜덤이었고, 시군구를
+            기대하고 누른 사람은 서른 판을 눌러도 시군구를 못 만난다.
+
+            두 단추로 가른다. 이름이 무엇을 주는지 말하므로 눌러 보기 전에
+            안다. 나누지 않고 층을 반반으로 뽑는 안도 있었는데, 그러면 눌러
+            봐야 무엇이 나오는지 아는 것은 그대로다.
+
             링크가 아니라 버튼이다. 어디로 갈지는 **누를 때** 정해야 한다 —
             렌더 중에 뽑으면 서버와 브라우저가 다른 코스를 고르고, 그게 곧
             하이드레이션 불일치다.
           */}
-          <button
-            type="button"
-            onClick={() => {
-              /*
-               * 겹치는 코스는 뽑지 않는다. `랜덤`을 누르는 사람은 가볍게 한 판
-               * 하겠다는 뜻인데 스무 판쯤 걸리는 전국 시군구가 나오면 약속이
-               * 다르다. 끝판왕은 찾아가는 것이지 걸리는 것이 아니다.
-               */
-              const pool = seed.courses.filter((c) => !c.overlapping);
-              const pick = pool[Math.floor(Math.random() * pool.length)];
-              router.push(`/play/map/${pick.id}?from=home_secondary`);
-            }}
-            className="rounded-xl border border-edge px-6 py-4 text-center text-base font-medium transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-          >
-            랜덤 도전
-          </button>
+          <div className="flex gap-2">
+            {(
+              [
+                /*
+                 * 겹치는 코스는 뽑지 않는다. `랜덤`을 누르는 사람은 가볍게 한 판
+                 * 하겠다는 뜻인데 스무 판쯤 걸리는 전국 시군구가 나오면 약속이
+                 * 다르다. 끝판왕은 찾아가는 것이지 걸리는 것이 아니다.
+                 */
+                { label: "시군구 랜덤", level: "sigungu" as const },
+                { label: "읍면동 랜덤", level: "dong" as const },
+              ]
+            ).map(({ label, level }) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => {
+                  const pool = seed.courses.filter(
+                    (c) => !c.overlapping && c.level === level,
+                  );
+                  if (pool.length === 0) return;
+                  const pick = pool[Math.floor(Math.random() * pool.length)];
+                  router.push(`/play/map/${pick.id}?from=home_secondary`);
+                }}
+                className="flex-1 rounded-xl border border-edge px-5 py-4 text-center text-base font-medium whitespace-nowrap transition-colors hover:border-dim hover:bg-paint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 

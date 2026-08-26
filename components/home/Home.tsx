@@ -363,7 +363,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
         */
         <Link
           href={`/review/${data.confusion.courseId}`}
-          className="home-confuse relative flex flex-col gap-1 rounded-md bg-paint p-5 pt-4 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-2"
+          className="home-confuse relative flex flex-col gap-1 rounded-md bg-paint p-5 pt-4 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-1.5 lg:p-4"
         >
           <span
             aria-hidden
@@ -414,7 +414,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
 
       <Link
         href="/rooms"
-        className="home-friends relative flex flex-col gap-1 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-2 lg:p-5 lg:pt-4"
+        className="home-friends relative flex flex-col gap-1 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-1.5 lg:p-4"
       >
         <span
           aria-hidden
@@ -426,7 +426,7 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           무엇이 벌어지는지가 이름만으로 안 그려진다. 그래도 문장은 아니다 —
           명사와 숫자로 적는다.
         */}
-        <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
+        <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim">
           <span>같은 코스</span>
           <span>최대 8명</span>
         </span>

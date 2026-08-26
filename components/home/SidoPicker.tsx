@@ -82,7 +82,20 @@ export function SidoPicker({
                   selected ? "text-on-sign/80" : "text-dim"
                 }`}
               >
-                {region.known} / {region.total}
+                {/*
+                  빗금을 세로로 맞춘다.
+
+                  `justify-between`이 오른쪽 끝을 맞춰 주는데, 분모가 한 자리인
+                  곳이 여섯이라(대전·광주·대구·울산·세종·제주) 그 줄만 빗금이
+                  한 칸 오른쪽으로 밀렸다. 열일곱 줄이 세로로 서 있는 목록에서
+                  눈이 따라가는 선은 오른쪽 끝이 아니라 빗금이다.
+
+                  칸을 고정해 둔다. `tabular-nums`가 이미 자릿수를 맞추고
+                  있으므로 `2ch`면 두 자리까지 정확히 들어간다.
+                */}
+                <span className="inline-block w-[2ch] text-right">{region.known}</span>
+                {" / "}
+                <span className="inline-block w-[2ch] text-left">{region.total}</span>
               </span>
             </button>
           </li>

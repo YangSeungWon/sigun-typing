@@ -61,7 +61,7 @@ export function DailyLine() {
      */
     <Link
       href="/today"
-      className="home-daily relative flex flex-col gap-1 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-2 lg:p-5 lg:pt-4"
+      className="home-daily relative flex flex-col gap-1 rounded-md bg-paint px-5 py-3.5 shadow-[0_1px_0_0_var(--color-edge)] transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:gap-1.5 lg:p-4"
     >
       {/*
         판면으로 세운다.
@@ -75,7 +75,7 @@ export function DailyLine() {
         className="pointer-events-none absolute inset-1.5 rounded-sm border border-edge"
       />
       <span className="relative font-semibold">오늘의 퀴즈</span>
-      <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim lg:text-lg">
+      <span className="relative flex items-baseline gap-3 font-mono text-sm text-dim">
         {/*
           푼 날에는 성적이, 안 푼 날에는 며칠 문제인지가 온다.
 

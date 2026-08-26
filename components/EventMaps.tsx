@@ -183,12 +183,19 @@ export function EventMaps({ event }: { event: HistoryEvent }) {
       </div>
 
       {/*
-        점선이 무엇인지 한 번은 밝혀야 한다. 지도 아래 한 줄이면 되고,
-        아무것도 겹치지 않은 사건에서는 이 줄도 없다.
+        지도 아래 한 줄에 두 가지를 밝힌다.
+
+        **`곳`이 무엇을 세는지.** 전국 총계로 읽힌다 — `2009 20곳 → 2010 22곳`을
+        보고 대한민국 시군구가 스무 곳이었다고 읽을 사람이 있다. 이 페이지는
+        사건이 일어난 시도만 잘라 보여 주므로 그 안의 수다. 그 전제를 화면에
+        안 적고 있었다.
+
+        **점선이 언제 경계인지.** 아무것도 겹치지 않은 사건에서는 그 절반이 없다.
       */}
-      {ghost.length > 0 && (
-        <p className="text-center font-mono text-xs text-dim">점선은 {first.year}년 경계</p>
-      )}
+      <p className="flex flex-wrap justify-center gap-x-4 text-center font-mono text-xs text-dim">
+        <span>이 지도 안에서만 셉니다</span>
+        {ghost.length > 0 && <span>점선은 {first.year}년 경계</span>}
+      </p>
 
       {/*
         바뀐 내용은 표다.

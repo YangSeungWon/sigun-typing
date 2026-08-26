@@ -26,9 +26,17 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
   const event = find(year);
   if (!event) notFound();
 
-  const i = EVENTS.indexOf(event);
-  const prev = EVENTS[i - 1];
-  const next = EVENTS[i + 1];
+  /*
+   * 이웃은 **연도순으로** 잡는다.
+   *
+   * 배열 차례를 그대로 쓰고 있었는데, 읍면동 층의 부천 이야기(2019)가 뒤에
+   * 덧붙어 있어서 2024의 다음이 2019가 됐다. 시간축이 갑자기 되감기는 것처럼
+   * 보이고, 실제로는 그 페이지가 2018과 2023 사이에 놓일 이야기다.
+   */
+  const order = [...EVENTS].sort((a, b) => a.year.localeCompare(b.year));
+  const i = order.indexOf(event);
+  const prev = order[i - 1];
+  const next = order[i + 1];
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
@@ -41,9 +49,22 @@ export default async function EventPage({ params }: PageProps<"/history/[year]">
         </h1>
         <div className="flex flex-col items-end gap-1">
           {/*
-            실제 날짜를 모르면 그렇다고 밝힌다. 자료의 해는 시행일보다 늦을 수
-            있다 — 제주특별자치도는 2006년 출범인데 2007년 판에서야 바뀐다.
-            아는 척하느니 어디까지 아는지를 적는다.
+            **큰 숫자는 실제로 일어난 해다.** 주소와 목록의 해는 그것이 경계
+            자료에 처음 나타난 해이고, 둘이 다른 경우가 있다 — 대구·인천직할시는
+            1981년에 생겼는데 자료가 5년 단위라 1985년 판에서 처음 보인다.
+
+            그동안 이 페이지는 큰 숫자만 실제 해로 바꿔 놓고 그 사정을 안
+            적었다. 목록에서 `1985`를 누르고 들어와 `1981`을 보면 어느 쪽이
+            맞는지 알 수가 없다. 다르면 다르다고 적는다.
+          */}
+          {event.at !== event.year && (
+            <p className="font-mono text-xs tabular-nums text-dim">
+              {event.year}년 자료에서 확인
+            </p>
+          )}
+          {/*
+            실제 날짜를 모르면 그렇다고 밝힌다. 아는 척하느니 어디까지 아는지를
+            적는다.
           */}
           {!event.dated && (
             <p className="font-mono text-xs tabular-nums text-dim">
@@ -78,9 +99,15 @@ export async function generateMetadata({ params }: PageProps<"/history/[year]">)
   const event = find(year);
   if (!event) return {};
 
-  const title = `${event.at}년 행정구역 개편 — ${event.headline}`;
+  /*
+   * 제목은 한 꼴로 짧게.
+   *
+   * `${event.at}년 행정구역 개편 — ${headline}`을 90자로 자르고 있었다. 1995년은
+   * 변화가 예순네 건이라 그 목록이 이어 붙어 검색 결과에서 잘린 문장으로 뜬다.
+   * 구체적인 `A → B`는 설명문으로 보낸다 — 거기는 300자다.
+   */
   return {
-    title: title.slice(0, 90),
+    title: `${event.at}년 행정구역 개편`,
     description: `${event.states[0].year}년과 ${event.states.at(-1)!.year}년 지도를 나란히 놓고 봅니다. ${event.headline}`.slice(
       0,
       300,

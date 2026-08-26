@@ -67,7 +67,27 @@ export default function HistoryPage() {
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 pt-8 pb-14">
-      <Timelapse data={DATA} />
+      {/*
+        페이지 제목은 이 페이지가 무엇인가이지 지금 보고 있는 해가 아니다.
+        연도는 지도의 **상태값**이라 `Timelapse` 안에서 크게 뜨면 되고,
+        h1은 여기 한 번 있으면 된다. 앞서는 연도가 h1을 겸하고 있어서, 처음
+        온 사람은 첫 타임랩스가 무엇의 연혁인지 추론해야 했다.
+      */}
+      <header className="flex flex-col gap-1">
+        <h1 className="text-4xl font-bold tracking-tight">대한민국 행정구역 변천사</h1>
+        <p className="text-lg text-dim break-keep">
+          {FIRST.year}년부터 경계가 어떻게 바뀌었는지 지도에서 비교합니다.
+        </p>
+      </header>
+
+      {/*
+        아래 `시군구`에는 제목이 있는데 위에는 없었다. 그래서 첫 타임랩스가
+        무엇의 연혁인지 말해 주는 것이 없었다.
+      */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">시도</h2>
+        <Timelapse data={DATA} />
+      </section>
 
       {/*
         시군구 개편은 위 지도에 안 담긴다 — 전국 축척에서 창원 통합도 청주

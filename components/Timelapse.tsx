@@ -79,12 +79,17 @@ export function Timelapse({ data }: { data: TimelapseData }) {
         전에는 최소 높이를 억지로 박아 두고 있었다.
       */}
       <header className="flex items-end justify-between gap-5">
-        <h1
+        {/*
+          제목이 아니라 값이다. h1이었는데, 페이지 제목이 `대한민국 행정구역
+          변천사`이고 이 숫자는 그 페이지에서 지금 보고 있는 해다 — 단추를
+          누르면 바뀌는 것이 제목일 수는 없다.
+        */}
+        <p
           className="shrink-0 font-mono text-6xl leading-none font-bold tabular-nums sm:text-7xl"
           aria-label={`${frame.year}년. ${frame.label || `시도 ${frame.regions.length}곳`}`}
         >
           {frame.year}
-        </h1>
+        </p>
         <div className="flex flex-col items-end gap-1">
           <p className="text-right text-lg leading-snug font-medium break-keep">
             {frame.label || `시도 ${frame.regions.length}곳`}

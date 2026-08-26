@@ -40,10 +40,17 @@ export function NextQuiz() {
   const pad = (n: number) => String(n).padStart(2, "0");
   const clock = `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
 
+  /*
+   * 두 줄로 세운다. 라벨은 작게, 시각은 크게.
+   *
+   * 결과 카드 안에서 한 줄로 붙어 있었다. 거기 있으면 이 값이 오늘의 성적처럼
+   * 읽히는데, 이건 오늘이 아니라 내일이다. 카드 밖에 여백을 두고 가운데
+   * 놓으면 읽을 것이 끝났다는 표시가 그 여백이 된다.
+   */
   return (
-    <span className="flex items-baseline gap-2">
-      <span>다음 문제</span>
-      <span className="tabular-nums text-ink">{clock}</span>
-    </span>
+    <>
+      <span>다음 퀴즈까지</span>
+      <span className="text-2xl font-semibold tabular-nums text-ink">{clock}</span>
+    </>
   );
 }

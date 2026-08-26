@@ -18,6 +18,7 @@ import { quizDate } from "@/lib/daily/pick";
 import { loadQuiz, saveQuiz } from "@/lib/daily/store";
 import { ShareCard } from "@/components/share/ShareCard";
 import { StreakBadge } from "./StreakBadge";
+import { Tiles } from "./Tiles";
 import { NextQuiz } from "./NextQuiz";
 import { aliveOn, loadStreak, recordDay, type Streak } from "@/lib/daily/streak";
 
@@ -230,15 +231,6 @@ export function DailyQuiz({
 
   const left = MAX_TRIES - state.guesses.length;
   const text = quizShareText(state);
-  /*
-   * 미리보기용으로 문구를 색 줄 앞뒤로 가른다. 그 줄은 본문 안에 그대로
-   * 들어 있으므로 그것을 경계로 자른다 — 두 벌을 따로 만들면 보여 준 것과
-   * 보낸 것이 언젠가 갈라진다.
-   */
-  const marks = state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("");
-  const markAt = marks ? text.indexOf(marks) : -1;
-  const head = (markAt >= 0 ? text.slice(0, markAt) : text).trim();
-  const tail = markAt >= 0 ? text.slice(markAt + marks.length).trim() : "";
 
   /*
    * 아직 안 푼 사람에게 보이는 숫자.
@@ -270,19 +262,23 @@ export function DailyQuiz({
   return (
     <div className="flex w-full flex-col gap-5">
       {/*
-        한 줄이다.
-
-        이름·날짜·이어 온 날이 세 줄로 쌓여 있었다. 셋 다 짧아서 한 줄에 다
-        들어가는데, 세로로 두면 지도가 그만큼 아래로 밀린다. 이 화면의 본체는
-        지도다.
-
         불꽃을 페이지 쪽 머리글로 못 올린다. 판을 끝내는 순간 하루치가 세어져
         숫자가 오르는데, 서버 컴포넌트에 두면 그때 안 따라온다.
       */}
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <header className="flex flex-col gap-1">
         <h1 className="text-4xl font-bold tracking-tight">오늘의 퀴즈</h1>
-        <p className="font-mono text-sm text-dim">{quizDate(day)}</p>
-        {alive > 1 && <StreakBadge days={alive} />}
+        {/*
+          날짜는 부가정보가 아니라 **오늘 문제의 이름**이다. 매일 같은 주소에
+          다른 문제가 오므로 이 줄이 어느 판인지를 가르는 유일한 값이고,
+          공유 문구도 이것으로 서로를 맞춘다. 12px 회색으로 둘 자리가 아니다.
+
+          해는 안 적는다. 오늘 페이지에 있는 사람에게 2026은 새 정보가 없다.
+          공유 문구에는 넣는다 — 거기서는 언제 것인지가 오늘이 아니다.
+        */}
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-lg font-medium text-dim">
+          <span>{quizDate(day, { weekday: true })}</span>
+          {alive > 1 && <StreakBadge days={alive} />}
+        </p>
       </header>
 
       {/*
@@ -369,8 +365,14 @@ export function DailyQuiz({
         )}
       </div>
 
-      {/* 낸 답들. 색이 곧 공유될 격자다. */}
-      {state.guesses.length > 0 && (
+      {/*
+        낸 답들. 판이 도는 동안에만 낸다.
+
+        끝난 화면에서는 걷는다. 여기가 요약이라야 하는데 이름이 넷 다섯 줄로
+        늘어서면 갑자기 기록 화면이 된다. 몇 번 만에 끝냈는지는 아래 칸이
+        말하고, 무엇을 짚었는지는 그 사람이 방금 겪은 일이다.
+      */}
+      {stage !== "done" && state.guesses.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {state.guesses.map((g, i) => (
             <li
@@ -429,28 +431,11 @@ export function DailyQuiz({
           */}
           <p
             key={rejected}
-            className={`flex gap-1.5 ${rejected > 0 ? "tally-hold" : ""}`}
+            className={rejected > 0 ? "tally-hold" : undefined}
             role="status"
             aria-label={`${left}번 남았습니다`}
           >
-            {Array.from({ length: MAX_TRIES }, (_, i) => {
-              const g = state.guesses[i];
-              return (
-                <span
-                  key={i}
-                  aria-hidden
-                  className={`h-2.5 w-6 rounded-xs ${
-                    g
-                      ? g.closeness === "hit"
-                        ? "bg-sign"
-                        : g.closeness === "near"
-                          ? "bg-centerline"
-                          : "bg-alert"
-                      : "border border-edge"
-                  }`}
-                />
-              );
-            })}
+            <Tiles marks={state.guesses.map((g) => g.closeness)} />
           </p>
           {/*
             물린 답은 **입력칸이 말한다.** 아래에 뜨는 한 줄은 눈이 이미
@@ -528,40 +513,61 @@ export function DailyQuiz({
       )}
 
       {stage === "done" && (
-        <section className="flex flex-col gap-4 rounded-xl border border-edge bg-paint p-5">
+        <>
           {/*
-            맞힌 판과 못 맞힌 판이 같은 모양이면, 이름만 보고 자기가 맞혔는지를
-            다시 헤아려야 한다. 못 맞혔을 때만 `정답`이라는 딱지를 앞에 붙인다.
+            **상자 하나에 다 넣지 않는다.**
 
-            위로도 설명도 안 붙인다. `아쉽네요, 다시 도전해보세요`는 숫자가 이미
-            하는 말을 문장으로 한 번 더 하는 것이고, 그 문장은 아무도 안 읽는다.
+            결과·공유·카운트다운이 한 카드 안에 섞여 있었고, 그 안에 공유 카드가
+            또 들어 있었다. 상자 안의 상자다. 셋은 성격이 다르다 — 하나는 오늘
+            무엇이었나이고, 하나는 지금 할 수 있는 일이고, 하나는 내일이다.
+            자리를 갈라 두면 눈이 그 차례대로 읽는다.
           */}
-          <div className="flex items-baseline justify-between gap-4">
-            <p className="flex items-baseline gap-2.5">
-              {!state.solved && (
-                <span className="font-mono text-sm text-alert">정답</span>
-              )}
+          <section className="flex flex-col gap-4 rounded-xl border border-edge bg-paint p-5">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="flex flex-col gap-0.5">
+                {/*
+                  시도는 여기서만 적는다. 공유에는 안 나간다 — 받는 사람이 첫
+                  질문의 답을 알고 시작하면 반쯤 풀린 판을 물려받는 셈이다.
+                */}
+                {sidoName && (
+                  <span className="font-mono text-sm text-dim">{sidoName}</span>
+                )}
+                {/*
+                  이 화면에서 가장 중요한 글자다. 이 판의 결과는 점수가 아니라
+                  `광주시가 여기였구나`이므로, 지역명이 제일 커야 한다.
+                */}
+                <span className="text-3xl font-bold">{answer.name}</span>
+              </p>
               {/*
-                시도는 여기서만 적는다. 공유에는 안 나간다 — 받는 사람이 첫
-                질문의 답을 알고 시작하면 반쯤 풀린 판을 물려받는 셈이다.
+                `정답`이라고 쓰지 않는다. 이 자리에서 그 낱말은 두 가지로
+                읽힌다 — 옆에 적힌 이름이 정답이라는 뜻도 되고, 네가 맞혔다는
+                뜻도 된다. 본편 범례가 쓰는 말로 맞춘다(`맞힘`·`못 맞힘`).
               */}
-              {sidoName && (
-                <span className="font-mono text-sm text-dim">{sidoName}</span>
-              )}
-              <span className="text-2xl font-bold">{answer.name}</span>
+              <span
+                className={`shrink-0 rounded-sm px-2 py-1 font-mono text-sm ${
+                  state.solved ? "bg-sign/12 text-sign-deep" : "bg-alert/10 text-alert"
+                }`}
+              >
+                {state.solved ? "맞힘" : "못 맞힘"}
+              </span>
+            </div>
+
+            <p className="flex flex-col gap-2">
+              <span className="font-mono text-sm text-dim">시도</span>
+              <Tiles marks={state.guesses.map((g) => g.closeness)} />
             </p>
-            <p className="font-mono text-sm text-dim">
-              {state.solved
-                ? `${state.guesses.length} / ${MAX_TRIES}`
-                : `X / ${MAX_TRIES}`}
-            </p>
-          </div>
+          </section>
 
           {/*
-            보내는 길은 결과 화면과 같은 것을 쓴다. 그림은 아직 없다 —
-            도전장 카드는 기록을 실어 나르는 물건이라 오늘의 퀴즈용으로는
-            따로 그려야 한다.
+            보내는 길은 결과 화면과 같은 것을 쓴다. 미리보기는 걷었다 —
+            보낼 것을 편집하는 화면이 아니라 결과를 보는 화면이고, 그 그림
+            한 장이 화면 높이의 삼분의 일을 먹고 있었다.
+
+            제목을 하나 둔다. 위 상자가 오늘 무엇이었나이고 여기는 지금 할 수
+            있는 일이라, 둘이 붙어 있으면 아래 칸들이 결과의 일부로 읽힌다.
+            단추들이 자기 이름을 대고 있으므로 여기 적을 것은 묶음의 이름뿐이다.
           */}
+          <h2 className="mt-2 font-mono text-sm text-dim">결과 공유</h2>
           <ShareCard
             text={text}
             path="/today"
@@ -571,43 +577,23 @@ export function DailyQuiz({
               사라지면 오늘의 퀴즈라는 형식이 무너진다. 색 블록만 나간다.
             */
             imagePath={`/api/today-card/${cardCode(state)}`}
-            preview={
-              /*
-                보낼 것을 그대로 보여 준다. 색 줄만 크게 둔다 — 그게 이
-                공유물의 본체이고, 나머지는 그것을 둘러싼 문장이다.
-              */
-              <div
-                aria-hidden
-                className="flex flex-col items-center gap-2 text-center text-[11px] text-dim sm:text-xs"
-              >
-                <pre className="whitespace-pre-wrap">{head}</pre>
-                <pre className="text-lg leading-none whitespace-pre">
-                  {state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join("")}
-                </pre>
-                <pre className="whitespace-pre-wrap">{tail}</pre>
-              </div>
-            }
+            imageName={`시군타이핑-${quizDate(day, { year: true }).replace(/[^0-9]+/g, "-").replace(/^-|-$/g, "")}.png`}
             tweet={text}
             kakao={{
               title: `오늘의 퀴즈 ${quizDate(day)}`,
               // 카드에도 시도를 안 적는다. 받는 사람이 첫 질문의 답을 알고 시작한다.
-              description: `${
-                state.solved ? `${state.guesses.length} / ${MAX_TRIES}` : `X / ${MAX_TRIES}`
-              }, 같이 한 판?`,
+              description: "같이 한 판?",
             }}
           />
 
           {/*
-            하루에 한 번인 게임에서 "끝"만 적으면 오늘 여기서 관계가 끊긴다.
-            그 자리에 문장을 두는 대신 값을 둔다 — 줄어드는 시계.
-
-            이어 온 날은 여기 없다. 머리글이 늘 들고 있고, 판을 끝내는 순간
-            거기 숫자가 오른다. 한 화면에 불꽃이 둘일 이유가 없다.
+            내일은 결과가 아니다. 상자에 안 넣고 여백을 두고 가운데에 둔다 —
+            읽을 것이 끝났다는 표시가 그 여백이다.
           */}
-          <p className="flex flex-wrap items-baseline gap-x-4 font-mono text-sm text-dim">
+          <p className="mt-8 flex flex-col items-center gap-1 text-center font-mono text-sm text-dim">
             <NextQuiz />
           </p>
-        </section>
+        </>
       )}
     </div>
   );

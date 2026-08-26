@@ -51,10 +51,20 @@ export function closeness(guess: Point, answer: Point, exact: boolean): Closenes
     : "far";
 }
 
-export const QUIZ_EMOJI: Record<Closeness, string> = {
+/**
+ * 공유 문구의 칸.
+ *
+ * 화면에서는 이모지를 안 쓴다(`components/daily/Tiles.tsx`). 여기만 쓴다 —
+ * 글자밖에 못 싣는 자리라 달리 방법이 없다.
+ *
+ * `unused`는 안 쓴 횟수다. 흰 칸으로 채워 두면 몇 번에 끝냈는지가 세지 않아도
+ * 보이고, 그래서 `3 / 6`을 따로 적을 필요가 없다.
+ */
+export const QUIZ_EMOJI: Record<Closeness | "unused", string> = {
   hit: "🟩",
   near: "🟨",
   far: "🟥",
+  unused: "⬜",
 };
 
 /**
@@ -104,24 +114,22 @@ export function isOver(state: QuizState): boolean {
  * 통째로 사라진다.
  */
 export function quizShareText(state: QuizState): string {
-  const lines = ["시군 타이핑", `오늘의 퀴즈 ${quizDate(state.day)}`];
+  const lines = ["시군 타이핑", `오늘의 퀴즈 ${quizDate(state.day, { year: true })}`];
 
   /*
-   * **시도는 안 적는다.**
+   * **시도도 성적도 숫자로 안 적는다.**
    *
-   * 점수로는 문제가 없다 — 시도 맞히기는 횟수를 안 깎으니 공정성이 안 걸린다.
-   * 걸리는 것은 받는 사람이다. `경기 3 / 6`을 받으면 첫 질문의 답을 알고
+   * 시도를 안 적는 이유는 받는 사람이다. `경기`를 받으면 첫 질문의 답을 알고
    * 시작하므로, 같은 판을 푸는 것이 아니라 반쯤 풀린 판을 물려받는다.
+   * 화면 안에서는 보여 준다 — 거기서는 자기가 짚은 것이라 스포일러가 아니다.
    *
-   * 화면 안에서는 보여 준다. 거기서는 자기가 짚은 것이라 스포일러가 아니다.
+   * `3 / 6`을 적고 있었다. 그건 바로 아랫줄이 이미 하는 말이다. 안 쓴 횟수를
+   * 빈 칸으로 채우면 채워진 칸을 세지 않아도 몇 번에 끝냈는지가 보이고,
+   * 못 맞힌 판은 빈 칸이 없다는 것으로 스스로 드러난다.
    */
-  lines.push(
-    state.solved ? `${state.guesses.length} / ${MAX_TRIES}` : `X / ${MAX_TRIES}`,
-  );
-
-  if (state.guesses.length > 0) {
-    lines.push("", state.guesses.map((g) => QUIZ_EMOJI[g.closeness]).join(""));
-  }
+  const marks = state.guesses.map((g) => QUIZ_EMOJI[g.closeness]);
+  const rest = MAX_TRIES - marks.length;
+  lines.push("", marks.join("") + QUIZ_EMOJI.unused.repeat(Math.max(0, rest)));
 
   lines.push("", "같이 한 판?");
   return lines.join("\n");

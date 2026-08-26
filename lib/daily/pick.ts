@@ -54,9 +54,16 @@ export function dayIndex(now: number): number {
  * `EPOCH_KST`가 KST 자정을 UTC 타임스탬프로 적어 둔 값이므로, 여기에 날짜를
  * 더한 뒤 UTC로 읽으면 그날의 KST 달력이 그대로 나온다.
  */
-export function quizDate(day: number): string {
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+export function quizDate(
+  day: number,
+  options: { weekday?: boolean; year?: boolean } = {},
+): string {
   const at = new Date(EPOCH_KST + day * 86_400_000);
-  return `${at.getUTCMonth() + 1}월 ${at.getUTCDate()}일`;
+  const head = options.year ? `${at.getUTCFullYear()}년 ` : "";
+  const tail = options.weekday ? ` ${WEEKDAYS[at.getUTCDay()]}요일` : "";
+  return `${head}${at.getUTCMonth() + 1}월 ${at.getUTCDate()}일${tail}`;
 }
 
 /**

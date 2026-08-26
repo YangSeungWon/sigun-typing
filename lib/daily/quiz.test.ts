@@ -66,12 +66,29 @@ describe("공유 덩어리", () => {
     solved: true,
   };
 
-  it("날짜와 성적과 격자가 들어간다", () => {
+  it("날짜와 격자가 들어간다", () => {
     const t = quizShareText(solved);
     // 회차(`3일차`)가 아니라 날짜다. 받는 사람이 어느 날 문제인지 아는 값이어야 한다.
-    expect(t).toContain("오늘의 퀴즈 8월 21일");
-    expect(t).toContain("3 / 6");
+    // 해까지 적는다 — 이 문구가 읽히는 날은 오늘이 아닐 수 있다.
+    expect(t).toContain("오늘의 퀴즈 2026년 8월 21일");
     expect(t).toContain("🟥🟨🟩");
+  });
+
+  it("성적을 숫자로 적지 않는다 — 안 쓴 횟수가 빈 칸으로 남는다", () => {
+    const t = quizShareText(solved);
+    expect(t).not.toContain("3 / 6");
+    expect(t).toContain("🟥🟨🟩⬜⬜⬜");
+  });
+
+  it("못 맞힌 판에는 빈 칸이 없다", () => {
+    const lost = {
+      ...solved,
+      solved: false,
+      guesses: Array.from({ length: 6 }, () => ({ name: "안성시", closeness: "far" as const })),
+    };
+    const t = quizShareText(lost);
+    expect(t).not.toContain("⬜");
+    expect(t).toContain("🟥🟥🟥🟥🟥🟥");
   });
 
   it("정답을 적지 않는다", () => {
@@ -83,11 +100,6 @@ describe("공유 덩어리", () => {
   it("시도도 적지 않는다", () => {
     // `경기 3 / 6`을 받으면 첫 질문의 답을 알고 시작한다 — 반쯤 풀린 판이다.
     expect(quizShareText(solved)).not.toContain("경기");
-  });
-
-  it("못 맞힌 판은 X로 적는다", () => {
-    const t = quizShareText({ ...solved, solved: false });
-    expect(t).toContain("X / 6");
   });
 
   it("가운데점을 쓰지 않는다", () => {

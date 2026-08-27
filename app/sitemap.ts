@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { COURSES } from "@/data/courses";
-import { MODE_LADDER } from "@/lib/game/modes";
 import eventYears from "@/data/timelapse/event-years.json";
 import dongHistoryIds from "@/data/timelapse/dong-history-ids.json";
 import { siteUrl } from "@/lib/site";
@@ -14,14 +13,29 @@ import { siteUrl } from "@/lib/site";
 export default function sitemap(): MetadataRoute.Sitemap {
   const at = (path: string) => `${siteUrl()}${path}`;
 
-  const games = MODE_LADDER.flatMap((mode) =>
-    COURSES.map((course) => ({
-      url: at(`/play/${mode}/${course.id}`),
-      changeFrequency: "monthly" as const,
-      // 본편인 지도 타이핑을 조금 더 높게 둔다.
-      priority: mode === "map" ? 0.7 : 0.6,
-    })),
-  );
+  /*
+   * **`learn`은 안 싣는다.**
+   *
+   * 같은 270곳을 세는 주소가 셋이었다 — `/courses/<코스>`, `/play/map`,
+   * `/play/learn`. 872개 중 810개가 그 셋이다. 구글은 그중 190개를 가져간
+   * 뒤로 사실상 멈췄고, 남은 682개는 "알긴 아는데 안 가져간" 상태로 서 있다.
+   * 막힌 곳이 색인이 아니라 **크롤**이라는 뜻이다(크롤한 것은 100% 색인된다).
+   *
+   * 셋 중 무엇을 뺄지는 세어 보면 나온다.
+   *
+   *   /courses/<코스>   색인 113   노출 있음, 클릭도 있음
+   *   /play/map         색인  38   노출 4 · 클릭 2
+   *   /play/learn       색인  26   노출 0 · 클릭 0
+   *
+   * `learn`은 답이 화면에 적혀 있는 모드라 검색으로 들어올 말도 따로 없다.
+   * 270개를 덜어 낸 예산이 코스 소개와 아직 한 번도 안 가져간 동네별 변천으로
+   * 간다. 화면에서 사라지는 것은 아니다 — 목록과 코스 소개에서 그대로 간다.
+   */
+  const games = COURSES.map((course) => ({
+    url: at(`/play/map/${course.id}`),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
 
   /*
    * 코스 소개는 검색 유입의 착지점이다. 게임 화면보다 우선순위를 높게 둔다.

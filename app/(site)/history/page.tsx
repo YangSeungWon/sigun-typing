@@ -5,6 +5,8 @@ import changes from "@/data/reference/boundary-changes.json";
 import { UNMAPPED } from "@/data/reference/admin-events";
 import { DATA_VINTAGE } from "@/data/vintage";
 import eventYears from "@/data/timelapse/event-years.json";
+import dongHistoryIds from "@/data/timelapse/dong-history-ids.json";
+import { getCourse } from "@/data/courses";
 import summaries from "@/data/timelapse/event-summaries.json";
 
 const DATA = timelapse as TimelapseData;
@@ -13,6 +15,17 @@ const LAST = DATA.frames[DATA.frames.length - 1];
 
 /** 전후 지도를 구워 둔 해. 나머지는 목록에만 남는다. */
 const DRAWN = new Set(eventYears);
+
+/**
+ * 읍면동 변천이 있는 시군구.
+ *
+ * 이름은 `parentName`(`부산광역시 동구`)을 쓴다. 코스 이름(`동구 12개 동`)은
+ * 개수가 붙어 있고 시도가 없어서, 부산 동구와 대전 동구가 한 목록에 나란히
+ * 서면 구별이 안 된다.
+ */
+const DONG_LINKS = (dongHistoryIds as string[])
+  .map((id) => ({ id, name: getCourse(id)?.parentName ?? id }))
+  .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 
 export const metadata = {
   title: `대한민국 행정구역 변천사 ${FIRST.year}~${LAST.year}`,
@@ -158,6 +171,40 @@ export default function HistoryPage() {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      {/*
+        읍면동.
+
+        서른네 곳 각각에 자기 페이지가 있는데, 여태 들어가는 길이 그 시군구
+        코스 소개(`/courses/<코스>`) 안의 링크 하나뿐이었다. 그 부모 페이지가
+        아직 크롤되지 않은 곳이 절반이라, 서른네 곳 전부가 검색 로봇이 한 번도
+        가져가지 못한 상태로 서 있었다.
+
+        여기가 두 번째 입구다. 이 페이지는 이미 색인된 자리이고, 무엇보다
+        층으로 보면 여기가 제자리다 — 위가 시도, 그다음이 시군구, 그 아래가
+        읍면동이다.
+
+        목록에는 `부산광역시 동구`처럼 시도까지 적는다. `동구`만 적으면 부산과
+        대전이 한 목록에 나란히 서서 어느 쪽인지 알 수 없다.
+      */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">읍면동</h2>
+        <p className="text-base break-keep text-dim">
+          동이 합쳐지거나 갈라진 곳입니다. 시군구 경계는 그대로입니다.
+        </p>
+        <ul className="flex flex-wrap gap-2">
+          {DONG_LINKS.map((d) => (
+            <li key={d.id}>
+              <Link
+                href={`/history/dong/${d.id}`}
+                className="inline-block rounded-lg border border-edge px-3 py-1.5 text-base transition-colors hover:bg-concrete-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                {d.name}
+              </Link>
+            </li>
+          ))}
         </ul>
       </section>
 

@@ -320,14 +320,28 @@ export function Home({ seed, geo }: { seed: HomeSeed; geo: CourseGeo | null }) {
           )}
         </p>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {/*
+          **한 줄에 셋을 넣지 않는다.**
+
+          `sm:flex-row`로 히어로와 랜덤 두 단추를 한 줄에 뒀었다. 1024 이상에서
+          `actions`는 여섯 열 중 둘이라 셋이 들어갈 폭이 아니다. 랜덤 두 단추는
+          `whitespace-nowrap`이라 안 줄고, 남은 것을 히어로가 뒤집어쓰면서
+          `전국 이어하기`가 최소 너비까지 눌렸다 — 한글은 글자마다 끊기므로
+          단추 안에서 글자가 세로로 늘어섰다.
+
+          히어로는 제 줄을 갖고, 랜덤 둘이 그 아래 줄을 반씩 나눈다.
+        */}
+        <div className="flex flex-col gap-2">
           {/*
             버튼이 어디로 가는지 스스로 말한다. `이어하기`만 적혀 있으면 지도에서
             방금 고른 곳으로 가는지 지난번 코스로 가는지 눌러 봐야 안다.
+
+            `whitespace-nowrap`은 위의 재발 방지다. 코스 이름이 길어져도
+            (`서울특별시 이어하기`) 글자가 세로로 서는 대신 단추가 넓어진다.
           */}
           <Link
             href={`/play/map/${target.courseId}?from=home_hero`}
-            className="rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:px-10"
+            className="rounded-xl bg-sign px-6 py-4 text-center text-xl font-bold whitespace-nowrap text-on-sign transition-colors hover:bg-sign-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:px-10"
           >
             {target.shortName} {verb}
           </Link>
